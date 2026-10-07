@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e5af43e8791caa418ac62aba760a20c, type: 3}
   m_Name: Scope 2
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeaponPart
-  itemName: Scope 2
+  itemName: Telescopic Scope
   type: 9
   icon: {fileID: 21300000, guid: 7d48db157db7600469a809d1ca19bf87, type: 3}
   maxStack: 1
@@ -22,11 +22,9 @@ MonoBehaviour:
   buffs:
   - attribute: 13
     mode: 1
-    value: -0.3
-  randomBuffs:
-  - buff:
-      attribute: 0
-      mode: 0
-      value: 5
-    weight: 1
+    value: -0.25
+  - attribute: 21
+    mode: 1
+    value: 0.35
+  randomBuffs: []
   meshRenderer: {fileID: 4103093666213313895, guid: a4d0dd14a2c29c54ca93b5db40c7c449, type: 3}

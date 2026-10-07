@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
 
@@ -8,6 +9,15 @@ public class MoveWithVelocity : MonoBehaviour
     [Range(0f, 1f)] public float t = 0f;
     public float speed = 5f;
     public bool loop = true;
+
+    [Tooltip("反方向行駛（沿著 spline 的 knot 順序倒著走）。\n" +
+             "要改變船繞圈的方向（順時針 / 逆時針）時勾這個，不用重新排 knot。")]
+    public bool reverse = false;
+
+    [Tooltip("開始時從船目前的位置，找 spline 上最近的點當起點。\n\n" +
+             "關掉的話會從上面的 t 開始 —— 船如果沒有剛好擺在那個點上，\n" +
+             "會先往 t 的位置開過去、追上之後再掉頭，看起來就像走到盡頭折返。")]
+    public bool startFromNearestPoint = true;
 
     [Header("Steering")]
     public float maxAccel = 50f;
@@ -48,17 +58,38 @@ public class MoveWithVelocity : MonoBehaviour
         approxSplineLength = spline != null ? Mathf.Max(0.01f, spline.CalculateLength()) : 10f;
     }
 
+    void Start()
+    {
+        if (startFromNearestPoint) SnapToNearestPoint();
+    }
+
+    /// <summary>把 t 設成 spline 上離船目前位置最近的點。</summary>
+    [ContextMenu("Snap t To Nearest Point")]
+    private void SnapToNearestPoint()
+    {
+        if (spline == null) return;
+
+        Vector3 worldPos = (rb != null) ? rb.position : transform.position;
+
+        // GetNearestPoint 用的是 spline 的區域座標
+        float3 local = (float3)spline.transform.InverseTransformPoint(worldPos);
+        SplineUtility.GetNearestPoint(spline.Spline, local, out float3 _, out float nearestT);
+        t = nearestT;
+    }
+
     void FixedUpdate()
     {
         if (spline == null) return;
 
+        float dir = reverse ? -1f : 1f;
+
         float dt = (speed / approxSplineLength) * Time.fixedDeltaTime;
-        t += dt;
+        t += dt * dir;
 
         if (loop) t = Mathf.Repeat(t, 1f);
         else t = Mathf.Clamp01(t);
 
-        float tAhead = loop ? Mathf.Repeat(t + lookAhead, 1f) : Mathf.Clamp01(t + lookAhead);
+        float tAhead = loop ? Mathf.Repeat(t + lookAhead * dir, 1f) : Mathf.Clamp01(t + lookAhead * dir);
 
         Vector3 targetPos = spline.EvaluatePosition(tAhead);
         targetPos.y = fixedHeight;   // ★ 忽略 spline 的 y，鎖定在固定高度

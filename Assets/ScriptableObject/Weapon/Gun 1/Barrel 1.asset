@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e5af43e8791caa418ac62aba760a20c, type: 3}
   m_Name: Barrel 1
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeaponPart
-  itemName: Barrel
+  itemName: SMG Barrel
   type: 9
   icon: {fileID: 21300000, guid: e0cf10aa6bb44564eb94f956e5831e25, type: 3}
   maxStack: 1
@@ -20,18 +20,14 @@ MonoBehaviour:
   rangeWeaponPartPrefab: {fileID: 7393721869439523434, guid: b10d3fcdb42008141b7e15349ecf06bb, type: 3}
   partType: 2
   buffs:
-  - attribute: 11
+  - attribute: 39
     mode: 1
-    value: 0.3
-  randomBuffs:
-  - buff:
-      attribute: 0
-      mode: 0
-      value: 10
-    weight: 1
-  - buff:
-      attribute: 1
-      mode: 0
-      value: 5
-    weight: 1
+    value: -0.2
+  - attribute: 13
+    mode: 1
+    value: 0.15
+  - attribute: 15
+    mode: 1
+    value: -0.1
+  randomBuffs: []
   meshRenderer: {fileID: 9050892394816699327, guid: b10d3fcdb42008141b7e15349ecf06bb, type: 3}

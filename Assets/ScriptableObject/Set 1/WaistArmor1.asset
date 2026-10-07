@@ -29,14 +29,4 @@ MonoBehaviour:
   - attribute: 6
     mode: 0
     value: 3
-  randomBuffs:
-  - buff:
-      attribute: 0
-      mode: 0
-      value: 5
-    weight: 5
-  - buff:
-      attribute: 5
-      mode: 0
-      value: 10
-    weight: 1
+  randomBuffs: []

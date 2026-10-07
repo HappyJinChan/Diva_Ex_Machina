@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53fed8c131a2b844ab0ee47b1eb23f3b, type: 3}
   m_Name: Gun 2
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeapon
-  itemName: Gun 2
+  itemName: Assault Rifle
   type: 8
   icon: {fileID: 21300000, guid: 065f9fd66e491bb48879d8666c74b38f, type: 3}
   maxStack: 1
@@ -21,10 +21,10 @@ MonoBehaviour:
   buffs:
   - attribute: 0
     mode: 0
-    value: 10
+    value: 15
   - attribute: 8
     mode: 0
-    value: 2.2
+    value: 3
   - attribute: 9
     mode: 0
     value: 1
@@ -39,7 +39,7 @@ MonoBehaviour:
     value: 0
   - attribute: 13
     mode: 0
-    value: 0.8
+    value: 0.5
   - attribute: 14
     mode: 0
     value: 30
@@ -52,6 +52,12 @@ MonoBehaviour:
   - attribute: 39
     mode: 0
     value: 0.2
+  - attribute: 21
+    mode: 0
+    value: 0.08
+  - attribute: 22
+    mode: 0
+    value: 1.5
   randomBuffs:
   - buff:
       attribute: 0

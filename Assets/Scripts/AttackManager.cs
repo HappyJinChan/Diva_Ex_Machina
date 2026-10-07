@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class AttackManager : MonoBehaviour
 {
@@ -140,6 +141,8 @@ public class AttackManager : MonoBehaviour
         outWeapon.damage.explosionDamage = 0f;
         outWeapon.damage.energyDamage = 0f;
         outWeapon.damage.coldDamage = 0f;
+        outWeapon.damage.criticalChance = 0f;
+        outWeapon.damage.criticalMultiplier = 1f;
 
         outWeapon.range.reloadTime = 0f;
         outWeapon.range.bulletPerShot = 0;
@@ -196,6 +199,8 @@ public class AttackManager : MonoBehaviour
         outWeapon.damage.explosionDamage = 0f;
         outWeapon.damage.energyDamage = 0f;
         outWeapon.damage.coldDamage = 0f;
+        outWeapon.damage.criticalChance = 0f;
+        outWeapon.damage.criticalMultiplier = 1f;
 
         outWeapon.range.reloadTime = 0f;
         outWeapon.range.bulletPerShot = 0;
@@ -222,6 +227,14 @@ public class AttackManager : MonoBehaviour
         outWeapon.rangeRuntime.readyToShoot = false;
         outWeapon.rangeRuntime.allowInvoke = false;
     }
+    // 暴擊：以武器本體為基礎（覆蓋玩家基礎暴擊）+ 零件 / 手甲 / 頭盔的武器側 buff。開火 / 揮刀時直接讀 outWeapon.damage。
+    private static void ApplyCritical(List<EquipmentBuff> weaponBuffs, Weapon outWeapon)
+    {
+        var ps = PlayerStats.Instance;
+        outWeapon.damage.criticalChance = (ps != null) ? ps.GetCriticalChanceFor(weaponBuffs) : 0f;
+        outWeapon.damage.criticalMultiplier = (ps != null) ? ps.GetCriticalMultiplierFor(weaponBuffs) : 1f;
+    }
+
     private void ApplyHand(WeaponStats hand, Weapon outWeapon, bool isLeftHand,
                                   MeleeStanceRules stanceRules,
                                   ref RangeWeaponInstance cachedRange,
@@ -266,6 +279,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.damage.explosionDamage = hand.GetAttribute(Attributes.ExplosionDamage);
             outWeapon.damage.energyDamage = hand.GetAttribute(Attributes.EnergyDamage);
             outWeapon.damage.coldDamage = hand.GetAttribute(Attributes.ColdDamage);
+            ApplyCritical(hand.buffs, outWeapon);
 
             outWeapon.range.reloadTime = hand.GetAttribute(Attributes.ReloadTime);
             outWeapon.range.bulletPerShot = Mathf.Max(1, Mathf.RoundToInt(hand.GetAttribute(Attributes.BulletPerShot)));
@@ -315,6 +329,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.damage.explosionDamage = hand.GetAttribute(Attributes.ExplosionDamage);
             outWeapon.damage.energyDamage = hand.GetAttribute(Attributes.EnergyDamage);
             outWeapon.damage.coldDamage = hand.GetAttribute(Attributes.ColdDamage);
+            ApplyCritical(hand.buffs, outWeapon);
 
             // 2) 武器類型：每次現算，不存進 Instance。
             //    這樣之後調整 MeleeStanceRules 時，存檔裡的舊武器不會停在舊值。
@@ -418,6 +433,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.damage.explosionDamage = shoulder.GetAttribute(Attributes.ExplosionDamage);
             outWeapon.damage.energyDamage = shoulder.GetAttribute(Attributes.EnergyDamage);
             outWeapon.damage.coldDamage = shoulder.GetAttribute(Attributes.ColdDamage);
+            ApplyCritical(shoulder.buffs, outWeapon);
 
             outWeapon.range.reloadTime = shoulder.GetAttribute(Attributes.ReloadTime);
             outWeapon.range.bulletPerShot = Mathf.Max(1, Mathf.RoundToInt(shoulder.GetAttribute(Attributes.BulletPerShot)));

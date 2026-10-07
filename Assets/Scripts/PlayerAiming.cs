@@ -103,6 +103,7 @@ public class PlayerAiming : MonoBehaviour
     private float _autoAimOutAreaTimer = 0f;
 
     private bool _autoAimActive;
+    private bool _forcedAutoAim;   // 由程式指定的鎖定（WeaponBalanceBot），不會自動退出、也不會自己換目標
     private Transform _autoAimTarget;
     private Renderer _autoAimTargetRenderer;
 
@@ -239,9 +240,45 @@ public class PlayerAiming : MonoBehaviour
         _autoAimPointVel = Vector3.zero;
     }
 
+    /// <summary>
+    /// 由程式強制鎖定某個目標，鏡頭跟按中鍵鎖定時一樣轉向它（同一套指數跟隨、同樣的轉速上限）。
+    ///
+    /// 跟玩家的鎖定差在：
+    ///   · 不會因為超出 lockOnDistance 或跑出鎖定圈而自動退出（射擊場 80m 靶也能鎖）
+    ///   · 目標死亡時不會自己找下一個目標，直接退出 —— 由呼叫端決定下一個
+    /// 給 WeaponBalanceBot 用；只影響鏡頭與準星 UI，不影響彈道。
+    /// </summary>
+    public void ForceAutoAim(Transform target)
+    {
+        if (target == null) { ReleaseForcedAutoAim(); return; }
+
+        _autoAimTarget = target;
+        _autoAimTargetRenderer = target.GetComponentInChildren<Renderer>();
+        _lockedTarget = target;
+        _lockedTargetRb = target.GetComponentInParent<Rigidbody>();
+        _lockedTargetRenderer = _autoAimTargetRenderer;
+
+        _autoAimActive = true;
+        _forcedAutoAim = true;
+
+        _autoAimPointSmoothed = GetAutoAimPointRaw();
+        _autoAimPointVel = Vector3.zero;
+        _autoAimOutDistanceTimer = 0f;
+        _autoAimOutAreaTimer = 0f;
+    }
+
+    /// <summary>解除 ForceAutoAim。沒有強制鎖定時什麼都不做（不會影響玩家自己的鎖定）。</summary>
+    public void ReleaseForcedAutoAim()
+    {
+        if (!_forcedAutoAim) return;
+        EndAutoAim();
+        ClearLock();
+    }
+
     private void EndAutoAim()
     {
         _autoAimActive = false;
+        _forcedAutoAim = false;
         _autoAimTarget = null;
         _autoAimTargetRenderer = null;
         _autoAimPointVel = Vector3.zero;
@@ -261,6 +298,13 @@ public class PlayerAiming : MonoBehaviour
     // 成功取得新目標回傳 true（AutoAim 繼續）；找不到回傳 false（已退出 AutoAim）。
     private bool HandleAutoAimTargetLost()
     {
+        // 強制鎖定：目標沒了就退出，不自己換目標
+        if (_forcedAutoAim)
+        {
+            EndAutoAim();
+            return false;
+        }
+
         if (TryAcquireNextAutoAimTarget())
             return true;
 
@@ -666,7 +710,8 @@ public class PlayerAiming : MonoBehaviour
         else
             _autoAimOutAreaTimer = 0f;
 
-        if (_autoAimOutDistanceTimer >= autoAimAutoExitSeconds_Distance || _autoAimOutAreaTimer >= autoAimAutoExitSeconds_LockArea)
+        if (!_forcedAutoAim &&
+            (_autoAimOutDistanceTimer >= autoAimAutoExitSeconds_Distance || _autoAimOutAreaTimer >= autoAimAutoExitSeconds_LockArea))
         {
             EndAutoAim();
             return;

@@ -12,20 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e5af43e8791caa418ac62aba760a20c, type: 3}
   m_Name: Scope 1
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeaponPart
-  itemName: Scope
+  itemName: Iron Sight
   type: 9
   icon: {fileID: 21300000, guid: a2993ee848f5b4c4b8643fca0f535424, type: 3}
   maxStack: 1
   dropPrefab: {fileID: 0}
   rangeWeaponPartPrefab: {fileID: 9096270882145384013, guid: 78a553cd527c352419381ccddb9c66d1, type: 3}
   partType: 1
-  muzzlePoint: {fileID: 0}
   buffs:
-  - attribute: 0
-    value: 3
-  randomBuffs:
-  - buff:
-      attribute: 0
-      value: 5
-    weight: 1
+  - attribute: 13
+    mode: 1
+    value: -0.1
+  - attribute: 21
+    mode: 0
+    value: 0.1
+  randomBuffs: []
   meshRenderer: {fileID: 7294862023860328344, guid: 78a553cd527c352419381ccddb9c66d1, type: 3}

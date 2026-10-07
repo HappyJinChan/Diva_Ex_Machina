@@ -1,0 +1,5 @@
+session_id,kill_index,round_id,loadout_id,weapon_combo,enemy_name,distance,target_hp,target_speed,time_to_kill,time_from_round_start,interval_since_prev_kill,first_hit_time,kill_timestamp
+20261007_010403,0,-1,0,L:Shotgun|R:Shotgun|LS:-|RS:-,Target _ 10m,10,100,0,0.25972,,,102.8802,103.1399
+20261007_010403,1,-1,0,L:Shotgun|R:Shotgun|LS:-|RS:-,Target _ 20m,20,100,0,1.556152,,,103.4038,104.9599
+20261007_010403,2,-1,0,L:Shotgun|R:Shotgun|LS:-|RS:-,Target _ 50m,50,100,0,8.956367,,,105.5035,114.4599
+20261007_010403,3,-1,0,L:Shotgun|R:Shotgun|LS:-|RS:-,Target _ 80m,80,100,0,12.35522,,,111.1047,123.4599

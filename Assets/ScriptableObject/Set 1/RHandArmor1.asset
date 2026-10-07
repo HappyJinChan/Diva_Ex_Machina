@@ -20,26 +20,7 @@ MonoBehaviour:
   skinnedMeshRenderer: {fileID: 6537984270782739639, guid: 51a9ba5ce211525499a6f40ddfdc0f7d, type: 3}
   uts3MaterialTemplate: {fileID: 2100000, guid: 5d5f84e82f580fd46b070a0e673bf1fd, type: 2}
   buffs:
-  - attribute: 3
-    mode: 0
-    value: 5
-  - attribute: 0
-    mode: 0
-    value: 6
-  - attribute: 6
-    mode: 0
-    value: 3
   - attribute: 40
     mode: 0
     value: 300
-  randomBuffs:
-  - buff:
-      attribute: 0
-      mode: 0
-      value: 5
-    weight: 5
-  - buff:
-      attribute: 5
-      mode: 0
-      value: 10
-    weight: 1
+  randomBuffs: []

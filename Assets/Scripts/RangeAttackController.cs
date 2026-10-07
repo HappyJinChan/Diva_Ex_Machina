@@ -26,6 +26,16 @@ public class RangeAttackController : MonoBehaviour
              "衝鋒槍約 0.1 秒、火砲約 3 秒，不需要各自調參數。")]
     [SerializeField] private float ceaseFireIntervalMultiplier = 1.5f;
 
+    [Header("Aim Override (測試用)")]
+    [Tooltip("不為 null 時，所有開火都瞄準這個物件（Collider 中心），忽略準星與鎖定。\n" +
+             "給 WeaponBalanceBot 自動測試用 —— 後座偏移與散佈照常套用，只有「瞄準」是理想化的。\n" +
+             "平常保持空白。")]
+    public Transform aimOverride;
+
+    [Tooltip("aimOverride 目標的速度（世界座標）。不為零時用攔截預測算提前量，跟鎖定瞄準同一套算法。\n" +
+             "由 WeaponBalanceBot 每幀寫入。")]
+    [HideInInspector] public Vector3 aimOverrideVelocity;
+
     [Header("Debug")]
     [Tooltip("開火時在 Scene 視圖畫出：黃 = 準星 ray（相機出發）、紅 = 子彈實際方向（槍口出發），持續 1 秒。")]
     [SerializeField] private bool debugDrawFireRay = false;
@@ -115,7 +125,7 @@ public class RangeAttackController : MonoBehaviour
                 w.rangeRuntime.accumulatedDeviation + w.range.recoilPerShooting);
         }
 
-        // 這一次射擊共用同一個偏移角（圖上的一個紫點對應一個紅圈）
+        // 偏移的「大小」整次扣扳機共用；「方向」每一輪（Round）骰一次，見下面的 roundDeviation。
         float deviationDeg = w.isShoulder ? 0f : w.rangeRuntime.accumulatedDeviation;
 
         bool isLeftShoulder = (w == attackManager.leftShoulderWeapon);
@@ -127,6 +137,13 @@ public class RangeAttackController : MonoBehaviour
             // 沒有目標時武器是收著的，這段等待也涵蓋「迅速轉向前方」的時間。
             if ((isLeftShoulder || isRightShoulder) && attackManager.playerAnimation != null)
                 yield return attackManager.playerAnimation.FireShoulderAndWait(isLeftShoulder);
+
+            // 這一輪的後座偏移（圖上的紫點）。只在這一輪的第一顆彈丸骰一次，
+            // 之後的彈丸沿用同一個旋轉 —— 霰彈槍整組彈丸一起被推開，再各自散開。
+            // 以前是每顆彈丸各骰一次，後座偏移變成第二層散佈：彈丸圓圈中心永遠在準星上，
+            // 只是越打越大（散佈 + 偏移），而不是整組被推離準星。
+            Quaternion roundDeviation = Quaternion.identity;
+            bool hasRoundDeviation = false;
 
             for (int x = 0; x < w.range.bulletPerShot; x++)
             {
@@ -151,7 +168,17 @@ public class RangeAttackController : MonoBehaviour
                 Ray fireRay = (PlayerAiming.Instance != null) ? PlayerAiming.Instance.GetRay() : ray;
 
                 bool constrained = PlayerAiming.Instance.lockOn;
-                if (constrained)
+                if (aimOverride != null)
+                {
+                    // 測試機器人：瞄目標中心；目標在動時跟鎖定一樣算攔截點（提前量）
+                    Vector3 aimPos = AimPointOf(aimOverride);
+                    if (aimOverrideVelocity.sqrMagnitude > 0.0001f &&
+                        MathToolKit.InterceptionPoint(aimPos, muzzle.position, aimOverrideVelocity, w.range.bulletSpeed, out var leadPoint))
+                        targetPoint = leadPoint;
+                    else
+                        targetPoint = aimPos;
+                }
+                else if (constrained)
                 {
                     var targetRb = PlayerAiming.Instance.GetTargetRigidbody();
                     if (TrySampleTarget(targetRb, out Vector3 tgtPos, out Vector3 tgtVel))
@@ -181,15 +208,24 @@ public class RangeAttackController : MonoBehaviour
 
                 Vector3 dirNoSpread = (targetPoint - muzzle.position).normalized;
 
-                // 兩層獨立的圓錐取樣：
-                //   綠錐（deviation）擾動出「本次的瞄準方向」= 圖上的紫點
-                //   紅錐（spread）  再從紫點往外散開          = 圖上的藍點
+                // 兩層圓錐取樣：
+                //   綠錐（deviation）擾動出「本輪的瞄準方向」= 圖上的紫點（每輪骰一次，整組彈丸共用）
+                //   紅錐（spread）  再從紫點往外散開          = 圖上的藍點（每顆彈丸各骰一次）
                 // 關鍵是紅錐疊在紫方向上而不是原始方向上 —— 後座把準星推開之後，
                 // 散佈是從被推開的位置再往外擴，兩者是累加的。
                 //
+                // 共用的是「旋轉」而不是方向本身：同一輪的彈丸瞄的是同一個點，
+                // 用旋轉套用也不怕 dirNoSpread 之後有微小差異。
+                //
                 // 鎖定時 dirNoSpread 是攔截預測方向，deviation 照樣生效 ——
                 // 後座力對自動鎖定同樣有懲罰，這是 RecoilControl 的價值所在。
-                Vector3 dirAfterDeviation = ApplyConeSpread(dirNoSpread, deviationDeg);
+                if (!hasRoundDeviation)
+                {
+                    Vector3 deviated = ApplyConeSpread(dirNoSpread, deviationDeg);
+                    roundDeviation = Quaternion.FromToRotation(dirNoSpread, deviated);
+                    hasRoundDeviation = true;
+                }
+                Vector3 dirAfterDeviation = roundDeviation * dirNoSpread;
                 Vector3 dirWithSpread = ApplyConeSpread(dirAfterDeviation, w.range.spread);
 
                 if (debugDrawFireRay)
@@ -221,13 +257,9 @@ public class RangeAttackController : MonoBehaviour
                     bulletComp.energyDamage = w.damage.energyDamage;
                     bulletComp.coldDamage = w.damage.coldDamage;
 
-                    // 2) 暴擊（先用 PlayerStats 的最終值；之後要做「武器/零件暴擊」再擴充）
-                    var ps = PlayerStats.Instance;
-                    if (ps != null)
-                    {
-                        bulletComp.criticalChance = ps.criticalChance;
-                        bulletComp.criticalMultiplier = ps.criticalMultiplier;
-                    }
+                    // 2) 暴擊：以武器本體為基礎 + 零件 / 手甲 / 頭盔的加成（由 AttackManager 算好）
+                    bulletComp.criticalChance = w.damage.criticalChance;
+                    bulletComp.criticalMultiplier = w.damage.criticalMultiplier;
                 }
 
                 var rb = currentBullet.GetComponent<Rigidbody>();
@@ -333,6 +365,13 @@ public class RangeAttackController : MonoBehaviour
 
         Vector3 lateral = right * Mathf.Cos(phi) + up * Mathf.Sin(phi);
         return (dir * cosAlpha + lateral * sinAlpha).normalized;
+    }
+
+    // 目標的瞄準點：有 Collider 就用 bounds 中心，比 pivot（常在腳底）準
+    private static Vector3 AimPointOf(Transform t)
+    {
+        var col = t.GetComponentInChildren<Collider>();
+        return (col != null) ? col.bounds.center : t.position;
     }
 
     private bool TrySampleTarget(Rigidbody rb, out Vector3 pos, out Vector3 vel)

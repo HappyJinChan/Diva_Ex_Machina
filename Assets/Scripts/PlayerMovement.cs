@@ -336,6 +336,22 @@ public class PlayerMovement : MonoBehaviour
         && pendingSingleUntil.TryGetValue(meleeBufferedWeapon, out float t)
         && Time.time <= t;
 
+    // ───── 外部朝向（測試用）─────
+    // WeaponBalanceBot 需要角色面向靶子，但它不經過玩家輸入，
+    // ProcessAttackFacingAndAttack 每幀都會把 attackFacing 清掉，所以另開一個優先的欄位。
+    private Vector3? _externalFacing;
+
+    /// <summary>強制角色面向 worldPoint（只看水平方向）。直到 ClearExternalFacing 為止。</summary>
+    public void SetExternalFacing(Vector3 worldPoint)
+    {
+        if (characterModel == null) return;
+        Vector3 dir = worldPoint - characterModel.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.0001f) _externalFacing = dir.normalized;
+    }
+
+    public void ClearExternalFacing() => _externalFacing = null;
+
     private void SetAttackFacingOwner(Weapon w, Vector3 desiredForward)
     {
         attackFacingOwner = w;
@@ -1284,7 +1300,12 @@ public class PlayerMovement : MonoBehaviour
         bool aimRigWanted = true;
 
 
-        if (attackFacingActive)
+        if (_externalFacing.HasValue)
+        {
+            // 外部指定的朝向（WeaponBalanceBot 自動測試用），優先於一切
+            desiredForward = _externalFacing.Value;
+        }
+        else if (attackFacingActive)
         {
             desiredForward = attackDesiredForward;
         }

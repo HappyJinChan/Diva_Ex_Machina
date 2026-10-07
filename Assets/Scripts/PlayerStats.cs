@@ -385,8 +385,8 @@ public class PlayerStats : MonoBehaviour, IDamageable
         if (tbs <= 0.00001f) return 0f;
         float shotsPerSecond = 1f / tbs;
 
-        float cc = GetMergedCriticalChance(hand);
-        float cm = GetMergedCriticalMultiplier(hand);
+        float cc = GetCriticalChanceFor(hand.buffs);
+        float cm = GetCriticalMultiplierFor(hand.buffs);
 
         float expectedShot = (1f - cc) * D + cc * (cm * D);
         return expectedShot * bulletPerShotVal * roundPerPullVal * shotsPerSecond;
@@ -436,14 +436,21 @@ public class PlayerStats : MonoBehaviour, IDamageable
         return info;
     }
 
-    private float GetMergedCriticalChance(WeaponStats hand)
+    // 一把武器的最終暴擊率：這把武器吃到的武器側 buff（先加後乘）。
+    // 手持武器傳 WeaponStats.buffs，肩武器傳 ShoulderWeaponStats.buffs。
+    // 子彈 / 近戰的實際暴擊和 DPS 顯示都走這裡，兩者才會一致。
+    //
+    // ★ 槽位裝了武器，就以「武器本體的暴擊」作為基礎，覆蓋玩家的基礎暴擊（criticalChance / criticalMultiplier）。
+    //   所以每把武器本體要自己帶 CriticalChance / CriticalMultiplier 的 Add；沒有的話暴擊率是 0、暴擊倍率是 1。
+    //   零件 / 手甲 / 頭盔的 Add 加在武器的基礎上，Multiplier 再乘上去。
+    public float GetCriticalChanceFor(List<EquipmentBuff> weaponBuffs)
     {
-        float baseCc = criticalChance;
+        float baseCc = 0f;
         float add = 0f;
         float mul = 1f;
-        if (hand?.buffs != null)
+        if (weaponBuffs != null)
         {
-            foreach (var b in hand.buffs)
+            foreach (var b in weaponBuffs)
             {
                 if (b.attribute != Attributes.CriticalChance) continue;
                 if (b.mode == BuffApplyMode.Add) add += b.value;
@@ -454,14 +461,14 @@ public class PlayerStats : MonoBehaviour, IDamageable
         return Mathf.Clamp01(cc);
     }
 
-    private float GetMergedCriticalMultiplier(WeaponStats hand)
+    public float GetCriticalMultiplierFor(List<EquipmentBuff> weaponBuffs)
     {
-        float baseCm = criticalMultiplier;
+        float baseCm = 0f;   // 同上：由武器本體提供；最後至少為 1（暴擊不會讓傷害變少）
         float add = 0f;
         float mul = 1f;
-        if (hand?.buffs != null)
+        if (weaponBuffs != null)
         {
-            foreach (var b in hand.buffs)
+            foreach (var b in weaponBuffs)
             {
                 if (b.attribute != Attributes.CriticalMultiplier) continue;
                 if (b.mode == BuffApplyMode.Add) add += b.value;
@@ -577,7 +584,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
 
         // Buffs 分流：
         // - globalBuffs：影響全身（左欄）
-        // - sharedWeaponBuffs：由「非手甲裝備」提供，影響左右手武器最終屬性（如 HeadArmor 的 spread/crit 等）
+        // - sharedWeaponBuffs：由「非手甲裝備」提供，影響左右手武器與左右肩武器的最終屬性（如 HeadArmor 的 spread/crit 等）
         // - left/rightHandArmorWeaponBuffs：由手甲提供，影響該手武器最終屬性（單持時兩手疊加到唯一武器）
         List<EquipmentBuff> globalBuffs = new List<EquipmentBuff>();
         List<EquipmentBuff> sharedWeaponBuffs = new List<EquipmentBuff>();
@@ -693,9 +700,14 @@ public class PlayerStats : MonoBehaviour, IDamageable
         ApplyBuffListToGlobal(globalBuffs);
 
         // ===== 武器側 buffs 組裝（先把武器/零件的 buffs 留在 leftHand/rightHand 內） =====
-        // 1) sharedWeaponBuffs（如 HeadArmor 的 spread/crit）永遠套用到左右手武器
+        // 1) sharedWeaponBuffs（如 HeadArmor 的 spread/crit）永遠套用到左右手武器與肩武器
         AddBuffListToWeapon(leftHand, sharedWeaponBuffs);
         AddBuffListToWeapon(rightHand, sharedWeaponBuffs);
+
+        //    肩武器也吃 sharedWeaponBuffs（頭盔 / 胸甲等），但不吃手甲 —— 手甲只影響手持武器。
+        //    肩武器沒有後座力，所以這裡面的 RecoilControl 對它沒有作用。
+        if (leftShoulder.HasWeapon) AddBuffListToWeapon(leftShoulder, sharedWeaponBuffs);
+        if (rightShoulder.HasWeapon) AddBuffListToWeapon(rightShoulder, sharedWeaponBuffs);
 
         // 2) 手甲武器側 buffs：各手各吃一份
         AddBuffListToWeapon(leftHand, leftHandArmorWeaponBuffs);

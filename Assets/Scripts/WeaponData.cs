@@ -7,6 +7,11 @@ public class WeaponDamage
     public float explosionDamage;
     public float energyDamage;
     public float coldDamage;
+
+    // 暴擊：以武器本體為基礎（覆蓋玩家基礎暴擊）+ 零件 / 手甲 / 頭盔的加成。
+    // 由 AttackManager 在裝備變動時寫入，子彈與近戰 hitbox 直接讀這裡。
+    public float criticalChance;
+    public float criticalMultiplier = 1f;
 }
 
 [System.Serializable]

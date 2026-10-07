@@ -12,24 +12,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e5af43e8791caa418ac62aba760a20c, type: 3}
   m_Name: Barrel 2
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeaponPart
-  itemName: Barrel 2
+  itemName: AR Barrel
   type: 9
   icon: {fileID: 21300000, guid: 5be77fcff83bc9344965c09a05b29330, type: 3}
   maxStack: 1
   dropPrefab: {fileID: 0}
   rangeWeaponPartPrefab: {fileID: 8530888990223076684, guid: d441e6774978651439c767ce3061fab2, type: 3}
   partType: 2
-  muzzlePoint: {fileID: 0}
   buffs:
-  - attribute: 7
-    value: 3
-  randomBuffs:
-  - buff:
-      attribute: 7
-      value: 10
-    weight: 1
-  - buff:
-      attribute: 7
-      value: 5
-    weight: 1
+  - attribute: 13
+    mode: 1
+    value: -0.3
+  - attribute: 15
+    mode: 1
+    value: 0.3
+  - attribute: 39
+    mode: 1
+    value: 0.15
+  - attribute: 21
+    mode: 1
+    value: 0.25
+  randomBuffs: []
   meshRenderer: {fileID: 7882198914808818841, guid: d441e6774978651439c767ce3061fab2, type: 3}

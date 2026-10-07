@@ -299,7 +299,6 @@ public class MeleeAttackController : MonoBehaviour
         }
 
         float mul = _activeWeapon.melee.meleeOutput * _activeStep.damageMultiplier;
-        var ps = PlayerStats.Instance;
 
         hitbox.Configure(new MeleeHitData
         {
@@ -309,8 +308,9 @@ public class MeleeAttackController : MonoBehaviour
                 _activeWeapon.damage.explosionDamage * mul,
                 _activeWeapon.damage.energyDamage * mul,
                 _activeWeapon.damage.coldDamage * mul),
-            criticalChance = (ps != null) ? ps.criticalChance : 0f,
-            criticalMultiplier = (ps != null) ? ps.criticalMultiplier : 1f,
+            // 暴擊：以武器本體為基礎 + 零件 / 手甲 / 頭盔的加成（由 AttackManager 算好）
+            criticalChance = _activeWeapon.damage.criticalChance,
+            criticalMultiplier = _activeWeapon.damage.criticalMultiplier,
             knockback = _activeStep.knockback,
             hittableLayers = hittableLayers,
         });
