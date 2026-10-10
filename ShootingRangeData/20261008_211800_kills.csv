@@ -1,0 +1,13 @@
+session_id,kill_index,round_id,loadout_id,weapon_combo,enemy_name,distance,target_hp,target_speed,time_to_kill,time_from_round_start,interval_since_prev_kill,first_hit_time,kill_timestamp
+20261008_211800,0,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 10m,10,100,0,1.039787,,,122.1801,123.2199
+20261008_211800,1,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 20m,20,100,0,1.015884,,,122.224,123.2399
+20261008_211800,2,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 50m,50,100,0,0,,,124.2599,124.2599
+20261008_211800,3,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 80m,80,100,0,0,,,124.3199,124.3199
+20261008_211800,4,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 80m,80,100,0,0,,,145.4599,145.4599
+20261008_211800,5,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 50m,50,100,0,0,,,145.7799,145.7799
+20261008_211800,6,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 20m,20,100,0,0,,,146.3399,146.3399
+20261008_211800,7,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 10m,10,100,0,0,,,146.7199,146.7199
+20261008_211800,8,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 10m,10,100,0,0.170303,,,153.9296,154.0999
+20261008_211800,9,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 20m,20,100,0,0,,,154.9599,154.9599
+20261008_211800,10,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 50m,50,100,0,0,,,155.1799,155.1799
+20261008_211800,11,-1,0,L:Sniper|R:Sniper|LS:-|RS:-,Target _ 80m,80,100,0,0,,,156.2999,156.2999

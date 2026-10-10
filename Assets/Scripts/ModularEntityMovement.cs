@@ -42,8 +42,34 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
     public virtual void ManagedFixedUpdate(float dt)
     {
         GroundCheck();
+
+        // 被撞飛期間：不控制移動也不轉向，交給物理（速度、重力）自己飛
+        if (IsKnockedBack) return;
+
         ApplyHorizontalMovementFixed(dt);
         UpdateFacing();
+    }
+
+    // ── 撞飛 ─────────────────────────────────────────────────────────────
+    //
+    // 一般的移動每一步都會用加速度把速度拉回 AI 想要的值，直接 AddForce 的話馬上就被拉回去。
+    // 撞飛期間暫停移動控制，速度完全交給物理；時間到才恢復。
+
+    private float _knockbackUntil;
+
+    /// <summary>是否正在被撞飛（期間 AI 的移動控制暫停）。</summary>
+    public bool IsKnockedBack => Time.time < _knockbackUntil;
+
+    /// <summary>
+    /// 撞飛：把速度直接設成 worldVelocity（世界座標），並在 duration 秒內暫停移動控制。
+    /// Kinematic 的實體不受影響。
+    /// </summary>
+    public virtual void ApplyKnockback(Vector3 worldVelocity, float duration)
+    {
+        if (entityRigidbody == null || entityRigidbody.isKinematic) return;
+
+        entityRigidbody.linearVelocity = worldVelocity;
+        _knockbackUntil = Time.time + Mathf.Max(0f, duration);
     }
 
     // ── 朝向 ─────────────────────────────────────────────────────────────

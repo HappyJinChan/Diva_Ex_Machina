@@ -82,6 +82,31 @@ public class Bullet : MonoBehaviour, IPooled
     //   所以它必須進 prefab 快照，回收重用時還原，否則穿透彈只有第一輪有穿透。
     public int penetration = 0;
 
+    // 發射平台（玩家站在行進中的船上開火時，就是那艘船的 Rigidbody）與發射點。
+    // 只給曳光（BulletTracer）用，不影響飛行與命中。
+    //
+    // 鏡頭跟著船走，所以曳光要畫成「相對於船」的樣子才會從槍口延伸出去：
+    //   方向 = 子彈速度 − 船速（相對於船的飛行方向）
+    //   尾端 = 不超過發射點（發射點記在船的座標系裡，跟著船一起移動）
+    //
+    // 由發射端（RangeAttackController）在 Spawn 之後呼叫 SetPlatform；每次重新上場清空。
+    private Rigidbody _platform;
+    private Vector3 _spawnWorld;     // 沒有平台時的發射點（世界座標）
+    private Vector3 _spawnLocal;     // 有平台時的發射點（平台座標）
+
+    /// <summary>指定發射平台（站在船上開火時傳船的 Rigidbody；否則傳 null）。</summary>
+    public void SetPlatform(Rigidbody platform)
+    {
+        _platform = platform;
+        if (platform != null) _spawnLocal = platform.transform.InverseTransformPoint(_spawnWorld);
+    }
+
+    /// <summary>發射平台的速度。不在船上開火時是 0。</summary>
+    public Vector3 PlatformVelocity => _platform != null ? _platform.linearVelocity : Vector3.zero;
+
+    /// <summary>發射點目前在世界中的位置（在船上開火時會跟著船移動）。</summary>
+    public Vector3 SpawnPoint => _platform != null ? _platform.transform.TransformPoint(_spawnLocal) : _spawnWorld;
+
     // _live：這顆子彈是否「在場上活著」。
     // 取代原本的 _destroyed —— 池化之後子彈不會真的被銷毀，只會在 live / 待命之間切換。
     private bool _live;
@@ -130,6 +155,27 @@ public class Bullet : MonoBehaviour, IPooled
     private TrailRenderer[] _trails;
     private bool[] _trailEmitDefaults;
     private ParticleSystem[] _particles;
+
+    // 子彈本體的模型（不含 TrailRenderer / LineRenderer / 粒子）。
+    // 剛生成時先藏起來，等第一個 physics step 跑完才顯示 —— 見 IsRevealed。
+    private Renderer[] _bodyRenderers;
+    private bool[] _bodyRendererDefaults;
+
+    // 生成後是否已經跑過 physics step；跑過之前子彈先不顯示。
+    private bool _steppedSinceSpawn;
+    private bool _revealed;
+
+    /// <summary>
+    /// 子彈是否已經可以顯示。生成後到第一個 physics step 之前為 false。
+    ///
+    /// 為什麼要藏：子彈是插值的 Rigidbody。生成的那一幀，畫面上的位置是我們直接寫進去的物理位置；
+    /// 站在船上開火時，為了讓之後的每一幀都對準槍口，這個物理位置是「船的物理姿態」上的槍口，
+    /// 比畫面上的船超前一點（船速 × 插值落後時間），所以那一幀會畫在槍口旁邊。
+    /// 另外，物件池重用的子彈在第一個 physics step 之前，插值可能還拿上一世的位置來算。
+    /// 等第一個 step 跑完，插值的前後兩個姿態都是這一世的，畫面位置才可靠。
+    /// 這段時間最多一兩幀，而且槍口火焰正好蓋住，看不出缺了子彈。
+    /// </summary>
+    public bool IsRevealed => _revealed;
 
     // 共用暫存 buffer（同一 frame 內同步使用，不會互相干擾）
     private static readonly Collider[] _overlapBuffer = new Collider[64];
@@ -269,6 +315,7 @@ public class Bullet : MonoBehaviour, IPooled
     private void RestoreDefaults()
     {
         attacker = null;   // prefab 上必然是 null；由 spawn 端每次重新指定
+        _platform = null;   // 同上：只有站在船上開火時，發射端才會指定
 
         physicalDamage = _defaults.physicalDamage;
         explosionDamage = _defaults.explosionDamage;
@@ -322,6 +369,19 @@ public class Bullet : MonoBehaviour, IPooled
 
         _particles = GetComponentsInChildren<ParticleSystem>(true);
 
+        // 只收子彈本體的模型。拖尾 / 曳光（LineRenderer，可能由 BulletTracer 動態建立）/ 粒子各有自己的控制方式
+        var all = GetComponentsInChildren<Renderer>(true);
+        var body = new List<Renderer>(all.Length);
+        foreach (var r in all)
+        {
+            if (r is TrailRenderer || r is LineRenderer || r is ParticleSystemRenderer) continue;
+            body.Add(r);
+        }
+        _bodyRenderers = body.ToArray();
+        _bodyRendererDefaults = new bool[_bodyRenderers.Length];
+        for (int i = 0; i < _bodyRenderers.Length; i++)
+            _bodyRendererDefaults[i] = _bodyRenderers[i].enabled;
+
         CaptureDefaults();
     }
 
@@ -355,6 +415,9 @@ public class Bullet : MonoBehaviour, IPooled
         _homingReadyTime = Time.time + homingStartDelay;
 
         _despawnTime = Time.time + Mathf.Max(0f, lifespan);
+
+        // 發射點：transform 已經由物件池擺到槍口了。平台由發射端稍後透過 SetPlatform 指定。
+        _spawnWorld = transform.position;
 
         // Physics.IgnoreCollision 的配對狀態會在 collider disable/enable 時被清掉。
         // 這裡明確地 enable 一次，確保上一世 IgnoreCollision(self, other, true) 的殘留
@@ -392,8 +455,38 @@ public class Bullet : MonoBehaviour, IPooled
 
     private void OnDisable() => OnDespawned();
 
+    private void LateUpdate()
+    {
+        if (_live && !_revealed && (_steppedSinceSpawn || rb == null))
+            Reveal();
+    }
+
+    private void Reveal()
+    {
+        _revealed = true;
+
+        for (int i = 0; i < _bodyRenderers.Length; i++)
+            if (_bodyRenderers[i] != null) _bodyRenderers[i].enabled = _bodyRendererDefaults[i];
+
+        // 粒子延到現在才開始放：世界座標模擬的粒子如果在藏起來那一幀就放，會留在槍口旁邊
+        if (_particles != null)
+        {
+            for (int i = 0; i < _particles.Length; i++)
+            {
+                if (_particles[i] == null) continue;
+                if (_particles[i].main.playOnAwake) _particles[i].Play(true);
+            }
+        }
+    }
+
     private void ResetVisuals()
     {
+        // 子彈本體先藏起來，第一個 physics step 之後才顯示（見 IsRevealed）
+        _steppedSinceSpawn = false;
+        _revealed = false;
+        for (int i = 0; i < _bodyRenderers.Length; i++)
+            if (_bodyRenderers[i] != null) _bodyRenderers[i].enabled = false;
+
         // 順序很重要：transform 已經由 Instantiate / 物件池擺到位了，這時才 Clear，
         // 否則會看到一條從「上次死亡的位置」拉到槍口的拖尾。
         if (_trails != null)
@@ -411,8 +504,8 @@ public class Bullet : MonoBehaviour, IPooled
             for (int i = 0; i < _particles.Length; i++)
             {
                 if (_particles[i] == null) continue;
-                _particles[i].Clear(true);
-                if (_particles[i].main.playOnAwake) _particles[i].Play(true);
+                // 先停住並清空；等 Reveal() 才開始放
+                _particles[i].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
         }
     }
@@ -442,6 +535,9 @@ public class Bullet : MonoBehaviour, IPooled
     protected virtual void FixedUpdate()
     {
         if (!_live) return;
+
+        // 這個 FixedUpdate 之後就是這一世的第一個 physics step，下一次渲染時插值已經可靠
+        _steppedSinceSpawn = true;
 
         // 1) 上一個 physics step 由 Predict() 預測到的命中，延一步後才結算。
         //    對應原本 Predict() 裡的 yield return null。

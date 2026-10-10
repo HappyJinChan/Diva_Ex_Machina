@@ -26,5 +26,8 @@ MonoBehaviour:
   - attribute: 21
     mode: 1
     value: 0.35
+  - attribute: 33
+    mode: 0
+    value: 8
   randomBuffs: []
   meshRenderer: {fileID: 4103093666213313895, guid: a4d0dd14a2c29c54ca93b5db40c7c449, type: 3}

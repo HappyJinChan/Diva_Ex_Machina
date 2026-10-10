@@ -32,4 +32,7 @@ MonoBehaviour:
   - attribute: 40
     mode: 0
     value: 100
+  - attribute: 33
+    mode: 0
+    value: 40
   randomBuffs: []

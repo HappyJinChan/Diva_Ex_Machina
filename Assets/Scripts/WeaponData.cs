@@ -53,6 +53,10 @@ public class RangeWeaponSettings
     public int magazineSize;
     public float bulletSpeed;
     public int firingMode; // 0:Single, 1:Auto, 2:Charge
+
+    // 穿透：0 = 命中即消失；N = 可貫穿 N 個敵人，命中第 N+1 個時消失；-1 = 無限穿透。
+    // 由 AttackManager 從 Attributes.piercing 算出，開火時寫進 Bullet.penetration。
+    public int piercing;
 }
 
 [System.Serializable]

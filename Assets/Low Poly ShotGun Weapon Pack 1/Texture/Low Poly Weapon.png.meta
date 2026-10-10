@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: d987e6a3c5fa4b742a866ff0c313a687
+guid: 6e22ce775a391704eb1c5e467398e2a1
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -117,8 +117,8 @@ TextureImporter:
   assetBundleVariant: 
 AssetOrigin:
   serializedVersion: 1
-  productId: 283665
-  packageName: Low Poly ShotGun Weapon Pack 1
+  productId: 382254
+  packageName: Low Poly Weapon Series V MW 1
   packageVersion: 1.0
   assetPath: Assets/Low Poly ShotGun Weapon Pack 1/Texture/Low Poly Weapon.png
-  uploadId: 724253
+  uploadId: 925302

@@ -24,7 +24,7 @@ MonoBehaviour:
     value: 15
   - attribute: 8
     mode: 0
-    value: 3
+    value: 2
   - attribute: 9
     mode: 0
     value: 1
@@ -58,6 +58,9 @@ MonoBehaviour:
   - attribute: 22
     mode: 0
     value: 1.5
+  - attribute: 33
+    mode: 0
+    value: 40
   randomBuffs:
   - buff:
       attribute: 0

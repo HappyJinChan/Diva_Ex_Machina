@@ -19,6 +19,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 0}
   meleeCoatingPrefab: {fileID: 7011655065883924470, guid: 716435be39a64aa47b9bf01dc7c1ce1e, type: 3}
   partType: 5
-  buffs: []
+  buffs:
+  - attribute: 33
+    mode: 0
+    value: 2
   randomBuffs: []
   effectColorController: {fileID: 8818316354551033983, guid: 716435be39a64aa47b9bf01dc7c1ce1e, type: 3}

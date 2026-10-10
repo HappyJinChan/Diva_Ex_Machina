@@ -1,0 +1,17 @@
+session_id,loadout_id,timestamp,slot,kind,weapon_name,item_name,part_count,parts,recoil_control,recoil,recoil_ratio,max_deviation,deviation_decay_per_second,attr_PhysicalDamage,attr_ExplosionDamage,attr_EnergyDamage,attr_ColdDamage,attr_PhysicalDefense,attr_ExplosionDefense,attr_EnergyDefense,attr_ColdDefense,attr_ReloadTime,attr_BulletPerShot,attr_RoundPerPull,attr_TimeBetweenShooting,attr_TimeBetweenShots,attr_Spread,attr_MagazineSize,attr_BulletSpeed,attr_FiringMode,attr_MaxEnergy,attr_EnergyRegen,attr_DashEnergyCost,attr_FlyEnergyCost,attr_CriticalChance,attr_CriticalMultiplier,attr_SprintSpeed,attr_AccelerationSpeed,attr_DecelerationSpeed,attr_DashSpeed,attr_JumpHeight,attr_FlySpeed,attr_FlyAcceleration,attr_MaxHealth,attr_LockOnRange,attr_AimingDistance,attr_Weight,attr_MeleeOutput,attr_MeleeSpeed,attr_MeleeDashDistance,attr_MeleeReloadTime,attr_AutoAimSpeed,attr_RecoilPerShooting,attr_RecoilControl,attr_piercing
+20261009_004426,0,78.45995,LeftHand,Range,Shotgun,Shotgun,2,Barrel=Sniper Barrel;Scope=Telescopic Scope,1150,1800,1.565217,3.389085,2.121797,6,,,,,,,,3.5,8,1,0.2,0,1.575,20,390,1,,,,,0.0675,1.4,,,,,,,,,,,,,,,,,0.36,,0
+20261009_004426,0,78.45995,RightHand,Range,Shotgun,Shotgun,2,Barrel=Sniper Barrel;Scope=Telescopic Scope,1150,1800,1.565217,3.389085,2.121797,6,,,,,,,,3.5,8,1,0.2,0,1.575,20,390,1,,,,,0.0675,1.4,,,,,,,,,,,,,,,,,0.36,,0
+20261009_004426,0,78.45995,LeftShoulder,None,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+20261009_004426,0,78.45995,RightShoulder,None,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+20261009_004426,1,482.1597,LeftHand,Range,Shotgun,Shotgun,2,Barrel=Sniper Barrel;Scope=Telescopic Scope,950,1800,1.894737,4.876367,2.476455,6,,,,,,,,3.5,8,1,0.2,0,1.575,20,390,1,,,,,0.0675,1.4,,,,,,,,,,,,,,,,,0.36,,0
+20261009_004426,1,482.1597,RightHand,Range,Shotgun,Shotgun,2,Barrel=Sniper Barrel;Scope=Telescopic Scope,950,1800,1.894737,4.876367,2.476455,6,,,,,,,,3.5,8,1,0.2,0,1.575,20,390,1,,,,,0.0675,1.4,,,,,,,,,,,,,,,,,0.36,,0
+20261009_004426,1,482.1597,LeftShoulder,None,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+20261009_004426,1,482.1597,RightShoulder,None,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+20261009_004426,2,532.6196,LeftHand,Range,Shotgun,Shotgun,2,Barrel=Sniper Barrel;Scope=Telescopic Scope,650,1800,2.769231,5,2.5,6,,,,,,,,3.5,8,1,0.2,0,1.575,20,390,1,,,,,0.0675,1.4,,,,,,,,,,,,,,,,,0.36,,0
+20261009_004426,2,532.6196,RightHand,Range,Shotgun,Shotgun,2,Barrel=Sniper Barrel;Scope=Telescopic Scope,650,1800,2.769231,5,2.5,6,,,,,,,,3.5,8,1,0.2,0,1.575,20,390,1,,,,,0.0675,1.4,,,,,,,,,,,,,,,,,0.36,,0
+20261009_004426,2,532.6196,LeftShoulder,None,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+20261009_004426,2,532.6196,RightShoulder,None,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+20261009_004426,3,573.2196,LeftHand,Range,Shotgun,Shotgun,2,Barrel=Sniper Barrel;Scope=Telescopic Scope,1150,1800,1.565217,3.389085,2.121797,6,,,,,,,,3.5,8,1,0.2,0,1.575,20,390,1,,,,,0.0675,1.4,,,,,,,,,,,,,,,,,0.36,,0
+20261009_004426,3,573.2196,RightHand,Range,Shotgun,Shotgun,2,Barrel=Sniper Barrel;Scope=Telescopic Scope,1150,1800,1.565217,3.389085,2.121797,6,,,,,,,,3.5,8,1,0.2,0,1.575,20,390,1,,,,,0.0675,1.4,,,,,,,,,,,,,,,,,0.36,,0
+20261009_004426,3,573.2196,LeftShoulder,None,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+20261009_004426,3,573.2196,RightShoulder,None,,,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

@@ -149,6 +149,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Assault Boost",
+                    "type": "Button",
+                    "id": "035f00d8-bcf6-41b9-846d-17ecca8dab70",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -611,6 +620,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "AutoAim",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "42b893f7-f978-4b66-94d6-25200e3c988a",
+                    "path": "<Keyboard>/ctrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Assault Boost",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

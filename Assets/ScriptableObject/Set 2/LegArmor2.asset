@@ -35,6 +35,9 @@ MonoBehaviour:
   - attribute: 27
     mode: 0
     value: 10
+  - attribute: 33
+    mode: 0
+    value: 190
   randomBuffs: []
   visualChange:
     heightOffset: 0.095

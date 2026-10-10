@@ -41,6 +41,9 @@ MonoBehaviour:
   - attribute: 36
     mode: 0
     value: 10
+  - attribute: 33
+    mode: 0
+    value: 90
   randomBuffs: []
   normalThrusterFlame: {fileID: 3114569237128090224, guid: 3844c7b1ff1f30141af091ff1eb63bfa, type: 3}
   boostedThrusterFlame: {fileID: 3114569237128090224, guid: 4e00584ae3263184ba32d62f291c4996, type: 3}

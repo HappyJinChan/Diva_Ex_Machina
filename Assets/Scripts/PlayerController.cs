@@ -48,7 +48,10 @@ public class PlayerController : MonoBehaviour
             LastMoveInput = Vector2.zero; 
             // Clear movement intent so RotateCharacter / animations don't keep the last input direction.
             if (playerMovement != null)
+            {
                 playerMovement.HorizontalMovement(0f, 0f);
+                playerMovement.EndAssaultBoost();   // 打開裝備 / 合成介面時不要讓角色繼續衝出去
+            }
 
             return; // Skip Jump / Dash / Attack / Reload / AutoAim etc.
         }
@@ -66,6 +69,12 @@ public class PlayerController : MonoBehaviour
         if (playerControls.Player.Sprint.WasPressedThisFrame())
         {
             playerMovement.DashAction();
+        }
+
+        // 突擊推進：按一下開啟、再按一下關閉
+        if (playerControls.Player.AssaultBoost.WasPressedThisFrame())
+        {
+            playerMovement.AssaultBoostAction();
         }
 
         // Auto Aim toggle (Middle Mouse)

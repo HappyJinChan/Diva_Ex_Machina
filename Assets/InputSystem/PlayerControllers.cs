@@ -235,6 +235,15 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Assault Boost"",
+                    ""type"": ""Button"",
+                    ""id"": ""035f00d8-bcf6-41b9-846d-17ecca8dab70"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -697,6 +706,17 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""AutoAim"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""42b893f7-f978-4b66-94d6-25200e3c988a"",
+                    ""path"": ""<Keyboard>/ctrl"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Assault Boost"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1300,6 +1320,7 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         m_Player_LeftShoulderAttack = m_Player.FindAction("LeftShoulderAttack", throwIfNotFound: true);
         m_Player_RightShoulderAttack = m_Player.FindAction("RightShoulderAttack", throwIfNotFound: true);
         m_Player_AutoAim = m_Player.FindAction("AutoAim", throwIfNotFound: true);
+        m_Player_AssaultBoost = m_Player.FindAction("Assault Boost", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1409,6 +1430,7 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_LeftShoulderAttack;
     private readonly InputAction m_Player_RightShoulderAttack;
     private readonly InputAction m_Player_AutoAim;
+    private readonly InputAction m_Player_AssaultBoost;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1485,6 +1507,10 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @AutoAim => m_Wrapper.m_Player_AutoAim;
         /// <summary>
+        /// Provides access to the underlying input action "Player/AssaultBoost".
+        /// </summary>
+        public InputAction @AssaultBoost => m_Wrapper.m_Player_AssaultBoost;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_Player; }
@@ -1558,6 +1584,9 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
             @AutoAim.started += instance.OnAutoAim;
             @AutoAim.performed += instance.OnAutoAim;
             @AutoAim.canceled += instance.OnAutoAim;
+            @AssaultBoost.started += instance.OnAssaultBoost;
+            @AssaultBoost.performed += instance.OnAssaultBoost;
+            @AssaultBoost.canceled += instance.OnAssaultBoost;
         }
 
         /// <summary>
@@ -1617,6 +1646,9 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
             @AutoAim.started -= instance.OnAutoAim;
             @AutoAim.performed -= instance.OnAutoAim;
             @AutoAim.canceled -= instance.OnAutoAim;
+            @AssaultBoost.started -= instance.OnAssaultBoost;
+            @AssaultBoost.performed -= instance.OnAssaultBoost;
+            @AssaultBoost.canceled -= instance.OnAssaultBoost;
         }
 
         /// <summary>
@@ -2029,6 +2061,13 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnAutoAim(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Assault Boost" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnAssaultBoost(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

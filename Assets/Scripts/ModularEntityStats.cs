@@ -4,8 +4,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+public enum EntitySize
+{
+    Small,
+    Medium,
+    Large,
+}
+
 public class ModularEntityStats : MonoBehaviour, IDamageable
 {
+    public EntitySize entitySize;
     public float maxHealth;
     public float health;
     // 防禦值（不是百分比）。減傷 = 防禦 ÷ (防禦 + 1000)，詳見 DefenseFormula。

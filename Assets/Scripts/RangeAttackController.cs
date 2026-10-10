@@ -260,6 +260,17 @@ public class RangeAttackController : MonoBehaviour
                     // 2) 暴擊：以武器本體為基礎 + 零件 / 手甲 / 頭盔的加成（由 AttackManager 算好）
                     bulletComp.criticalChance = w.damage.criticalChance;
                     bulletComp.criticalMultiplier = w.damage.criticalMultiplier;
+
+                    // 3) 穿透：由武器的 piercing 屬性決定，蓋掉子彈 prefab 上的 penetration。
+                    //    （敵人的子彈不走這裡，仍然吃 prefab 上的值）
+                    bulletComp.penetration = w.range.piercing;
+
+                    // 4) 發射平台：只給曳光（BulletTracer）用，讓站在船上開火時曳光從槍口延伸出去（見 Bullet.SetPlatform）。
+                    //    不看 movingPlatformOffset —— 鎖定目標時它是 0（子彈不繼承船速），
+                    //    但鏡頭仍然跟著船走，拖尾一樣要補償。
+                    bulletComp.SetPlatform((attackManager.shipRB != null && attackManager.onShip)
+                        ? attackManager.shipRB
+                        : null);
                 }
 
                 var rb = currentBullet.GetComponent<Rigidbody>();
@@ -268,7 +279,19 @@ public class RangeAttackController : MonoBehaviour
                 // 用方向本身，不要乘上速度：bulletSpeed 為 0 時 forward 會收到零向量，
                 // Unity 會忽略這次賦值，子彈就維持 Quaternion.identity 的朝向。
                 if (dirWithSpread.sqrMagnitude > 0.0001f)
+                {
                     currentBullet.transform.rotation = Quaternion.LookRotation(dirWithSpread.normalized, Vector3.up);
+                    if (rb) rb.rotation = currentBullet.transform.rotation;   // 插值的 Rigidbody 要連物理姿態一起設，否則第一幀會被插值蓋回去
+                }
+
+                // ★ 站在船上開火：把子彈放到「船的物理姿態」上的槍口位置（見 ToPlatformPhysicsSpace）。
+                //   不這樣做，船開得越快，子彈看起來越像是從槍口後方（船行進的反方向）射出來。
+                if (rb && attackManager.shipRB != null && attackManager.onShip)
+                {
+                    Vector3 physicsMuzzle = ToPlatformPhysicsSpace(attackManager.shipRB, muzzle.position);
+                    currentBullet.transform.position = physicsMuzzle;
+                    rb.position = physicsMuzzle;
+                }
 
 
             }
@@ -285,6 +308,22 @@ public class RangeAttackController : MonoBehaviour
             w.rangeRuntime.allowInvoke = false;
             StartCoroutine(ResetShotCooldown(w));
         }
+    }
+
+    /// <summary>
+    /// 把「畫面上」的一個點，換算成船在物理模擬中的對應位置。
+    ///
+    /// 船是插值的 Rigidbody：畫面上的船（transform）比物理位置（rb.position）落後最多一個 physics step。
+    /// 槍口跟著畫面上的船走，但子彈是從物理位置開始模擬、之後再以同樣的落後量被畫出來。
+    /// 直接拿槍口的畫面位置當子彈的物理起點，等於在船的座標系裡往後退了「船速 × 落後時間」，
+    /// 子彈就會畫在槍口後方。換算到船的物理姿態上之後，子彈被畫出來時剛好落在槍口。
+    /// 船沒有開插值時兩者相同，換算結果不變。
+    /// </summary>
+    private static Vector3 ToPlatformPhysicsSpace(Rigidbody platform, Vector3 renderedWorldPoint)
+    {
+        Transform t = platform.transform;
+        Vector3 local = t.InverseTransformPoint(renderedWorldPoint);
+        return Matrix4x4.TRS(platform.position, platform.rotation, t.lossyScale).MultiplyPoint3x4(local);
     }
 
     public void StartReload(Weapon w)

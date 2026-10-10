@@ -29,6 +29,7 @@ public class FalconMovement : ModularEntityMovement
     public override void ManagedFixedUpdate(float dt)
     {
         base.ManagedFixedUpdate(dt);   // GroundCheck + ApplyHorizontalMovementFixed（下面已 override）+ 轉向
+        if (IsKnockedBack) return;     // 被撞飛期間不維持懸停，讓它真的飛出去；時間到再自己飛回懸停高度
         ApplyHover(dt);                // 每步維持懸停高度
         UpdateBank();                  // 每幀更新傾斜（含回正）
     }

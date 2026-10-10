@@ -35,6 +35,99 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float dashAttackLockDuration = 0.35f;
     private float dashAttackLockUntil = 0f;
 
+    // ───── 突擊推進（Assault Boost）─────
+    //
+    // 按一下開啟、再按一下關閉。啟動時相對平台速度歸零，之後：
+    //   水平：朝鏡頭方向，以 dashSpeed 為目標速度、accelerationSpeed 為加速度。
+    //         按下左 / 右：跟一般 Dash 一樣的爆發側推（dashDuration 內推到 dashSpeed），
+    //         消耗 dashEnergyCost、受 dashCooldown 限制；推完後側向速度以 accelerationSpeed 收回。
+    //   垂直：鏡頭往上就爬升、往下就俯衝；按住飛行鍵則像平常飛行一樣往上升。
+    //         速度上限 flySpeed、加速度 flyAcceleration。
+    //         沒有裝推進器（flySpeed = 0）時只能水平衝刺。期間關閉重力。
+    //   能量：啟動扣一次完整的 dashEnergyCost；之後推進期間每秒扣 flyEnergyCost、
+    //         側推每次扣 dashEnergyCost，這兩者都乘上 assaultBoostEnergyCostMultiplier（預設減半）。
+    //         期間不回復。
+    // 結束（再按一次 / 能量耗盡 / 按 Dash / 按近戰）時保留當下速度，交回一般移動慢慢減速。
+    [Header("Assault Boost")]
+    [Tooltip("鏡頭俯仰在這個角度（度）以內視為水平，不爬升也不俯衝。\n" +
+             "瞄準時鏡頭難免有一點上下，沒有死區的話會一直慢慢飄高或沉下去。")]
+    [SerializeField, Range(0f, 45f)] private float assaultBoostPitchDeadZone = 10f;
+
+    [Tooltip("推進期間的能量消耗倍率（啟動那一下不打折）。\n" +
+             "套用在：每秒的 flyEnergyCost、每次側推的 dashEnergyCost。0.5 = 減半。")]
+    [SerializeField, Range(0f, 1f)] private float assaultBoostEnergyCostMultiplier = 0.5f;
+
+    [Tooltip("Animator 上的 bool 參數名稱。Animator 沒有這個參數時會自動略過，不會報錯。")]
+    [SerializeField] private string assaultBoostAnimBool = "assaultBoost";
+
+    private bool _assaultBoosting;
+    private bool _abPrevGravity = true;
+    private Vector2 _moveInput;                       // 原始移動輸入（x = 左右，y = 前後）
+    private float _abFlyRequestUntil;                 // 推進中按住飛行鍵（同 flyRequestUntil 的緩衝做法）
+    private int _abSideBurstSign;                     // 側推方向：+1 右、-1 左
+    private float _abSideBurstUntil;                  // 側推視窗結束時間
+    private float _abSideBurstAccel = -1f;            // 側推加速度；-1 = 下一個 physics step 再算
+    private Vector3 _abFacing = Vector3.forward;      // 突擊推進中角色面向（水平）
+    private Vector3 _abAnimDir = Vector3.forward;     // 突擊推進中給移動動畫用的方向（水平）
+    private int _abAnimHash;
+    private bool? _abAnimHasParam;
+
+    /// <summary>是否正在突擊推進。</summary>
+    public bool IsAssaultBoosting => _assaultBoosting;
+
+    // ───── 突擊推進：撞飛小型敵人 ─────
+    //
+    // 推進中，前方（沿著這一步的移動方向）碰到 entitySize = Small 的敵人就把它撞飛：
+    //   方向 = 推進方向，再往「偏離推進路線的那一側」帶一點，看起來像被撞開而不是被推著走；
+    //   速度 = 玩家相對速度 × assaultBoostRamSpeedMultiplier，另外往上 assaultBoostRamUpwardSpeed。
+    // 中型、大型敵人不受影響（照常發生物理碰撞）。
+    //
+    // 撞擊傷害（物理）= 係數 × 玩家總重量（kg）× 相對速度（m/s）—— 用動量，不用動能：
+    //   動能裡速度是平方，會讓「輕、快」壓過「重」。用動量的話重量和速度一樣重要，
+    //   而且剛好跟重量曲線互相拉扯：越重越痛，但重量曲線也讓推進變慢，
+    //   所以撞擊最痛的配裝落在中量到臨界（懸崖邊），不是越重越好。
+    // 相對速度 = 兩者沿「玩家 → 敵人」方向互相接近的速度：迎面衝來的撞得更痛，逃跑的撞得輕。
+    // 玩家不減速、不受反作用傷害。只有突擊推進會撞。
+    [Header("Assault Boost Ram")]
+    [Tooltip("撞飛判定的層。留空（Nothing）= Enemy。")]
+    [SerializeField] private LayerMask assaultBoostRamLayers;
+
+    [Tooltip("撞飛判定的半徑（公尺），從玩家重心沿移動方向往前掃。")]
+    [SerializeField, Min(0.1f)] private float assaultBoostRamRadius = 1.5f;
+
+    [Tooltip("被撞飛的水平速度 = 玩家相對速度 × 這個倍率。大於 1 才會比玩家快、被撞到前面去，不會黏在身上。")]
+    [SerializeField, Min(0f)] private float assaultBoostRamSpeedMultiplier = 1.2f;
+
+    [Tooltip("被撞飛時往上的速度（公尺/秒）。")]
+    [SerializeField, Min(0f)] private float assaultBoostRamUpwardSpeed = 8f;
+
+    [Tooltip("往路線側邊偏的比例。0 = 沿推進方向直直撞出去；越大越往兩側彈開。")]
+    [SerializeField, Range(0f, 2f)] private float assaultBoostRamSideBias = 0.6f;
+
+    [Tooltip("被撞飛後，敵人的 AI 移動暫停幾秒（期間完全交給物理）。")]
+    [SerializeField, Min(0f)] private float assaultBoostRamKnockbackDuration = 1f;
+
+    [Tooltip("撞擊傷害 = 這個係數 × 玩家總重量（kg）× 相對速度（m/s）。物理傷害，會被敵人的物理防禦減免。\n" +
+             "0.005：Crimson Rose 輕型基準約 136、Emerald Storm 中型基準約 308。")]
+    [SerializeField, Min(0f)] private float assaultBoostRamDamagePerMomentum = 0.005f;
+
+    [Tooltip("相對速度低於這個值（m/s）只撞飛、不造成傷害。避免推進剛啟動還在加速時也撞出傷害。")]
+    [SerializeField, Min(0f)] private float assaultBoostRamMinDamageSpeed = 15f;
+
+    [Tooltip("相對速度上限 = 玩家這一步的推進速度 × 這個倍率。避免迎面撞上高速飛行的敵人時傷害爆表。")]
+    [SerializeField, Min(1f)] private float assaultBoostRamMaxRelativeSpeedRatio = 1.5f;
+
+    [Tooltip("同一隻敵人被撞擊傷害後，幾秒內不會再吃撞擊傷害（仍然會被撞飛）。\n" +
+             "有移動腳本的敵人在擊退期間本來就不會再被撞；這是給沒有移動腳本、會在膠囊裡停留好幾幀的小型實體用的。")]
+    [SerializeField, Min(0f)] private float assaultBoostRamDamageCooldown = 0.5f;
+
+    // 每隻敵人最後一次吃撞擊傷害的時間
+    private readonly Dictionary<ModularEntityStats, float> _ramDamageTimes = new Dictionary<ModularEntityStats, float>();
+    private static readonly List<ModularEntityStats> s_RamPrune = new List<ModularEntityStats>();
+
+    private static readonly Collider[] s_RamHits = new Collider[32];
+    private static readonly HashSet<ModularEntityStats> s_RamSeen = new HashSet<ModularEntityStats>();
+
     [Header("Attack Facing")]
     [SerializeField] private float attackRotateSpeed = 25;         // 轉身速度
     [SerializeField] private float attackAngleThreshold = 6f;       // 允許開火的角度誤差
@@ -115,8 +208,16 @@ public class PlayerMovement : MonoBehaviour
         GroundCheck();          // 同一條射線同時更新 grounded 和 ShipPassenger
         SyncMobilePlatform();   // 讀剛更新的船上狀態
         CarryWithPlatformRotation(Time.fixedDeltaTime);
-        ApplyHorizontalMovementFixed(Time.fixedDeltaTime);
-        ApplyFlyFixed(Time.fixedDeltaTime); // 新增
+        if (_assaultBoosting)
+        {
+            // 突擊推進接管水平與垂直速度；一般移動與飛行暫停
+            ApplyAssaultBoostFixed(Time.fixedDeltaTime);
+        }
+        else
+        {
+            ApplyHorizontalMovementFixed(Time.fixedDeltaTime);
+            ApplyFlyFixed(Time.fixedDeltaTime); // 新增
+        }
         ApplyDashFixed(Time.fixedDeltaTime); // 新增
         ApplyMeleeDashFixed(Time.fixedDeltaTime);
         ApplyMeleeAnchorFixed(Time.fixedDeltaTime);
@@ -235,6 +336,11 @@ public class PlayerMovement : MonoBehaviour
                         ClearAttackFacingOwnerIfSelf(meleeBufferedWeapon);
                     }
                     meleeBufferedWeapon = w;
+
+                    // 突擊推進中按近戰：先結束推進，交給一般近戰（突擊近戰之後再做）。
+                    // 一定要在近戰開始之前結束 —— 近戰滯空會記住「當下的重力設定」，
+                    // 推進中重力是關的，記錯了結束後就再也不會恢復重力。
+                    if (_assaultBoosting) EndAssaultBoost();
                 }
 
                 pendingSingleUntil[w] = Time.time + bufferTime;
@@ -368,6 +474,17 @@ public class PlayerMovement : MonoBehaviour
     }
     public void HorizontalMovement(float moveX, float moveZ)
     {
+        // 突擊推進中：左 / 右「按下的那一刻」觸發一次爆發側推（按住不會連發）
+        if (_assaultBoosting)
+        {
+            const float press = 0.5f;
+            bool wasPressed = Mathf.Abs(_moveInput.x) >= press;
+            bool isPressed = Mathf.Abs(moveX) >= press;
+            if (isPressed && !wasPressed)
+                TryAssaultBoostSideBurst(moveX > 0f ? 1 : -1);
+        }
+        _moveInput = new Vector2(moveX, moveZ);
+
         // 只更新 moveDirection（給 RotateCharacter / 動畫用），不要在 Update 內碰剛體
         Vector3 forward = characterOrientation.forward;
         forward.y = 0f;
@@ -389,6 +506,14 @@ public class PlayerMovement : MonoBehaviour
     private PlayerJumpDust _jumpDust;
     public bool JumpAction()
     {
+        // 突擊推進中：飛行鍵 = 往上升（由 ApplyAssaultBoostFixed 處理）。不起跳 ——
+        // 推進中重力是關的，起跳的衝量會讓角色一直往上飄。
+        if (_assaultBoosting)
+        {
+            _abFlyRequestUntil = Time.time + flyInputBuffer;
+            return false;
+        }
+
         if (grounded && readyToJump)
         {
             readyToJump = false;
@@ -444,6 +569,11 @@ public class PlayerMovement : MonoBehaviour
 
         // 近戰揮擊中，且這一段標記為不可取消 → 擋掉 Dash
         if (meleeController != null && meleeController.IsBlockingDash) return false;
+
+        // 突擊推進中按 Dash：一定會打斷推進 —— 放在冷卻 / 能量檢查之前，
+        // 所以就算這次 Dash 因冷卻（例如剛側推完）或能量不足而放不出來，推進也照樣結束。
+        // 放得出來的話，下面會直接接一般 Dash（緊急閃避）。
+        if (_assaultBoosting) EndAssaultBoost();
 
         if (Time.time < nextDashTime) return false;
         if (stats.currentEnergy <= 0) return false;
@@ -1161,6 +1291,340 @@ public class PlayerMovement : MonoBehaviour
         playerRigidbody.AddForce(_meleeDashDir * meleeDashAccel, ForceMode.Acceleration);
     }
 
+    // ────────────────────────────────────────────────
+    //  突擊推進（Assault Boost）
+    // ────────────────────────────────────────────────
+
+    /// <summary>突擊推進按鍵：沒在推進就開始，正在推進就結束。</summary>
+    public void AssaultBoostAction()
+    {
+        if (_assaultBoosting) EndAssaultBoost();
+        else TryBeginAssaultBoost();
+    }
+
+    private bool TryBeginAssaultBoost()
+    {
+        var stats = PlayerStats.Instance;
+        if (stats == null) return false;
+
+        // 近戰揮擊中，且這一段標記為不可取消 → 跟 Dash 一樣擋掉
+        if (meleeController != null && meleeController.IsBlockingDash) return false;
+        if (stats.currentEnergy <= 0f) return false;
+
+        stats.currentEnergy -= stats.dashEnergyCost;
+        CancelInvoke(nameof(ResetEnergyRegenerate));
+        canRegenerateEnergy = false;
+
+        // 收掉近戰、一般 Dash 與飛行請求（順序同 DashAction：先收近戰，它會還原重力設定）
+        CancelMeleeBrake();
+        StopMeleeDash("AssaultBoost");
+        EndMeleeHover();
+        EndMeleeAnchor();
+        if (meleeController != null)
+            meleeController.CancelByDash();
+
+        dashRequestUntil = 0f;
+        dashActiveUntil = 0f;
+        flyRequestUntil = 0f;
+
+        // 相對平台的速度歸零：在船上就是跟著船走，不在船上就是停住
+        playerRigidbody.linearVelocity = GetMobilePlatformVelocity();
+
+        _abPrevGravity = playerRigidbody.useGravity;
+        playerRigidbody.useGravity = false;
+
+        _abFacing = FlatForwardOr(characterModel != null ? characterModel.forward : transform.forward, Vector3.forward);
+        _abAnimDir = _abFacing;
+        _abFlyRequestUntil = 0f;
+        _abSideBurstUntil = 0f;
+        _abSideBurstSign = 0;
+        _assaultBoosting = true;
+        SetAssaultBoostAnim(true);
+
+        // 推進中手動轉鏡頭受 AimTurnRate 限制（推進方向跟著鏡頭，所以推進的轉向也一起受限）
+        if (PlayerAiming.Instance != null) PlayerAiming.Instance.SetManualTurnRateLimit(true);
+        return true;
+    }
+
+    /// <summary>
+    /// 推進中的爆發側推：跟一般 Dash 一樣的成本與冷卻，只是方向固定為推進方向的左 / 右，
+    /// 而且不會結束推進。不鎖攻擊、不播 Dash 動畫（推進中照樣可以開槍）。
+    /// </summary>
+    private bool TryAssaultBoostSideBurst(int sign)
+    {
+        var stats = PlayerStats.Instance;
+        if (stats == null || sign == 0) return false;
+        if (Time.time < nextDashTime) return false;
+        if (stats.currentEnergy <= 0f) return false;
+
+        stats.currentEnergy -= stats.dashEnergyCost * assaultBoostEnergyCostMultiplier;   // 推進中的側推打折
+        nextDashTime = Time.time + dashCooldown;
+
+        _abSideBurstSign = sign;
+        _abSideBurstUntil = Time.time + Mathf.Max(0.02f, dashDuration);
+        _abSideBurstAccel = -1f;   // 下一個 physics step 依當下的側向速度算出加速度
+        return true;
+    }
+
+    /// <summary>
+    /// 結束突擊推進。保留當下速度，之後由一般移動用 decelerationSpeed 慢慢減速、重力恢復。
+    /// 能量回復交回 EnergyRegenerationCheck 的一般規則（停止消耗後延遲一段時間才開始回復）。
+    /// </summary>
+    public void EndAssaultBoost()
+    {
+        if (!_assaultBoosting) return;
+
+        _assaultBoosting = false;
+        playerRigidbody.useGravity = _abPrevGravity;
+        SetAssaultBoostAnim(false);
+
+        if (PlayerAiming.Instance != null) PlayerAiming.Instance.SetManualTurnRateLimit(false);
+    }
+
+    private void ApplyAssaultBoostFixed(float dt)
+    {
+        var stats = PlayerStats.Instance;
+        if (stats == null)
+        {
+            EndAssaultBoost();
+            return;
+        }
+
+        // 1) 能量：每秒扣 flyEnergyCost（打折），期間不回復；耗盡就結束（保留當下速度）
+        stats.currentEnergy -= stats.flyEnergyCost * assaultBoostEnergyCostMultiplier * dt;
+        CancelInvoke(nameof(ResetEnergyRegenerate));
+        canRegenerateEnergy = false;
+        if (stats.currentEnergy <= 0f)
+        {
+            stats.currentEnergy = 0f;
+            EndAssaultBoost();
+            return;
+        }
+
+        // 2) 方向：畫面正中央（鏡頭正前方）。
+        //    不能用 PlayerAiming.GetRay() —— 沒按中鍵時的「輔助瞄準」會把 ray 拉向鎖定圈內最近的敵人，
+        //    推進就會自己轉向敵人。按中鍵鎖定（AutoAim）時鏡頭本身會轉向目標，
+        //    畫面中央自然就對著目標，所以只有鎖定時推進才會追著目標衝。
+        Camera cam = (PlayerAiming.Instance != null) ? PlayerAiming.Instance.MainCamera : Camera.main;
+        Vector3 aimDir = (cam != null) ? cam.transform.forward : characterOrientation.forward;
+        if (aimDir.sqrMagnitude < 0.0001f) aimDir = _abFacing;
+        aimDir.Normalize();
+
+        Vector3 flatForward = FlatForwardOr(aimDir, _abFacing);
+        Vector3 right = Vector3.Cross(Vector3.up, flatForward);
+
+        // 一律以「相對平台」的速度計算（跟一般移動、Dash 相同）
+        Vector3 platformVel = GetMobilePlatformVelocity();
+        Vector3 vRel = playerRigidbody.linearVelocity - platformVel;
+
+        // 3) 水平：拆成「前進」與「側向」兩個分量各自控制。
+        //    前進：目標 dashSpeed，加速度 accelerationSpeed。
+        //    側向：側推視窗內跟一般 Dash 一樣，在 dashDuration 內推到 dashSpeed；
+        //          視窗外目標 0，以 accelerationSpeed 收回。
+        //    轉鏡頭時，原本的前進速度有一部分會變成側向速度，再慢慢收回 —— 自然帶一點甩尾的慣性
+        Vector3 horizontalRel = new Vector3(vRel.x, 0f, vRel.z);
+        float vForward = Vector3.Dot(horizontalRel, flatForward);
+        float vSide = Vector3.Dot(horizontalRel, right);
+
+        vForward = Mathf.MoveTowards(vForward, stats.dashSpeed, stats.accelerationSpeed * dt);
+
+        if (Time.time <= _abSideBurstUntil && _abSideBurstSign != 0)
+        {
+            float targetSide = _abSideBurstSign * stats.dashSpeed;
+            if (_abSideBurstAccel < 0f)
+            {
+                // 跟 DashAction 同一套算法：剩下要補的速度 ÷ 持續時間
+                float deltaV = Mathf.Max(0f, stats.dashSpeed - _abSideBurstSign * vSide);
+                _abSideBurstAccel = deltaV / Mathf.Max(0.02f, dashDuration);
+            }
+            vSide = Mathf.MoveTowards(vSide, targetSide, _abSideBurstAccel * dt);
+        }
+        else
+        {
+            _abSideBurstSign = 0;
+            vSide = Mathf.MoveTowards(vSide, 0f, stats.accelerationSpeed * dt);
+        }
+
+        horizontalRel = flatForward * vForward + right * vSide;
+
+        // 4) 垂直：鏡頭超出死區的俯仰才算數；超出的部分換成爬升 / 俯衝速度，上限 flySpeed
+        float pitch = Mathf.Asin(Mathf.Clamp(aimDir.y, -1f, 1f)) * Mathf.Rad2Deg;
+        float effectivePitch = Mathf.Sign(pitch) * Mathf.Max(0f, Mathf.Abs(pitch) - assaultBoostPitchDeadZone);
+        float targetVy = Mathf.Sin(effectivePitch * Mathf.Deg2Rad) * stats.dashSpeed;
+        targetVy = Mathf.Clamp(targetVy, -stats.flySpeed, stats.flySpeed);
+
+        // 按住飛行鍵：像平常飛行一樣以 flySpeed 往上升（能量已經在推進中按每秒 flyEnergyCost 扣，不重複扣）
+        if (Time.time <= _abFlyRequestUntil && stats.flySpeed > 0f)
+            targetVy = stats.flySpeed;
+
+        if (grounded && targetVy < 0f) targetVy = 0f;   // 貼地時不往地面裡推
+
+        // 爬升 / 俯衝用 flyAcceleration；回到水平（目標 0）時至少用 accelerationSpeed 拉平，
+        // 否則沒有推進器（flyAcceleration = 0）時，撞到東西產生的垂直速度會一直留著
+        float vAccel = Mathf.Approximately(targetVy, 0f)
+            ? Mathf.Max(stats.flyAcceleration, stats.accelerationSpeed)
+            : stats.flyAcceleration;
+        float vy = Mathf.MoveTowards(vRel.y, targetVy, vAccel * dt);
+
+        Vector3 newVRel = new Vector3(horizontalRel.x, vy, horizontalRel.z);
+        playerRigidbody.linearVelocity = newVRel + platformVel;
+
+        // 撞飛前方的小型敵人
+        RamSmallEnemies(newVRel, platformVel, dt);
+
+        // 5) 給 RotateCharacter：角色面向推進方向，移動動畫用實際的水平移動方向（側推時會往旁邊）
+        _abFacing = flatForward;
+        if (horizontalRel.sqrMagnitude > 0.0001f) _abAnimDir = horizontalRel.normalized;
+    }
+
+    /// <summary>
+    /// 推進中撞飛前方的小型敵人。在這一步的推進速度算好之後呼叫。
+    /// vRel：玩家這一步的相對平台速度；platformVel：平台速度（不在船上時為 0）。
+    /// </summary>
+    private void RamSmallEnemies(Vector3 vRel, Vector3 platformVel, float dt)
+    {
+        float speed = vRel.magnitude;
+        if (speed < 1f) return;   // 幾乎沒在動（剛啟動）就不撞
+
+        int mask = assaultBoostRamLayers.value != 0 ? assaultBoostRamLayers.value : LayerMask.GetMask("Enemy");
+
+        // 沿這一步的移動方向往前掃一段：兩步的距離 + 一點餘裕，確保在真正碰到之前就先把它撞開
+        Vector3 dir = vRel / speed;
+        Vector3 start = playerRigidbody.worldCenterOfMass;
+        Vector3 end = start + dir * (speed * dt * 2f + 0.5f);
+
+        int count = Physics.OverlapCapsuleNonAlloc(start, end, assaultBoostRamRadius, s_RamHits, mask,
+                                                   QueryTriggerInteraction.Ignore);
+        if (count == 0) return;
+
+        Vector3 flatDir = new Vector3(dir.x, 0f, dir.z);
+        if (flatDir.sqrMagnitude < 0.0001f) flatDir = _abFacing;
+        flatDir.Normalize();
+
+        s_RamSeen.Clear();
+        for (int i = 0; i < count; i++)
+        {
+            Collider col = s_RamHits[i];
+            if (col == null) continue;
+
+            var stats = col.GetComponentInParent<ModularEntityStats>();
+            if (stats == null || stats.IsDead || stats.entitySize != EntitySize.Small) continue;
+            if (!s_RamSeen.Add(stats)) continue;   // 同一隻敵人有好幾個碰撞體，只撞一次
+
+            var movement = stats.GetComponent<ModularEntityMovement>();
+            if (movement == null) movement = stats.GetComponentInChildren<ModularEntityMovement>();
+            if (movement != null && movement.IsKnockedBack) continue;   // 已經在飛了 —— 同一次撞飛只算一次傷害
+
+            // ── 撞擊傷害 ──（敵人速度要在撞飛之前讀，撞飛會改掉它）
+            Rigidbody enemyRb = col.attachedRigidbody;
+            if (enemyRb == null) enemyRb = stats.GetComponentInParent<Rigidbody>();
+            float rammed = RamClosingSpeed(vRel + platformVel, enemyRb, stats.transform.position, dir, speed);
+            if (rammed >= assaultBoostRamMinDamageSpeed && assaultBoostRamDamagePerMomentum > 0f
+                && !RamDamageOnCooldown(stats))
+            {
+                _ramDamageTimes[stats] = Time.time;
+
+                float weight = (PlayerStats.Instance != null) ? PlayerStats.Instance.GetTotalWeight() : 0f;
+                float damage = assaultBoostRamDamagePerMomentum * weight * rammed;
+                if (damage > 0f)
+                    stats.TakeDamage(new DamageInfo(damage, 0f, 0f, 0f), gameObject);
+
+                // 撞死了就不用撞飛：它這一幀就會回收，留著擊退狀態可能帶到下一次重用。
+                if (stats.IsDead) continue;
+            }
+
+            // 方向：推進方向 + 偏離路線的那一側
+            Vector3 toEnemy = stats.transform.position - playerRigidbody.position;
+            toEnemy.y = 0f;
+            Vector3 side = toEnemy - flatDir * Vector3.Dot(toEnemy, flatDir);
+            Vector3 knockDir = flatDir;
+            if (side.sqrMagnitude > 0.0001f)
+                knockDir = (flatDir + side.normalized * assaultBoostRamSideBias).normalized;
+
+            Vector3 knockRel = knockDir * (speed * assaultBoostRamSpeedMultiplier)
+                             + Vector3.up * assaultBoostRamUpwardSpeed;
+            Vector3 knockWorld = knockRel + platformVel;
+
+            if (movement != null)
+            {
+                movement.ApplyKnockback(knockWorld, assaultBoostRamKnockbackDuration);
+            }
+            else
+            {
+                // 沒有移動腳本的小型實體：直接改 Rigidbody 速度
+                Rigidbody rb = col.attachedRigidbody;
+                if (rb != null && !rb.isKinematic) rb.linearVelocity = knockWorld;
+            }
+        }
+    }
+
+    private bool RamDamageOnCooldown(ModularEntityStats stats)
+    {
+        // 順手清掉過期的紀錄（包含已經被回收的敵人），字典不會一直長大
+        if (_ramDamageTimes.Count > 32)
+        {
+            s_RamPrune.Clear();
+            foreach (var kv in _ramDamageTimes)
+                if (kv.Key == null || Time.time - kv.Value >= assaultBoostRamDamageCooldown)
+                    s_RamPrune.Add(kv.Key);
+            for (int i = 0; i < s_RamPrune.Count; i++) _ramDamageTimes.Remove(s_RamPrune[i]);
+        }
+
+        return _ramDamageTimes.TryGetValue(stats, out float t) && Time.time - t < assaultBoostRamDamageCooldown;
+    }
+
+    /// <summary>
+    /// 撞擊的相對速度：玩家和敵人沿「玩家 → 敵人」方向互相接近的速度（m/s），
+    /// 夾在 0 ~ 玩家推進速度 × assaultBoostRamMaxRelativeSpeedRatio。
+    /// playerWorldVel：玩家的世界速度（相對平台速度 + 平台速度），敵人在船上時平台速度會互相抵消。
+    /// </summary>
+    private float RamClosingSpeed(Vector3 playerWorldVel, Rigidbody enemyRb, Vector3 enemyPos,
+                                  Vector3 fallbackDir, float playerSpeed)
+    {
+        Vector3 enemyVel = (enemyRb != null && !enemyRb.isKinematic) ? enemyRb.linearVelocity : Vector3.zero;
+
+        Vector3 line = enemyPos - playerRigidbody.worldCenterOfMass;
+        Vector3 n = (line.sqrMagnitude > 0.0001f) ? line.normalized : fallbackDir;
+
+        float closing = Vector3.Dot(playerWorldVel - enemyVel, n);
+        return Mathf.Clamp(closing, 0f, playerSpeed * assaultBoostRamMaxRelativeSpeedRatio);
+    }
+
+    private static Vector3 FlatForwardOr(Vector3 dir, Vector3 fallback)
+    {
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f)
+        {
+            dir = fallback;
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 0.0001f) return Vector3.forward;
+        }
+        return dir.normalized;
+    }
+
+    private void SetAssaultBoostAnim(bool on)
+    {
+        Animator anim = (playerAnimation != null) ? playerAnimation.anim : null;
+        if (anim == null || string.IsNullOrEmpty(assaultBoostAnimBool)) return;
+
+        // 第一次用到時檢查 Animator 有沒有這個參數；還沒做動畫時就安靜略過
+        if (_abAnimHasParam == null)
+        {
+            _abAnimHash = Animator.StringToHash(assaultBoostAnimBool);
+            _abAnimHasParam = false;
+            foreach (var p in anim.parameters)
+            {
+                if (p.nameHash == _abAnimHash && p.type == AnimatorControllerParameterType.Bool)
+                {
+                    _abAnimHasParam = true;
+                    break;
+                }
+            }
+        }
+
+        if (_abAnimHasParam == true) anim.SetBool(_abAnimHash, on);
+    }
+
     public void FlyAction()
     {
         // 空中且有能量才允許提出飛行請求
@@ -1309,6 +1773,13 @@ public class PlayerMovement : MonoBehaviour
         {
             desiredForward = attackDesiredForward;
         }
+        else if (_assaultBoosting)
+        {
+            // 突擊推進中面向推進方向（畫面中央的水平方向）。
+            // 放在 lockOn 之前：輔助瞄準時 lockOn 也是 true，否則身體會轉去看敵人、跟飛行方向對不上。
+            // 開火時仍由上面的 attackFacingActive 轉向目標。
+            desiredForward = _abFacing;
+        }
         else if (PlayerAiming.Instance.lockOn)
         {
             Vector3 lookDirection = PlayerAiming.Instance.aimingPoint.position - characterModel.position;
@@ -1392,6 +1863,14 @@ public class PlayerMovement : MonoBehaviour
             localMove = characterModel.InverseTransformDirection(moveDirection);
             localMove.y = 0f;
             localMove.Normalize();
+        }
+
+        // 突擊推進中：沒按方向鍵也在往前衝，移動動畫改用推進方向
+        if (_assaultBoosting)
+        {
+            localMove = characterModel.InverseTransformDirection(_abAnimDir);
+            localMove.y = 0f;
+            if (localMove.sqrMagnitude > 0.0001f) localMove.Normalize();
         }
 
         float targetX = localMove.x; // 左右

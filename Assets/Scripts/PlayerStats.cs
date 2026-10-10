@@ -52,6 +52,7 @@ public enum Attributes
     MagazineSize = 14,
     BulletSpeed = 15,
     FiringMode = 16,          //0:Single, 1:Auto, 2:Charge
+    piercing = 41,          // 子彈穿透力，0 = 無穿透，1 = 穿透 1 個目標，2 = 穿透 2 個目標，依此類推；-1 = 無限穿透
 
     //Energy
     MaxEnergy = 17,
@@ -91,7 +92,7 @@ public enum Attributes
     MeleeReloadTime = 37,
 
     //Auto Aim Speed
-    AutoAimSpeed = 38,        // The speed of auto-aiming towards the target, degrees per second
+    AimTurnRate = 38,         // 瞄準轉速（度/秒）：自動瞄準的最大轉速，也是突擊推進中手動轉鏡頭的上限。舊名 AutoAimSpeed
 }
 
 public enum AnimationType
@@ -240,7 +241,10 @@ public class BaseStats
     [Header("Base Aiming")]
     public float lockOnRange = 300f;
     public float aimingDistance = 50f;
-    public float autoAimSpeed = 60f; // The speed of auto-aiming towards the target, degrees per second
+    // 瞄準轉速（度/秒）：自動瞄準的最大轉速，也是突擊推進中手動轉鏡頭的上限。
+    // FormerlySerializedAs：舊名 autoAimSpeed，保住場景裡已經填好的數值。
+    [UnityEngine.Serialization.FormerlySerializedAs("autoAimSpeed")]
+    public float aimTurnRate = 60f;
 
     [Header("Base Recoil")]
     // 玩家不穿任何防具時也有的基礎後座力控制。
@@ -250,6 +254,88 @@ public class BaseStats
     //
     // 量級要跟 Recoil 對齊（AttackManager 把 Recoil 乘了 1000，落在數百~數千）。
     public float recoilControl = 400f;
+}
+
+/// <summary>
+/// 重量系統的參數。
+///
+/// 總重量 = Diva 本體重量 + 所有裝備（防具、手持武器、肩武器、零件）的 Weight。
+/// 總重量經過 curve 換算成機動倍率 m，每個移動屬性再吃 m 的 k 次方：
+///   · 速度類（Sprint、加速、減速、Dash、跳躍、飛行）：數值 × m^k  —— 越重越慢
+///   · 能耗類（Dash、飛行的能量消耗）：           數值 ÷ m^k  —— 越重越貴
+///
+/// 用次方而不是各自一個倍率，是因為很多手感是好幾個屬性相乘的結果
+/// （例如飛行航程 = 飛行速度 × 能量 ÷ 飛行能耗），用次方的話 k 直接相加，
+/// 一眼就能看出某種手感總共吃了多少懲罰。原則：任何一種手感的 k 總和不超過 1.5。
+///
+/// 想讓重量更痛時，優先調 curve，不要拉高個別的 k。
+/// </summary>
+[System.Serializable]
+public class WeightSettings
+{
+    [Tooltip("Diva 本體重量（kg）。不穿任何裝備時的總重量。")]
+    public float bodyWeight = 136f;
+
+    [Tooltip("重量曲線：x = 總重量（kg，含本體），y = 機動倍率 m。\n" +
+             "點與點之間線性內插；比第一個點輕取第一個點的 y，比最後一個點重取最後一個點的 y。\n" +
+             "x 必須由小到大排列。")]
+    public Vector2[] curve = new Vector2[]
+    {
+        new Vector2( 580f, 1.10f),   // 極端輕量（比 Crimson Rose 更輕）
+        new Vector2( 680f, 1.00f),   // 輕型基準：Crimson Rose + 雙持衝鋒槍
+        new Vector2(1000f, 0.92f),   // 輕量 → 中量（Emerald Storm + 雙手武器約 1044）
+        new Vector2(1400f, 0.80f),   // 中量的長緩坡，給中型機掛重武器的空間
+        new Vector2(1500f, 0.65f),   // 臨界：懸崖
+        new Vector2(1950f, 0.55f),   // 重量區繼續緩降，之後觸底
+    };
+
+    [Header("敏感度 k（實際倍率 = m^k）")]
+    public float sprintSpeedK = 1f;
+    [Tooltip("比最高速多掉一點，讓重的機體「起步慢」。")]
+    public float accelerationK = 1.5f;
+    [Tooltip("稍微滑一點就好，太滑會變成操作不準。")]
+    public float decelerationK = 0.5f;
+    public float dashSpeedK = 1f;
+    [Tooltip("刻意很小：陸戰機飛不久，跳躍是它主要的垂直移動手段。")]
+    public float jumpHeightK = 0.3f;
+    public float flySpeedK = 1f;
+    public float flyAccelerationK = 1.5f;
+    [Tooltip("能耗類是「除以」m^k：越重越貴。")]
+    public float dashEnergyCostK = 0.5f;
+    [Tooltip("能耗類是「除以」m^k：越重越貴。")]
+    public float flyEnergyCostK = 0.5f;
+
+    /// 總重量 → 機動倍率 m
+    public float Evaluate(float totalWeight)
+    {
+        if (curve == null || curve.Length == 0) return 1f;
+
+        float m;
+        if (totalWeight <= curve[0].x)
+        {
+            m = curve[0].y;
+        }
+        else if (totalWeight >= curve[curve.Length - 1].x)
+        {
+            m = curve[curve.Length - 1].y;
+        }
+        else
+        {
+            m = curve[curve.Length - 1].y;
+            for (int i = 1; i < curve.Length; i++)
+            {
+                if (totalWeight > curve[i].x) continue;
+                Vector2 a = curve[i - 1];
+                Vector2 b = curve[i];
+                float t = (b.x > a.x) ? (totalWeight - a.x) / (b.x - a.x) : 1f;
+                m = Mathf.Lerp(a.y, b.y, t);
+                break;
+            }
+        }
+
+        // m 會被拿來開次方和當除數，不能是 0 或負數
+        return Mathf.Max(0.05f, m);
+    }
 }
 
 
@@ -319,7 +405,14 @@ public class PlayerStats : MonoBehaviour, IDamageable
     [Header("Aiming")]
     public float lockOnRange;
     public float aimingDistance;
-    public float autoAimSpeed;
+    [UnityEngine.Serialization.FormerlySerializedAs("autoAimSpeed")]
+    public float aimTurnRate;
+    [Header("Weight")]
+    public WeightSettings weightSettings = new WeightSettings();
+    [Tooltip("目前總重量（kg，含本體）。只在執行時計算，改了沒用。")]
+    public float totalWeight;
+    [Tooltip("目前的機動倍率 m（1 = 輕型基準）。只在執行時計算，改了沒用。")]
+    public float mobilityFactor = 1f;
     [Header("手部武器狀態（只在執行時使用）")]
     public WeaponStats leftHand = new WeaponStats();
     public WeaponStats rightHand = new WeaponStats();
@@ -399,7 +492,10 @@ public class PlayerStats : MonoBehaviour, IDamageable
 
     public float GetAimingDistance() => aimingDistance;
 
-    public float GetAutoAimSpeed() => autoAimSpeed;
+    public float GetAimTurnRate() => aimTurnRate;
+
+    public float GetTotalWeight() => totalWeight;
+    public float GetMobilityFactor() => mobilityFactor;
     /// <summary>
     /// 主人先前定義的 Energy Efficiency（保留 API，以後若要用可直接接 UI）。
     /// FlyCost: 每秒；DashCost: 每次。
@@ -564,8 +660,11 @@ public class PlayerStats : MonoBehaviour, IDamageable
         flyAcceleration = baseStats.flyAcceleration;
         maxHealth = baseStats.maxHealth;
         lockOnRange = baseStats.lockOnRange;
-        autoAimSpeed = baseStats.autoAimSpeed;
+        aimTurnRate = baseStats.aimTurnRate;
         aimingDistance = baseStats.aimingDistance;
+
+        totalWeight = weightSettings.bodyWeight;
+        mobilityFactor = 1f;
     }
     public void RecalculateFromEquipment()
     {
@@ -699,6 +798,11 @@ public class PlayerStats : MonoBehaviour, IDamageable
         // ★最後統一套用（先加後乘）— 全身屬性
         ApplyBuffListToGlobal(globalBuffs);
 
+        // ★重量：一定要在全身 buff 套完之後 —— 懲罰是乘在「最終數值」上，
+        //   裝甲自己給的移動加成也一樣會被重量打折。
+        CalculateTotalWeight(globalBuffs);
+        ApplyWeightToMobility();
+
         // ===== 武器側 buffs 組裝（先把武器/零件的 buffs 留在 leftHand/rightHand 內） =====
         // 1) sharedWeaponBuffs（如 HeadArmor 的 spread/crit）永遠套用到左右手武器與肩武器
         AddBuffListToWeapon(leftHand, sharedWeaponBuffs);
@@ -777,6 +881,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
             case Attributes.MagazineSize:
             case Attributes.BulletSpeed:
             case Attributes.FiringMode:
+            case Attributes.piercing:
             case Attributes.CriticalChance:
             case Attributes.CriticalMultiplier:
             case Attributes.MeleeReloadTime:
@@ -843,6 +948,68 @@ public class PlayerStats : MonoBehaviour, IDamageable
         return v;
     }
 
+    // ======= 重量 =======
+    // Weight 不是武器側屬性，所以：
+    //   · 防具的 Weight 在 globalBuffs 裡（ApplyAddToGlobal 沒有它的 case，不會影響其他數值）
+    //   · 武器本體和零件的 Weight 留在各手 / 各肩的 buffs 裡
+    // 頭盔 / 手甲分給武器的 buffs 只有武器側屬性，不會帶 Weight，不會重複計算。
+    //
+    // 裝備的 Weight 全部合起來算（先加後乘），再加上本體重量。
+    // 所以 Weight 的 Multiplier 是「整台機體的裝備重量」打折，例如之後的輕量化詞條。
+    void CalculateTotalWeight(List<EquipmentBuff> globalBuffs)
+    {
+        List<EquipmentBuff> weightBuffs = new List<EquipmentBuff>();
+        CollectWeightBuffs(globalBuffs, weightBuffs);
+        CollectWeightBuffs(leftHand.buffs, weightBuffs);
+        CollectWeightBuffs(rightHand.buffs, weightBuffs);
+        CollectWeightBuffs(leftShoulder.buffs, weightBuffs);
+        CollectWeightBuffs(rightShoulder.buffs, weightBuffs);
+
+        float equipmentWeight = Mathf.Max(0f, ApplyBuffListToValue(weightBuffs, Attributes.Weight, 0f));
+        totalWeight = weightSettings.bodyWeight + equipmentWeight;
+        mobilityFactor = weightSettings.Evaluate(totalWeight);
+    }
+
+    static void CollectWeightBuffs(List<EquipmentBuff> src, List<EquipmentBuff> dst)
+    {
+        if (src == null) return;
+        for (int i = 0; i < src.Count; i++)
+        {
+            if (src[i].attribute == Attributes.Weight)
+                dst.Add(src[i]);
+        }
+    }
+
+    void ApplyWeightToMobility()
+    {
+        float m = mobilityFactor;
+        if (Mathf.Approximately(m, 1f)) return;
+
+        var w = weightSettings;
+
+        // 速度類：× m^k
+        sprintSpeed       *= Mathf.Pow(m, w.sprintSpeedK);
+        accelerationSpeed *= Mathf.Pow(m, w.accelerationK);
+        decelerationSpeed *= Mathf.Pow(m, w.decelerationK);
+        dashSpeed         *= Mathf.Pow(m, w.dashSpeedK);
+        jumpHeight        *= Mathf.Pow(m, w.jumpHeightK);
+        flySpeed          *= Mathf.Pow(m, w.flySpeedK);
+        flyAcceleration   *= Mathf.Pow(m, w.flyAccelerationK);
+
+        // 能耗類：÷ m^k
+        dashEnergyCost    /= Mathf.Pow(m, w.dashEnergyCostK);
+        flyEnergyCost     /= Mathf.Pow(m, w.flyEnergyCostK);
+    }
+
+#if UNITY_EDITOR
+    // 執行中在 Inspector 調重量曲線 / k，馬上重算，不用重新換裝。
+    void OnValidate()
+    {
+        if (Application.isPlaying && Instance == this && EquipmentManager.Instance != null)
+            RecalculateFromEquipment();
+    }
+#endif
+
     // 這隻手的最終後座力控制：baseStats.recoilControl 再吃該手的武器側 buff。
     //
     // 必須走 ApplyBuffListToValue 而不是 GetAttribute —— 後者在沒有任何 buff 時
@@ -903,7 +1070,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
             case Attributes.MaxHealth: maxHealth += buff.value; break;
             case Attributes.AimingDistance: aimingDistance += buff.value; break;
             case Attributes.LockOnRange: lockOnRange += buff.value; break;
-            case Attributes.AutoAimSpeed: autoAimSpeed += buff.value; break;
+            case Attributes.AimTurnRate: aimTurnRate += buff.value; break;
         }
     }
     void ApplyMultiplierToGlobal(EquipmentBuff buff)
@@ -936,7 +1103,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
             case Attributes.MaxHealth: maxHealth *= m; break;
             case Attributes.AimingDistance: aimingDistance *= m; break;
             case Attributes.LockOnRange: lockOnRange *= m; break;
-            case Attributes.AutoAimSpeed: autoAimSpeed *= m; break;
+            case Attributes.AimTurnRate: aimTurnRate *= m; break;
         }
     }
 

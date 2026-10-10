@@ -127,8 +127,8 @@ MonoBehaviour:
   alignToVelocity: 1
   homingStartDelay: 0
   lockAssignedTarget: 1
-  penetration: -1
-  meleeImpactOwnerAnim: {fileID: 0}
+  penetration: 0
+  explodePrefab: {fileID: 0}
 --- !u!1001 &8511368318867935596
 PrefabInstance:
   m_ObjectHideFlags: 0

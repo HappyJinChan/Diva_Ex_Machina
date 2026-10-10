@@ -19,6 +19,9 @@ MonoBehaviour:
   dropPrefab: {fileID: 0}
   shoulderWeaponPartPrefab: {fileID: 1375098822608907812, guid: 1cf41b2e5d78ad94cbb3d15c7d9adf11, type: 3}
   partType: 7
-  buffs: []
+  buffs:
+  - attribute: 33
+    mode: 0
+    value: 20
   randomBuffs: []
   meshRenderer: {fileID: -7511558181221131132, guid: 70529d7a0c2109944b548aa1932d1d1e, type: 3}

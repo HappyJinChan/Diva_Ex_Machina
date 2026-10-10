@@ -161,6 +161,7 @@ public class AttackManager : MonoBehaviour
         outWeapon.range.magazineSize = 0;
         outWeapon.range.bulletSpeed = 0f;
         outWeapon.range.firingMode = 0;
+        outWeapon.range.piercing = 0;
 
         // runtime 不一定要清，但清咗 Inspector 會更直觀
         outWeapon.rangeRuntime.bulletsLeft = 0;
@@ -219,6 +220,7 @@ public class AttackManager : MonoBehaviour
         outWeapon.range.magazineSize = 0;
         outWeapon.range.bulletSpeed = 0f;
         outWeapon.range.firingMode = 0;
+        outWeapon.range.piercing = 0;
 
         // runtime 不一定要清，但清咗 Inspector 會更直觀
         outWeapon.rangeRuntime.bulletsLeft = 0;
@@ -233,6 +235,33 @@ public class AttackManager : MonoBehaviour
         var ps = PlayerStats.Instance;
         outWeapon.damage.criticalChance = (ps != null) ? ps.GetCriticalChanceFor(weaponBuffs) : 0f;
         outWeapon.damage.criticalMultiplier = (ps != null) ? ps.GetCriticalMultiplierFor(weaponBuffs) : 1f;
+    }
+
+    // 穿透：0 = 命中即消失；N = 可貫穿 N 個敵人；-1 = 無限穿透。
+    //
+    // -1 是「標記」而不是數量，不能跟其他 buff 一起加總 ——
+    // 武器 -1 再裝一個 +1 的零件，加總會變成 0，無限穿透反而變成完全不能穿透。
+    // 所以只要任何一筆 Add 是負數，就直接視為無限；其餘照一般規則先加後乘、四捨五入。
+    private static int ResolvePiercing(List<EquipmentBuff> weaponBuffs)
+    {
+        if (weaponBuffs == null) return 0;
+
+        float add = 0f;
+        float mul = 1f;
+        foreach (var b in weaponBuffs)
+        {
+            if (b.attribute != Attributes.piercing) continue;
+            if (b.mode == BuffApplyMode.Add)
+            {
+                if (b.value < 0f) return -1;   // 無限穿透
+                add += b.value;
+            }
+            else if (b.mode == BuffApplyMode.Multiplier)
+            {
+                mul *= (1f + b.value);
+            }
+        }
+        return Mathf.Max(0, Mathf.RoundToInt(add * mul));
     }
 
     private void ApplyHand(WeaponStats hand, Weapon outWeapon, bool isLeftHand,
@@ -297,6 +326,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.range.magazineSize = Mathf.Max(1, Mathf.RoundToInt(hand.GetAttribute(Attributes.MagazineSize)));
             outWeapon.range.bulletSpeed = hand.GetAttribute(Attributes.BulletSpeed);
             outWeapon.range.firingMode = Mathf.RoundToInt(hand.GetAttribute(Attributes.FiringMode));
+            outWeapon.range.piercing = ResolvePiercing(hand.buffs);
 
             if (changedWeapon)
             {
@@ -451,6 +481,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.range.magazineSize = Mathf.Max(1, Mathf.RoundToInt(shoulder.GetAttribute(Attributes.MagazineSize)));
             outWeapon.range.bulletSpeed = shoulder.GetAttribute(Attributes.BulletSpeed);
             outWeapon.range.firingMode = Mathf.RoundToInt(shoulder.GetAttribute(Attributes.FiringMode));
+            outWeapon.range.piercing = ResolvePiercing(shoulder.buffs);
 
             if (changedWeapon)
             {

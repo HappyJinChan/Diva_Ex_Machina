@@ -14,6 +14,14 @@ public class PlayerAiming : MonoBehaviour
 
     [Header("Camera")]
     [SerializeField] private Camera mainCam;
+    /// <summary>瞄準用的鏡頭（畫面中央 = 這台鏡頭的正前方）。</summary>
+    public Camera MainCamera => mainCam != null ? mainCam : Camera.main;
+
+    // 手動轉鏡頭的轉速上限（突擊推進期間由 PlayerMovement 開啟）。
+    // 開啟時，滑鼠每幀轉動的角度不超過 AimTurnRate × deltaTime —— 跟自動瞄準共用同一個數值，
+    // 所以完全手動瞄準的玩家，這個數值一樣有意義。
+    private bool _manualTurnRateLimited;
+    public void SetManualTurnRateLimit(bool limited) => _manualTurnRateLimited = limited;
     [SerializeField] private GameObject playerOrientation;
     public Vector2 turn;
     public float TopClamp = 70f;
@@ -75,7 +83,7 @@ public class PlayerAiming : MonoBehaviour
              "平時用 lockRotateSpeed 的滯後是刻意的 —— 目標比較容易跑出鎖定圈，\n" +
              "手動瞄準才有意義。但近戰需要目標穩定在畫面中央，所以攻擊期間\n" +
              "大幅提高這個係數，讓穩定誤差趨近 0。\n\n" +
-             "只影響指數跟隨的收斂速度；最大轉速仍然由 AutoAimSpeed 決定。")]
+             "只影響指數跟隨的收斂速度；最大轉速仍然由 AimTurnRate 決定。")]
     [SerializeField] private float meleeLockRotateSpeed = 45f;
 
     [Tooltip("進入 / 離開近戰對焦的過渡時間（秒）。\n" +
@@ -175,6 +183,19 @@ public class PlayerAiming : MonoBehaviour
 
         float mouseX = Input.GetAxis("Mouse X");
         float mouseY = Input.GetAxis("Mouse Y");
+
+        // 突擊推進中：手動轉鏡頭受 AimTurnRate 限制（上下左右合起來算，維持滑鼠移動的方向）
+        if (_manualTurnRateLimited && PlayerStats.Instance != null)
+        {
+            float maxStep = Mathf.Max(0f, PlayerStats.Instance.GetAimTurnRate()) * Time.deltaTime;
+            float step = Mathf.Sqrt(mouseX * mouseX + mouseY * mouseY);
+            if (step > maxStep && step > 0.0001f)
+            {
+                float scale = maxStep / step;
+                mouseX *= scale;
+                mouseY *= scale;
+            }
+        }
         // pitch（上下）照舊
         if (Mathf.Abs(mouseY) > 0.001f)
         {
@@ -345,7 +366,7 @@ public class PlayerAiming : MonoBehaviour
             if (dist > lockOnDistance) continue;
 
             // 必須在相機前方
-            Vector3 sp = mainCam.WorldToScreenPoint(enemy.transform.position);
+            Vector3 sp = mainCam.WorldToScreenPoint(GetTargetAimPoint(enemy.transform));
             if (sp.z <= 0f) continue;
 
             Vector2 pt = new Vector2(sp.x, sp.y);
@@ -446,7 +467,7 @@ public class PlayerAiming : MonoBehaviour
         // 超出 lockOnDistance 不在這裡斷鎖，交給 LateUpdate 的 _autoAimOutDistanceTimer（超距 N 秒才退出）
         targetDistance = Vector3.Distance(playerOrientation.transform.position, _lockedTarget.position);
 
-        Vector3 sp = mainCam.WorldToScreenPoint(_lockedTarget.position);
+        Vector3 sp = mainCam.WorldToScreenPoint(GetTargetAimPoint(_lockedTarget));
         bool behindCamera = sp.z <= 0f;
 
         Vector2 targetScreen = new Vector2(sp.x, sp.y);
@@ -537,7 +558,9 @@ public class PlayerAiming : MonoBehaviour
             // 便宜的檢查先做
             if ((pos - origin).sqrMagnitude > maxDistSqr) continue;
 
-            Vector3 sp = mainCam.WorldToScreenPoint(pos);
+            // 螢幕位置與視線都用瞄準點（碰撞體中心），不用腳底的 transform
+            Vector3 aimPos = GetTargetAimPoint(t);
+            Vector3 sp = mainCam.WorldToScreenPoint(aimPos);
             if (sp.z <= 0f) continue;
 
             Vector2 pt = new Vector2(sp.x, sp.y);
@@ -551,7 +574,7 @@ public class PlayerAiming : MonoBehaviour
 
             Renderer r = enemy.GetComponentInChildren<Renderer>();
             if (r != null && !r.isVisible) continue;
-            if (requireLineOfSight && !HasLineOfSight(t, pos)) continue;
+            if (requireLineOfSight && !HasLineOfSight(t, aimPos)) continue;
 
             if (isCurrent)
             {
@@ -619,9 +642,10 @@ public class PlayerAiming : MonoBehaviour
     {
         lockOn = true;
         currentTargetRb = _lockedTargetRb;
-        targetDirection = (_lockedTarget.position - transform.position).normalized;
+        Vector3 aimPos = GetTargetAimPoint(_lockedTarget);
+        targetDirection = (aimPos - transform.position).normalized;
 
-        if (aimingPoint) aimingPoint.position = _lockedTarget.position;
+        if (aimingPoint) aimingPoint.position = aimPos;
         SetDistanceText(targetDistance, locked: true);
     }
 
@@ -759,10 +783,10 @@ public class PlayerAiming : MonoBehaviour
         float expT = 1f - Mathf.Exp(-k * dt);
         float stepWanted = angle * expT;
 
-        // 永遠用 AutoAimSpeed 當 max deg/s（圈內圈外都 cap）
+        // 永遠用 AimTurnRate 當 max deg/s（圈內圈外都 cap）
         float maxDegPerSec = 120f;
         if (PlayerStats.Instance != null)
-            maxDegPerSec = Mathf.Max(0f, PlayerStats.Instance.GetAutoAimSpeed());
+            maxDegPerSec = Mathf.Max(0f, PlayerStats.Instance.GetAimTurnRate());
 
         float maxStep = maxDegPerSec * dt;
         stepWanted = Mathf.Min(stepWanted, maxStep);
@@ -784,16 +808,69 @@ public class PlayerAiming : MonoBehaviour
     {
         if (_autoAimTarget == null) return Vector3.zero;
 
+        // 原本用第一個 Renderer 的 bounds 中心；模型拆成很多部件時（例如獵犬）
+        // 第一個 Renderer 可能只是一條腿，所以改用和準星一樣的瞄準點（碰撞體中心）。
         if (autoAimUseBoundsCenter)
-        {
-            if (_autoAimTargetRenderer == null)
-                _autoAimTargetRenderer = _autoAimTarget.GetComponentInChildren<Renderer>();
-
-            if (_autoAimTargetRenderer != null)
-                return _autoAimTargetRenderer.bounds.center + autoAimOffset;
-        }
+            return GetTargetAimPoint(_autoAimTarget) + autoAimOffset;
 
         return _autoAimTarget.position + autoAimOffset;
+    }
+
+    // =========================
+    // Target aim point（碰撞體中心）
+    // =========================
+    //
+    // 敵人的 transform 原點通常在腳底，直接拿 position 當瞄準點，
+    // 準星、子彈、鏡頭都會對著地面。這裡改用敵人「最大的非 Trigger 碰撞體」的 bounds 中心。
+    // 第一次查詢某個敵人時找一次碰撞體並快取，之後每幀只讀 bounds。
+    private readonly Dictionary<Transform, Collider> _aimColliderCache = new Dictionary<Transform, Collider>();
+    private const int AimColliderCacheLimit = 1024;
+
+    /// <summary>敵人的瞄準點：主碰撞體中心；找不到碰撞體時退回 transform.position。</summary>
+    public Vector3 GetTargetAimPoint(Transform target)
+    {
+        if (target == null) return Vector3.zero;
+
+        if (!_aimColliderCache.TryGetValue(target, out Collider col) || col == null)
+        {
+            // 敵人如果是 Destroy 而不是回收到物件池，快取會越長越大；超過上限就整個清掉重建
+            if (_aimColliderCache.Count >= AimColliderCacheLimit)
+                _aimColliderCache.Clear();
+
+            col = FindAimCollider(target);
+            if (col == null)
+                return target.position;   // 不快取 null，之後加上碰撞體也能找到
+
+            _aimColliderCache[target] = col;
+        }
+
+        if (!col.enabled || !col.gameObject.activeInHierarchy)
+            return target.position;
+
+        return col.bounds.center;
+    }
+
+    /// <summary>挑出目標底下體積最大的非 Trigger 碰撞體（略過感應範圍之類的 Trigger）。</summary>
+    private static Collider FindAimCollider(Transform target)
+    {
+        Collider best = null;
+        float bestVolume = -1f;
+
+        Collider[] cols = target.GetComponentsInChildren<Collider>();
+        for (int i = 0; i < cols.Length; i++)
+        {
+            Collider c = cols[i];
+            if (c.isTrigger) continue;
+
+            Vector3 size = c.bounds.size;
+            float volume = size.x * size.y * size.z;
+            if (volume > bestVolume)
+            {
+                bestVolume = volume;
+                best = c;
+            }
+        }
+        return best;
     }
 
     // =========================
@@ -843,7 +920,7 @@ public class PlayerAiming : MonoBehaviour
     /// 近戰對焦。開啟時大幅降低鎖定滯後，讓目標穩定在畫面中央。
     /// 由 MeleeAttackController 在連段開始 / 結束時呼叫。
     ///
-    /// 只改變收斂速度，最大轉速仍受 AutoAimSpeed 限制 ——
+    /// 只改變收斂速度，最大轉速仍受 AimTurnRate 限制 ——
     /// 所以高速目標還是有可能甩開鏡頭，手動瞄準的價值不會完全消失。
     /// </summary>
     public void SetMeleeFocus(bool active) => _meleeFocus = active;

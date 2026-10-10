@@ -19,7 +19,10 @@ MonoBehaviour:
   dropPrefab: {fileID: 0}
   meleeWeaponPartPrefab: {fileID: 555869486465178901, guid: 0f6f4bf74a0290343988d3f656c3500d, type: 3}
   partType: 4
-  buffs: []
+  buffs:
+  - attribute: 33
+    mode: 0
+    value: 5
   randomBuffs: []
   meshRenderer: {fileID: -7511558181221131132, guid: 84805b1d016e53c4999290d2f59c93ed, type: 3}
   attribute: 1

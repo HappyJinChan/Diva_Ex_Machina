@@ -1,0 +1,234 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &353417744774178942
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7866609110490064983}
+  m_Layer: 0
+  m_Name: WWII_SMG_A_Bullets
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7866609110490064983
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 353417744774178942}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2523118290705092467}
+  - {fileID: 1474608206753656292}
+  - {fileID: 4542160728648827566}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &5820487495719191815
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7866609110490064983}
+    m_Modifications:
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0079
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.021759905
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5763352428115079769, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_Name
+      value: WWII_SMG_A_Bullet (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5763352428115079769, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 090891480820d134793e628b13682bd2, type: 3}
+--- !u!4 &1474608206753656292 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+  m_PrefabInstance: {fileID: 5820487495719191815}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7472510151494985616
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7866609110490064983}
+    m_Modifications:
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0079
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.0388399
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5763352428115079769, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_Name
+      value: WWII_SMG_A_Bullet
+      objectReference: {fileID: 0}
+    - target: {fileID: 5763352428115079769, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 090891480820d134793e628b13682bd2, type: 3}
+--- !u!4 &2523118290705092467 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+  m_PrefabInstance: {fileID: 7472510151494985616}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8915057766230960717
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7866609110490064983}
+    m_Modifications:
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.0091
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.015
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.009
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9659259
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.258819
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5763352428115079769, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_Name
+      value: WWII_SMG_A_Bullet (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5763352428115079769, guid: 090891480820d134793e628b13682bd2, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 090891480820d134793e628b13682bd2, type: 3}
+--- !u!4 &4542160728648827566 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4949555856717867235, guid: 090891480820d134793e628b13682bd2, type: 3}
+  m_PrefabInstance: {fileID: 8915057766230960717}
+  m_PrefabAsset: {fileID: 0}

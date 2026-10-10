@@ -133,10 +133,13 @@ public class EquipmentManager : MonoBehaviour
             LineLeft("Dash Speed", FormatFloat(ps.GetDisplayDashSpeed())) + "\n" +
             LineLeft("Cruising Speed", FormatFloat(ps.GetDisplaySprintSpeed()));
 
-        // Right side (2 stats)
+        // Right side (4 stats)
+        // Mobility = weight curve factor m (100% = light-frame baseline).
         string right =
             LineRight("LH Attack", ps.GetDisplayLhAttack()) + "\n" +
-            LineRight("RH Attack", ps.GetDisplayRhAttack());
+            LineRight("RH Attack", ps.GetDisplayRhAttack()) + "\n" +
+            LineRight("Weight", Mathf.RoundToInt(ps.GetTotalWeight())) + "\n" +
+            LineRight("Mobility", Mathf.RoundToInt(ps.GetMobilityFactor() * 100f) + "%");
 
         leftStatBlock.text = left;
         rightStatBlock.text = right;
@@ -149,6 +152,9 @@ public class EquipmentManager : MonoBehaviour
         => $"{label}:<pos={leftValuePos}>{value}";
 
     private string LineRight(string label, int value)
+        => $"{label}:<pos={rightValuePos}>{value}";
+
+    private string LineRight(string label, string value)
         => $"{label}:<pos={rightValuePos}>{value}";
 
     private static string FormatFloat(float v)
