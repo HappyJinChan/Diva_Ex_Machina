@@ -183,6 +183,11 @@ public class RangeAttackController : MonoBehaviour
                     var targetRb = PlayerAiming.Instance.GetTargetRigidbody();
                     if (TrySampleTarget(targetRb, out Vector3 tgtPos, out Vector3 tgtVel))
                     {
+                        // 位置改用鎖定的瞄準點（AimPoint）；Rigidbody 只拿來取速度做提前量。
+                        // rb.position 是敵人的原點，通常在腳底，直接用會整排打在地上。
+                        if (PlayerAiming.Instance.TryGetLockedAimPoint(out Vector3 lockedAim))
+                            tgtPos = lockedAim;
+
                         if (MathToolKit.InterceptionPoint(tgtPos, muzzle.position, tgtVel, w.range.bulletSpeed, out var predicted))
                             targetPoint = predicted;
                         else
@@ -190,7 +195,7 @@ public class RangeAttackController : MonoBehaviour
                     }
                     else
                     {
-                        targetPoint = fireRay.GetPoint(100f);
+                        targetPoint = PlayerAiming.Instance.GetAimPointAlongRay(fireRay);
                         if (attackManager.shipRB != null && attackManager.onShip == true)
                         {
                             movingPlatformOffset = attackManager.shipRB.linearVelocity;
@@ -199,7 +204,7 @@ public class RangeAttackController : MonoBehaviour
                 }
                 else
                 {
-                    targetPoint = fireRay.GetPoint(100f);
+                    targetPoint = PlayerAiming.Instance.GetAimPointAlongRay(fireRay);
                     if (attackManager.shipRB != null && attackManager.onShip == true)
                     {
                         movingPlatformOffset = attackManager.shipRB.linearVelocity;

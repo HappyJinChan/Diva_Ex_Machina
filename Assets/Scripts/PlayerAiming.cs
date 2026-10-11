@@ -558,7 +558,7 @@ public class PlayerAiming : MonoBehaviour
             // 便宜的檢查先做
             if ((pos - origin).sqrMagnitude > maxDistSqr) continue;
 
-            // 螢幕位置與視線都用瞄準點（碰撞體中心），不用腳底的 transform
+            // 螢幕位置與視線檢查用瞄準點（有 AimPoint 就用它，沒有就是 transform 原點）
             Vector3 aimPos = GetTargetAimPoint(t);
             Vector3 sp = mainCam.WorldToScreenPoint(aimPos);
             if (sp.z <= 0f) continue;
@@ -808,69 +808,52 @@ public class PlayerAiming : MonoBehaviour
     {
         if (_autoAimTarget == null) return Vector3.zero;
 
-        // 原本用第一個 Renderer 的 bounds 中心；模型拆成很多部件時（例如獵犬）
-        // 第一個 Renderer 可能只是一條腿，所以改用和準星一樣的瞄準點（碰撞體中心）。
+        // 有 AimPoint：鏡頭直接對準它（不加 autoAimOffset，位置由你在 prefab 裡擺放決定）
+        AimPoint ap = FindAimPoint(_autoAimTarget);
+        if (ap != null) return ap.transform.position;
+
         if (autoAimUseBoundsCenter)
-            return GetTargetAimPoint(_autoAimTarget) + autoAimOffset;
+        {
+            if (_autoAimTargetRenderer == null)
+                _autoAimTargetRenderer = _autoAimTarget.GetComponentInChildren<Renderer>();
+
+            if (_autoAimTargetRenderer != null)
+                return _autoAimTargetRenderer.bounds.center + autoAimOffset;
+        }
 
         return _autoAimTarget.position + autoAimOffset;
     }
 
     // =========================
-    // Target aim point（碰撞體中心）
+    // AimPoint（瞄準點）
     // =========================
     //
-    // 敵人的 transform 原點通常在腳底，直接拿 position 當瞄準點，
-    // 準星、子彈、鏡頭都會對著地面。這裡改用敵人「最大的非 Trigger 碰撞體」的 bounds 中心。
-    // 第一次查詢某個敵人時找一次碰撞體並快取，之後每幀只讀 bounds。
-    private readonly Dictionary<Transform, Collider> _aimColliderCache = new Dictionary<Transform, Collider>();
-    private const int AimColliderCacheLimit = 1024;
+    // 敵人底下放一個掛了 AimPoint 的空物件，準星、子彈、鏡頭就會瞄準它；
+    // 沒有放的敵人維持原本的行為（瞄準 transform 原點）。
+    // 每個敵人只在第一次被查詢時搜尋一次，結果（包括「沒有」）會快取起來。
+    private readonly Dictionary<Transform, AimPoint> _aimPointCache = new Dictionary<Transform, AimPoint>();
+    private const int AimPointCacheLimit = 1024;
 
-    /// <summary>敵人的瞄準點：主碰撞體中心；找不到碰撞體時退回 transform.position。</summary>
+    /// <summary>目標的瞄準位置：有 AimPoint 用它，沒有就用 transform.position。</summary>
     public Vector3 GetTargetAimPoint(Transform target)
     {
         if (target == null) return Vector3.zero;
-
-        if (!_aimColliderCache.TryGetValue(target, out Collider col) || col == null)
-        {
-            // 敵人如果是 Destroy 而不是回收到物件池，快取會越長越大；超過上限就整個清掉重建
-            if (_aimColliderCache.Count >= AimColliderCacheLimit)
-                _aimColliderCache.Clear();
-
-            col = FindAimCollider(target);
-            if (col == null)
-                return target.position;   // 不快取 null，之後加上碰撞體也能找到
-
-            _aimColliderCache[target] = col;
-        }
-
-        if (!col.enabled || !col.gameObject.activeInHierarchy)
-            return target.position;
-
-        return col.bounds.center;
+        AimPoint ap = FindAimPoint(target);
+        return ap != null ? ap.transform.position : target.position;
     }
 
-    /// <summary>挑出目標底下體積最大的非 Trigger 碰撞體（略過感應範圍之類的 Trigger）。</summary>
-    private static Collider FindAimCollider(Transform target)
+    private AimPoint FindAimPoint(Transform target)
     {
-        Collider best = null;
-        float bestVolume = -1f;
+        if (_aimPointCache.TryGetValue(target, out AimPoint ap))
+            return ap;
 
-        Collider[] cols = target.GetComponentsInChildren<Collider>();
-        for (int i = 0; i < cols.Length; i++)
-        {
-            Collider c = cols[i];
-            if (c.isTrigger) continue;
+        // 敵人如果是 Destroy 而不是回收到物件池，快取會越長越大；超過上限就清掉重建
+        if (_aimPointCache.Count >= AimPointCacheLimit)
+            _aimPointCache.Clear();
 
-            Vector3 size = c.bounds.size;
-            float volume = size.x * size.y * size.z;
-            if (volume > bestVolume)
-            {
-                bestVolume = volume;
-                best = c;
-            }
-        }
-        return best;
+        ap = target.GetComponentInChildren<AimPoint>();
+        _aimPointCache[target] = ap;   // 找不到也記下 null，避免每幀重新搜尋
+        return ap;
     }
 
     // =========================
@@ -913,6 +896,31 @@ public class PlayerAiming : MonoBehaviour
     // =========================
     public Rigidbody GetTargetRigidbody() => currentTargetRb;
     public Ray GetRay() => ray;
+
+    /// <summary>
+    /// 目前鎖定目標的瞄準位置（有 AimPoint 用它，沒有就是 transform 原點）。
+    /// 沒有鎖定（或目標已失效）時回傳 false。給開火時計算落點用。
+    /// </summary>
+    public bool TryGetLockedAimPoint(out Vector3 point)
+    {
+        point = default;
+        if (!lockOn || _lockedTarget == null || !_lockedTarget.gameObject.activeInHierarchy)
+            return false;
+        point = GetTargetAimPoint(_lockedTarget);
+        return true;
+    }
+
+    /// <summary>
+    /// 沿著準星射線找出實際瞄到的點（和 FreeAim 用同一個 layer mask）；
+    /// 什麼都沒打到時取 freeAimMaxDistance 處。
+    /// 子彈要射向這個點，而不是射線上固定距離的點，否則槍口和鏡頭的位置差會造成視差。
+    /// </summary>
+    public Vector3 GetAimPointAlongRay(Ray r)
+    {
+        if (Physics.Raycast(r, out RaycastHit hit, freeAimMaxDistance, ~ignoreLayer, QueryTriggerInteraction.Ignore))
+            return hit.point;
+        return r.GetPoint(freeAimMaxDistance);
+    }
 
     public void SetLockOnDistance(float newLockOnDistance) => lockOnDistance = newLockOnDistance;
 

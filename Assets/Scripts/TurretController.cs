@@ -30,6 +30,10 @@ public class TurretController : MonoBehaviour
     private float _trackExpireTime;
     private Vector3 _aimDirection;
 
+    /// <summary>目前正在追蹤的目標；沒有在追蹤目標（或已逾時）時為 null。給頭部注視之類的表現用。</summary>
+    public Transform CurrentTarget =>
+        (_aimMode == AimMode.Target && _trackTarget != null && Time.time <= _trackExpireTime) ? _trackTarget : null;
+
     [Header("Target Tracking")]
     [Tooltip("Brain 多久沒有再呼叫 TrackTarget 就停止追蹤（秒），停在最後的瞄準點。\n" +
              "Brain 每次思考（預設 0.1 秒）都會更新，這只是保險：避免 Brain 換狀態卻沒通知時，砲塔永遠黏著舊目標。")]

@@ -60,6 +60,26 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
     protected ShipPassenger selfPassenger;   // 自己的船上狀態（掛在同一個 GameObject 上）
 
     public EntityState currentState;
+
+    /// <summary>
+    /// 這隻實體目前應該「看著」的目標（給頭部注視之類的表現用）。
+    /// 每次 Think 更新一次，讀取不需要任何運算；沒有目標時為 null。
+    /// 要改成別的規則（例如只在 Combat 才看）就覆寫 SelectLookTarget。
+    /// </summary>
+    public Transform LookTarget { get; protected set; }
+
+    /// <summary>
+    /// Combat 狀態下的交戰目標（每次 Think 更新；其他狀態為 null）。
+    /// ★ 這是近戰等系統取得目標的唯一來源 —— 它們不自己存目標，每次都來這裡讀。
+    /// </summary>
+    public Transform CombatTarget { get; protected set; }
+
+    [Header("Melee")]
+    [Tooltip("近戰攻擊。留空會自動在自己或子物件上尋找；沒有就不做近戰。")]
+    [SerializeField] protected ModularEntityMeleeManager meleeManager;
+
+    /// <summary>是否正在進行近戰攻擊（期間移動與轉向由近戰接管）。</summary>
+    public bool IsMeleeAttacking => meleeManager != null && meleeManager.IsAttacking;
     public List<TargetPreference> targetPreferences = new List<TargetPreference>();
     public List<Target> targets = new List<Target>();
 
@@ -158,6 +178,9 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
         if (sensors == null || sensors.Length == 0)
             sensors = GetComponentsInChildren<EnemySensor>(true);
 
+        if (meleeManager == null)
+            meleeManager = GetComponentInChildren<ModularEntityMeleeManager>();
+
         _started = true;
     }
 
@@ -218,14 +241,26 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
     /// <summary>一次完整的思考。子類別要加邏輯就覆寫這裡（記得呼叫 base.Think()）。</summary>
     protected virtual void Think()
     {
-        // 這次思考沒有決定朝向的話，就不要再轉（跟原本「沒呼叫 FaceMoveDirection 就不轉」一致）
-        modularEntityMovement.ClearFacingTarget();
+        // 這次思考沒有決定朝向的話，就不要再轉（跟原本「沒呼叫 FaceMoveDirection 就不轉」一致）。
+        // 近戰攻擊中的朝向由近戰每個物理步指定，這裡不能清掉。
+        if (!IsMeleeAttacking)
+            modularEntityMovement.ClearFacingTarget();
 
         RunSensors();   // 先偵測，這次思考就能用到新發現的目標
         AttackSlotUpdate();
         PriorityUpdate();
         PathUpdate();
         StateBehaviour();
+        if (currentState != EntityState.Combat) CombatTarget = null;
+        LookTarget = SelectLookTarget();
+    }
+
+    /// <summary>決定 LookTarget：追擊與戰鬥中看著交戰目標，其他狀態不看。</summary>
+    protected virtual Transform SelectLookTarget()
+    {
+        if (currentState == EntityState.Chasing || currentState == EntityState.Combat)
+            return FindTarget();
+        return null;
     }
 
     /// <summary>讓每個 EnemySensor 做偵測（各自依 scanInterval 決定這次要不要真的查詢）。</summary>
@@ -802,6 +837,21 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
 
     protected virtual void CombatBehaviour()
     {
+        Transform target = FindTarget();
+        CombatTarget = target;
+
+        // ── 近戰 ──
+        //   攻擊中：移動、轉向全部交給近戰，這裡只負責砲塔（停不停火由 UpdateTurretAiming 判斷）。
+        //   沒在攻擊：讓近戰判斷要不要出招；出招了這次思考就到此為止。
+        if (meleeManager != null && target != null)
+        {
+            if (meleeManager.IsAttacking || meleeManager.TryStartAttack())
+            {
+                UpdateTurretAiming(target, GetTargetVelocity(target));
+                return;
+            }
+        }
+
         // ★ 移動段可以沒有路徑，但瞄準開火段一定要照跑。
         //   舊版整段 return → 敵人一旦算不出徘徊路徑就連射擊都停了。
         if (HasUsablePath())
@@ -824,11 +874,32 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
             }
         }
 
-        Transform target = FindTarget();
         if (target != null)
         {
             UpdateTurretAiming(target, GetTargetVelocity(target));
         }
+    }
+
+    // ═══════════════════════ 給近戰等系統讀取的目標資料 ═══════════════════════
+    //
+    // 目標資料只有 Brain 這一份。近戰不存目標，需要時就呼叫這些方法。
+
+    /// <summary>目標的瞄準點（碰撞體中心；沒有碰撞體就是原點）。</summary>
+    public Vector3 GetTargetAimPoint(Transform target)
+    {
+        return TurretController.GetAimPoint(target);
+    }
+
+    /// <summary>交戰目標目前的速度（目標或它父物件的 Rigidbody；沒有就是 0）。</summary>
+    public Vector3 GetCombatTargetVelocity()
+    {
+        return GetTargetVelocity(CombatTarget);
+    }
+
+    /// <summary>近戰出招前取得攻擊名額（與砲塔開火共用同一份名額）。</summary>
+    public bool TryAcquireMeleeSlot()
+    {
+        return TryAcquireAttackSlot(CombatTarget);
     }
 
     // 目標的 Rigidbody 快取：目標沒換就不用每次 GetComponentInParent
@@ -877,6 +948,10 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
         //   拿不到名額的敵人照常走位、照常把砲塔轉向目標，只是不扣扳機。
         //   狀態機、路徑、移動邏輯完全不受影響。
         bool mayFire = TryAcquireAttackSlot(target);
+
+        // 近戰攻擊中、而且這招設定「砲塔停火」→ 照常瞄準，但不開火
+        if (meleeManager != null && meleeManager.IsAttacking && meleeManager.StopsTurretFire)
+            mayFire = false;
 
         for (int i = 0; i < turrets.Length; i++)
         {

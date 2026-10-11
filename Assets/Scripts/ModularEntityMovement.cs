@@ -72,6 +72,39 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
         _knockbackUntil = Time.time + Mathf.Max(0f, duration);
     }
 
+    // ── 近戰覆寫 ─────────────────────────────────────────────────────────
+    //
+    // 近戰攻擊期間，移動方向與速度由 ModularEntityMeleeManager 指定。
+    // 速度仍然只在這裡（ApplyHorizontalMovementFixed）寫進 Rigidbody，Movement 是唯一的寫入者，
+    // 近戰只是下指令，不會跟 AI 的移動互相覆蓋。
+
+    private bool _hasVelocityOverride;
+    private Vector3 _overrideDirection;
+    private float _overrideSpeed;
+    private float _overrideAcceleration;
+
+    /// <summary>是否正在套用近戰覆寫。</summary>
+    public bool HasVelocityOverride => _hasVelocityOverride;
+
+    /// <summary>
+    /// 指定水平移動：方向（世界座標，會放平）、目標速度、加速度。
+    /// acceleration ≤ 0 代表立刻到達該速度（衝刺用）。
+    /// </summary>
+    public void SetVelocityOverride(Vector3 worldDirection, float speed, float acceleration)
+    {
+        worldDirection.y = 0f;
+        _overrideDirection = worldDirection.sqrMagnitude > 0.0001f ? worldDirection.normalized : Vector3.zero;
+        _overrideSpeed = Mathf.Max(0f, speed);
+        _overrideAcceleration = acceleration;
+        _hasVelocityOverride = true;
+    }
+
+    /// <summary>解除近戰覆寫，回到 AI 的一般移動。</summary>
+    public void ClearVelocityOverride()
+    {
+        _hasVelocityOverride = false;
+    }
+
     // ── 朝向 ─────────────────────────────────────────────────────────────
     //
     // Brain 降頻之後只會每 0.1 秒左右思考一次。轉向如果還留在 Brain 裡做，
@@ -124,6 +157,17 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
         Vector3 vRel = vWorld - platformVel;
 
         Vector3 horizontalRel = new Vector3(vRel.x, 0f, vRel.z);
+
+        // 近戰覆寫：由 ModularEntityMeleeManager 指定方向與速度，取代 AI 的移動方向
+        if (_hasVelocityOverride)
+        {
+            Vector3 wanted = _overrideDirection * _overrideSpeed;
+            horizontalRel = (_overrideAcceleration <= 0f)
+                ? wanted                                                            // 0 = 立刻到達（衝刺）
+                : Vector3.MoveTowards(horizontalRel, wanted, _overrideAcceleration * dt);
+            entityRigidbody.linearVelocity = new Vector3(horizontalRel.x, vRel.y, horizontalRel.z) + platformVel;
+            return;
+        }
 
         if (moveDirection.sqrMagnitude < 0.0001f)
         {
