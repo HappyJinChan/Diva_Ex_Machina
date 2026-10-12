@@ -291,6 +291,21 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
         }
     }
 
+    /// <summary>目前所在移動平台（船）的速度；不在船上為 0。近戰預判要扣掉它。</summary>
+    public Vector3 PlatformVelocity => GetMobilePlatformVelocity();
+
+    /// <summary>目前所在移動平台（船）的 Transform；不在船上為 null。</summary>
+    public Transform PlatformTransform
+    {
+        get
+        {
+            ShipPassenger p = Passenger;
+            if (p == null || !p.isOnShip) return null;
+            Rigidbody rb = p.PlatformRigidbody;
+            return rb != null ? rb.transform : null;
+        }
+    }
+
     protected virtual Vector3 GetMobilePlatformVelocity()
     {
         ShipPassenger p = Passenger;

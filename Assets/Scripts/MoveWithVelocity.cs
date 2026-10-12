@@ -10,13 +10,9 @@ public class MoveWithVelocity : MonoBehaviour
     public float speed = 5f;
     public bool loop = true;
 
-    [Tooltip("¤Ï¤è¦V¦æ¾p¡]ªuµÛ spline ªº knot ¶¶§Ç­ËµÛ¨«¡^¡C\n" +
-             "­n§ïÅÜ²îÂ¶°éªº¤è¦V¡]¶¶®É°w / °f®É°w¡^®É¤Ä³o­Ó¡A¤£¥Î­«·s±Æ knot¡C")]
+
     public bool reverse = false;
 
-    [Tooltip("¶}©l®É±q²î¥Ø«eªº¦ì¸m¡A§ä spline ¤W³ÌªñªºÂI·í°_ÂI¡C\n\n" +
-             "Ãö±¼ªº¸Ü·|±q¤W­±ªº t ¶}©l ¡X¡X ²î¦pªG¨S¦³­è¦nÂ\¦b¨º­ÓÂI¤W¡A\n" +
-             "·|¥ý©¹ t ªº¦ì¸m¶}¹L¥h¡B°l¤W¤§«á¦A±¼ÀY¡A¬Ý°_¨Ó´N¹³¨«¨ìºÉÀY§éªð¡C")]
     public bool startFromNearestPoint = true;
 
     [Header("Steering")]
@@ -36,20 +32,12 @@ public class MoveWithVelocity : MonoBehaviour
     public Transform cameraTransform;
 
     [Header("Ignore Spline Height")]
-    public float fixedHeight = 1.6f;   // ²î©T©wªº Y¡]¥@¬É°ª«×¡^
+    public float fixedHeight = 1.6f;   // ï¿½ï¿½Tï¿½wï¿½ï¿½ Yï¿½]ï¿½@ï¿½É°ï¿½ï¿½×¡^
 
-    [Tooltip("¨C­Ó physics step §â rb.position.y µw¼g¦^ fixedHeight¡C\n\n" +
-             "­ì¥» fixedHeight ¬O¦ºµ{¦¡½X ¡X¡X targetPos.y ³]¤F­È¡A¦ý¤U¤@¦æªº\n" +
-             "toTarget.y = 0f ¥ß¨è§â¥¦²M±¼¡A©Ò¥H¥¦¹ï²îªº¹ê»Ú°ª«×¨S¦³¥ô¦ó¼vÅT¡A\n" +
-             "¦Ó¥B¨S¦³¥ô¦ó¤O¶q·|§â³Q±ÀÂ÷ªº²î©Ô¦^¥Ø¼Ð°ª«×¡C\n\n" +
-             "ª½±µ¼g¤J¦ì¸m¯à§K¬Ì©Ò¦³¨Ó·½ªº¬ªº|¡]¸I¼²¥h¬ï³z¡B´Ý¾l¤O¡B¨ä¥L¸}¥»¡^¡A\n" +
-             "¸ò³o­Ó¸}¥»¤w¸g¦b¥Î rb.MoveRotation ª½±µ¼g¤J±ÛÂà¬O¤@­Pªº°µªk¡C")]
+
     public bool pinHeight = true;
 
-    [Tooltip("¦P®É§â««ª½³t«×²M¹s¡C\n\n" +
-             "³o«Ü­«­n¡G²îªº linearVelocity ·|³z¹L ShipPassenger.PlatformVelocity\n" +
-             "¶Çµ¹²î¤W©Ò¦³¹êÅé¡AModularEntityMovement ·|§â¥¦¾ã­Ó¥[¦^¦Û¤vªº³t«×¤W¡A\n" +
-             "¥]§t y ¤À¶q¡C²î¨­´Ý¾lªº««ª½³t«×·|Åý¥ÒªO¤Wªº¼Ä¤H¸òµÛ½wºC¤W¯B©Î¤U¨I¡C")]
+
     public bool zeroVerticalVelocity = true;
 
     void Awake()
@@ -63,7 +51,7 @@ public class MoveWithVelocity : MonoBehaviour
         if (startFromNearestPoint) SnapToNearestPoint();
     }
 
-    /// <summary>§â t ³]¦¨ spline ¤WÂ÷²î¥Ø«e¦ì¸m³ÌªñªºÂI¡C</summary>
+    /// <summary>ï¿½ï¿½ t ï¿½]ï¿½ï¿½ spline ï¿½Wï¿½ï¿½ï¿½ï¿½Ø«eï¿½ï¿½mï¿½Ìªï¿½ï¿½Iï¿½C</summary>
     [ContextMenu("Snap t To Nearest Point")]
     private void SnapToNearestPoint()
     {
@@ -71,7 +59,7 @@ public class MoveWithVelocity : MonoBehaviour
 
         Vector3 worldPos = (rb != null) ? rb.position : transform.position;
 
-        // GetNearestPoint ¥Îªº¬O spline ªº°Ï°ì®y¼Ð
+        // GetNearestPoint ï¿½Îªï¿½ï¿½O spline ï¿½ï¿½ï¿½Ï°ï¿½yï¿½ï¿½
         float3 local = (float3)spline.transform.InverseTransformPoint(worldPos);
         SplineUtility.GetNearestPoint(spline.Spline, local, out float3 _, out float nearestT);
         t = nearestT;
@@ -92,19 +80,19 @@ public class MoveWithVelocity : MonoBehaviour
         float tAhead = loop ? Mathf.Repeat(t + lookAhead * dir, 1f) : Mathf.Clamp01(t + lookAhead * dir);
 
         Vector3 targetPos = spline.EvaluatePosition(tAhead);
-        targetPos.y = fixedHeight;   // ¡¹ ©¿²¤ spline ªº y¡AÂê©w¦b©T©w°ª«×
+        targetPos.y = fixedHeight;   // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ spline ï¿½ï¿½ yï¿½Aï¿½ï¿½wï¿½bï¿½Tï¿½wï¿½ï¿½ï¿½ï¿½
 
         Vector3 toTarget = (targetPos - rb.position);
-        toTarget.y = 0f;             // ¡¹ ¥u¥Î¤ô¥­¤À¶qºâ²¾°Ê¤è¦V¡Ay ¤£°Ñ»PÅX°Ê
+        toTarget.y = 0f;             // ï¿½ï¿½ ï¿½uï¿½Î¤ï¿½ï¿½ï¿½ï¿½ï¿½qï¿½â²¾ï¿½Ê¤ï¿½Vï¿½Ay ï¿½ï¿½ï¿½Ñ»Pï¿½Xï¿½ï¿½
         Vector3 desiredVel = toTarget.sqrMagnitude > 0.000001f ? toTarget.normalized * speed : Vector3.zero;
 
         Vector3 dv = desiredVel - rb.linearVelocity;
 
-        // dv.y ¦b³o¸Ì¨è·N«O¯d 0 ¤§¥~ªº­È¤£°µ³B²z ¡X¡X ««ª½§ï¥Ñ¤U­±ªº PinHeight µw¸Ñ¡C
-        // ­ì¥»Åý dv.y ¶i ClampMagnitude ¦³­Ó°Æ§@¥Î¡GClampMagnitude ÁYªº¬O¾ã­Ó¦V¶q¡A
-        // °_¨B©MÂàÅs®É¤ô¥­ªº dv/dt »·¶W¹L maxAccel¡]15/0.02 = 750 vs 50¡^¡A
-        // ¾ã­Ó¦V¶q·|³QÁY¨ì¬ù 1/15 ¡X¡X ««ª½¤À¶q¤]¤@°_³Q«d®z¡A
-        // µ²ªG¬O³Ì»Ý­n§í¨î««ª½º}²¾ªº®É­Ô¡A§í¨î¤O¤Ï¦Ó³Ì¤p¡C
+        // dv.y ï¿½bï¿½oï¿½Ì¨ï¿½Nï¿½Oï¿½d 0 ï¿½ï¿½ï¿½~ï¿½ï¿½ï¿½È¤ï¿½ï¿½ï¿½ï¿½Bï¿½z ï¿½Xï¿½X ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¤Uï¿½ï¿½ï¿½ï¿½ PinHeight ï¿½wï¿½Ñ¡C
+        // ï¿½ì¥»ï¿½ï¿½ dv.y ï¿½i ClampMagnitude ï¿½ï¿½ï¿½Ó°Æ§@ï¿½Î¡GClampMagnitude ï¿½Yï¿½ï¿½ï¿½Oï¿½ï¿½Ó¦Vï¿½qï¿½A
+        // ï¿½_ï¿½Bï¿½Mï¿½ï¿½ï¿½sï¿½É¤ï¿½ï¿½ï¿½ï¿½ dv/dt ï¿½ï¿½ï¿½Wï¿½L maxAccelï¿½]15/0.02 = 750 vs 50ï¿½^ï¿½A
+        // ï¿½ï¿½Ó¦Vï¿½qï¿½|ï¿½Qï¿½Yï¿½ï¿½ï¿½ 1/15 ï¿½Xï¿½X ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½qï¿½]ï¿½@ï¿½_ï¿½Qï¿½dï¿½zï¿½A
+        // ï¿½ï¿½ï¿½Gï¿½Oï¿½Ì»Ý­nï¿½ï¿½î««ï¿½ï¿½ï¿½}ï¿½ï¿½ï¿½ï¿½ï¿½É­Ô¡Aï¿½ï¿½ï¿½Oï¿½Ï¦Ó³Ì¤pï¿½C
         dv.y = 0f;
 
         Vector3 accel = Vector3.ClampMagnitude(dv / Time.fixedDeltaTime, maxAccel);
@@ -121,8 +109,8 @@ public class MoveWithVelocity : MonoBehaviour
                 if (keepUpright)
                 {
                     forward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
-                    // ­ì¥»³o¸Ì¬O return ¡X¡X ¨º·|³s¦P¤U­±ªº°ª«×Âê¤@°_¸õ¹L¡C
-                    // §ï¦¨¥u¸õ¹LÂà¦V¡A°ª«×Âê·Ó±`°õ¦æ¡C
+                    // ï¿½ì¥»ï¿½oï¿½Ì¬O return ï¿½Xï¿½X ï¿½ï¿½ï¿½|ï¿½sï¿½Pï¿½Uï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½@ï¿½_ï¿½ï¿½ï¿½Lï¿½C
+                    // ï¿½ï¦¨ï¿½uï¿½ï¿½ï¿½Lï¿½ï¿½Vï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó±`ï¿½ï¿½ï¿½ï¿½C
                     if (forward.sqrMagnitude >= 0.000001f)
                         ApplyFacing(forward);
                 }
@@ -154,10 +142,10 @@ public class MoveWithVelocity : MonoBehaviour
     }
 
     /// <summary>
-    /// §â°ª«×°v¦^ fixedHeight¡A¨Ã²M±¼««ª½³t«×¡C
+    /// ï¿½â°ªï¿½×°vï¿½^ fixedHeightï¿½Aï¿½Ã²Mï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½tï¿½×¡C
     ///
-    /// ©ñ¦b FixedUpdate ³Ì«á¡G³o¤@¨B©Ò¦³·|¼vÅT rb ªº¾Þ§@³£°µ§¹¤F¡A
-    /// ³Ì«á¼g¤Jªº­È¤~¬O³o­Ó physics step ¯u¥¿¥Í®Äªº­È¡C
+    /// ï¿½ï¿½b FixedUpdate ï¿½Ì«ï¿½Gï¿½oï¿½@ï¿½Bï¿½Ò¦ï¿½ï¿½|ï¿½vï¿½T rb ï¿½ï¿½ï¿½Þ§@ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Fï¿½A
+    /// ï¿½Ì«ï¿½gï¿½Jï¿½ï¿½ï¿½È¤~ï¿½Oï¿½oï¿½ï¿½ physics step ï¿½uï¿½ï¿½ï¿½Í®Äªï¿½ï¿½È¡C
     /// </summary>
     private void PinHeight()
     {
@@ -183,16 +171,16 @@ public class MoveWithVelocity : MonoBehaviour
     }
 
     /// <summary>
-    /// §â fixedHeight ³]¦¨¥Ø«eªº¹ê»Ú°ª«×¡C
+    /// ï¿½ï¿½ fixedHeight ï¿½]ï¿½ï¿½ï¿½Ø«eï¿½ï¿½ï¿½ï¿½Ú°ï¿½ï¿½×¡C
     ///
-    /// ¥Î³~¡G²îº}²¾¹L¤§«á¡A§A·Q¥H¡u²{¦bªº¦ì¸m¡v¬°·Ç­«·s©w¸q°ò·Ç°ª«×¡A
-    /// ¦Ó¤£¬O¦^¨ì¬Y­Ó¤w¸g¤£ª¾¹D¹ï¤£¹ïªºÂÂ¼Æ­È¡C
-    /// °õ¦æ´Á©M½s¿è´Á³£¯à¥Î¡]Inspector ¥kÁä¿ï³æ¡^¡C
+    /// ï¿½Î³~ï¿½Gï¿½ï¿½}ï¿½ï¿½ï¿½Lï¿½ï¿½ï¿½ï¿½Aï¿½Aï¿½Qï¿½Hï¿½uï¿½{ï¿½bï¿½ï¿½ï¿½ï¿½mï¿½vï¿½ï¿½ï¿½Ç­ï¿½ï¿½sï¿½wï¿½qï¿½ï¿½Ç°ï¿½ï¿½×¡A
+    /// ï¿½Ó¤ï¿½ï¿½Oï¿½^ï¿½ï¿½Yï¿½Ó¤wï¿½gï¿½ï¿½ï¿½ï¿½ï¿½Dï¿½ï¤£ï¿½ïªºï¿½Â¼Æ­È¡C
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Mï¿½sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¡]Inspector ï¿½kï¿½ï¿½ï¿½ï¿½^ï¿½C
     /// </summary>
     [ContextMenu("Set Fixed Height From Current Y")]
     private void SetFixedHeightFromCurrent()
     {
         fixedHeight = transform.position.y;
-        Debug.Log($"[MoveWithVelocity] fixedHeight ³]¬° {fixedHeight}", this);
+        Debug.Log($"[MoveWithVelocity] fixedHeight ï¿½]ï¿½ï¿½ {fixedHeight}", this);
     }
 }

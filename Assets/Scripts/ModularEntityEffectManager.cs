@@ -8,9 +8,30 @@ public class ModularEntityEffectManager : MonoBehaviour
 
     public MMF_Player damageFeedback;
 
+    [Tooltip("攻擊預警（例如頭上亮一下）。由 Tools > Diva Ex Machina > Attack Warning Builder 建立並自動指定。\n" +
+             "近戰出招時會自動播放；其他攻擊也可以隨時呼叫 PlayAttackWarning()。")]
+    public MMF_Player attackWarningFeedback;
+
     public void PlayDamageFeedback(float damage)
     {
         damageFeedback.PlayFeedbacks(this.transform.position, RoundForDisplay(damage));
+    }
+
+    /// <summary>
+    /// 播放攻擊預警。intensity 會傳給 MMF_Player（支援強度的 feedback 會跟著放大）。
+    /// 沒有設定 attackWarningFeedback 時什麼都不做。
+    /// </summary>
+    public void PlayAttackWarning(float intensity = 1f)
+    {
+        if (attackWarningFeedback == null) return;
+        attackWarningFeedback.PlayFeedbacks(attackWarningFeedback.transform.position, intensity);
+    }
+
+    /// <summary>中止攻擊預警（例如攻擊被打斷時）。</summary>
+    public void StopAttackWarning()
+    {
+        if (attackWarningFeedback == null) return;
+        attackWarningFeedback.StopFeedbacks();
     }
 
     /// <summary>

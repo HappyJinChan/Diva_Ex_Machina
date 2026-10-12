@@ -8,7 +8,7 @@ public enum EntityMeleeMoveMode
     Normal,   // 以減速後的速度繼續朝目標前進
 }
 
-/// <summary>一招近戰攻擊的資料。</summary>
+/// <summary>一招近戰攻擊的資料。時間點由攻擊動畫的 Animation Event 決定。</summary>
 [Serializable]
 public class EntityMeleeAttack
 {
@@ -20,8 +20,8 @@ public class EntityMeleeAttack
     [MinMaxSlider(0f, 60f)]
     public Vector2 distanceRange = new Vector2(0f, 10f);
 
-    [Tooltip("目標偏離身體正前方的最大角度（水平，度）。")]
-    [Range(0f, 180f)] public float maxAngle = 45f;
+    [Tooltip("目標偏離身體正前方的最大角度（水平，度）。出招後的預備階段會轉向目標，所以不用設太嚴。")]
+    [Range(0f, 180f)] public float maxAngle = 90f;
 
     [Tooltip("觸發機率（%），同時也是權重。\n" +
              "· 所有符合條件的招式加總 ≤ 100：各自依自己的 % 觸發，剩下的機率什麼都不做\n" +
@@ -38,57 +38,69 @@ public class EntityMeleeAttack
     [Min(0f)] public float energyDamage;
     [Min(0f)] public float coldDamage;
 
+    [Header("命中")]
+    [Tooltip("這招使用的判定（掛在爪子、頭等骨頭底下的 EntityMeleeHitbox）。\n" +
+             "由動畫事件 MeleeHitOpen / MeleeHitClose 開關。")]
+    public EntityMeleeHitbox hitbox;
+
     [Header("移動")]
     public EntityMeleeMoveMode moveMode = EntityMeleeMoveMode.Dash;
 
-    [Tooltip("出招前把速度降到原本移動速度（sprintSpeed）的多少 %。Normal 模式的攻擊段也用這個速度。")]
-    [Range(0f, 100f)] public float slowdownPercent = 10f;
+    [Tooltip("出招前（預備階段）把速度降到原本移動速度（sprintSpeed）的多少 %。\nNormal 模式的攻擊段與收招也用這個速度。")]
+    [Range(0f, 100f)] public float slowdownPercent = 20f;
 
     [Tooltip("Dash 的速度倍率（× 實體的 dashSpeed）。")]
     [Min(0f)] public float dashSpeedMultiplier = 1f;
 
-    [Tooltip("離目標小於這個距離就不再往前推進（避免穿過目標衝過頭）。")]
-    [Min(0f)] public float stopDistance = 2f;
+    [Tooltip("Dash：衝刺方向在 MeleeDashStart 那一刻鎖定，之後每秒最多修正幾度。\n" +
+             "0 = 完全直線（最容易閃）；30～60 = 會稍微追一下，但側閃、起跳仍然躲得掉。\n" +
+             "預備階段不受影響，照樣會一直轉向目標。")]
+    [Range(0f, 360f)] public float dashTurnRate = 0f;
+
+    [Tooltip("Normal 模式（以及預備階段）：離目標小於這個水平距離就不再往前推進。\n" +
+             "Dash 的衝刺段不檢查這個距離，會照鎖定的方向衝過頭，直到 MeleeDashEnd。")]
+    [Min(0f)] public float stopDistance = 3f;
 
     [Tooltip("攻擊預判：朝目標「到達時會在的位置」移動，而不是目標現在的位置。")]
     public bool usePrediction = true;
 
-    [Header("時間軸（秒）")]
-    [Tooltip("預備：減速並轉向目標。")]
-    [Min(0f)] public float windup = 0.3f;
-    [Tooltip("攻擊段：Dash 衝刺 / Normal 前進的時間。")]
-    [Min(0f)] public float activeDuration = 0.4f;
-    [Tooltip("收招：維持減速後的速度，不再追蹤目標。")]
-    [Min(0f)] public float recovery = 0.4f;
-    [Tooltip("命中判定的開始 / 結束時間（從出招開始算，秒）。")]
-    [MinMaxSlider(0f, 3f)]
-    public Vector2 hitWindow = new Vector2(0.35f, 0.65f);
-
-    [Header("命中範圍（相對於身體：X 右、Y 上、Z 前）")]
-    public Vector3 hitOffset = new Vector3(0f, 1f, 2f);
-    [Min(0.05f)] public float hitRadius = 1.5f;
-
     [Header("其他")]
+    [Tooltip("出招時播放攻擊預警（ModularEntityEffectManager.PlayAttackWarning）。\n" +
+             "想在動畫的某一幀才亮，就關掉這個，改在攻擊動畫加 Animation Event「MeleeWarning」。")]
+    public bool showWarning = true;
+
     [Tooltip("這招進行中，砲塔停止開火（仍然會瞄準）。")]
     public bool stopTurretFire = true;
 
-    [Tooltip("出招時觸發的 Animator Trigger 名稱。留空就不觸發。")]
+    [Tooltip("出招時觸發的 Animator Trigger 名稱。")]
     public string animatorTrigger = "Melee";
 
-    public float TotalDuration => windup + activeDuration + recovery;
+    [Tooltip("保險：超過這個秒數還沒收到 MeleeEnd 事件就強制結束（動畫被打斷、事件漏掉時用）。\n" +
+             "設成比攻擊動畫稍長一點。")]
+    [Min(0.1f)] public float maxDuration = 3f;
 }
 
 /// <summary>
-/// 實體的近戰攻擊。由 ModularEntityBrain 驅動：
-///   · Brain 在 Combat 狀態每次思考時呼叫 TryStartAttack()，這裡決定要不要出招、出哪一招
-///   · 出招後，這裡每個物理步負責攻擊的時間軸、移動指令、命中判定與傷害
-///   · 目標資料一律向 Brain 讀取（CombatTarget），這裡不保存目標
-///   · 移動只透過 ModularEntityMovement 的覆寫指令，不直接改 Rigidbody
+/// 實體的近戰攻擊。
+///
+/// 分工：
+///   · Brain：在 Combat 狀態呼叫 TryStartAttack()；目標資料一律由 Brain 提供（CombatTarget）
+///   · 這裡：出招判斷（條件、擲骰、冷卻、攻擊名額）、移動指令、傷害結算
+///   · 動畫：用 Animation Event 決定每個階段什麼時候開始（經由 EntityMeleeAnimationRelay 轉過來）
+///       MeleeDashStart → 開始衝刺 / 前進
+///       MeleeDashEnd   → 停止推進，進入收招
+///       MeleeHitOpen   → 開啟判定
+///       MeleeHitClose  → 關閉判定
+///       MeleeEnd       → 攻擊結束，交還控制權
+///     出招（觸發 Trigger）到 MeleeDashStart 之間是預備階段：減速並轉向目標。
+///   · Hitbox：形狀用 Collider 定義，判定時用該形狀做物理查詢（不依賴層碰撞矩陣）
 ///
 /// 沒在攻擊時這個元件是停用的（不跑 FixedUpdate），沒有每幀成本。
 /// </summary>
 public class ModularEntityMeleeManager : MonoBehaviour
 {
+    private enum Phase { Windup, Active, Recovery }
+
     [SerializeField] private EntityMeleeAttack[] attacks = new EntityMeleeAttack[0];
 
     [Header("判斷頻率")]
@@ -98,10 +110,10 @@ public class ModularEntityMeleeManager : MonoBehaviour
     [Min(0f)] [SerializeField] private float globalCooldown = 1f;
 
     [Header("命中")]
-    [Tooltip("命中判定會掃描的層。只有 Brain 的交戰目標會受到傷害。")]
+    [Tooltip("判定會掃描的層（例如 Player Hurtbox）。")]
     [SerializeField] private LayerMask hitLayers = ~0;
-    [Tooltip("命中範圍的基準（身體）。留空 = 實體底下第一個 Animator 所在的物件。")]
-    [SerializeField] private Transform hitReference;
+    [Tooltip("只傷害 Brain 的交戰目標。關掉的話，判定碰到的任何可受傷物件都會受傷（自己與其他敵人除外）。")]
+    [SerializeField] private bool onlyHitCombatTarget = true;
 
     [Header("攻擊預判")]
     [Tooltip("目標速度 ÷ 自身速度超過這個比例就不預判（方程式會退化）。")]
@@ -112,25 +124,30 @@ public class ModularEntityMeleeManager : MonoBehaviour
     [SerializeField, Min(0.05f)] private float predictionMaxTime = 1.5f;
 
     [Header("除錯")]
-    [SerializeField] private bool drawGizmos = true;
+    [SerializeField] private bool logEvents = false;
 
     // ── 參考 ──
     private ModularEntityBrain _brain;
     private ModularEntityMovement _movement;
     private ModularEntityStats _stats;
+    private ModularEntityEffectManager _effects;
     private Animator _animator;
     private bool _resolved;
 
     // ── 執行期狀態 ──
-    private float[] _readyTime;          // 每招下一次可用的時間
+    private float[] _readyTime;
     private float _globalReadyTime;
     private float _nextEvaluateTime;
 
     private EntityMeleeAttack _current;
+    private Phase _phase;
     private float _elapsed;
+    private bool _hitOpen;
     private bool _hasHit;
-    private IDamageable _targetDamageable;
-    private Transform _targetDamageableOwner;   // _targetDamageable 是針對哪個目標找的
+    // Dash 衝刺段的方向（MeleeDashStart 時鎖定）。
+    // 在船上時存成「船的區域座標」—— 船轉彎時，衝刺方向跟著船一起轉，跟狼的移動（相對於船）一致。
+    private Transform _dashPlatform;
+    private Vector3 _dashDirLocal;
 
     private static readonly Collider[] s_Hits = new Collider[32];
 
@@ -158,9 +175,15 @@ public class ModularEntityMeleeManager : MonoBehaviour
         _movement = root.GetComponent<ModularEntityMovement>();
         _stats = root.GetComponent<ModularEntityStats>();
         _animator = root.GetComponentInChildren<Animator>();
-        if (hitReference == null) hitReference = _animator != null ? _animator.transform : root;
+        _effects = (_stats != null && _stats.modularEntityEffectManager != null)
+            ? _stats.modularEntityEffectManager
+            : root.GetComponentInChildren<ModularEntityEffectManager>();
 
         _readyTime = new float[attacks != null ? attacks.Length : 0];
+
+        if (_animator != null && _animator.GetComponent<EntityMeleeAnimationRelay>() == null)
+            Debug.LogWarning($"[MeleeManager] {root.name}：Animator 物件（{_animator.name}）上沒有 EntityMeleeAnimationRelay，" +
+                             "動畫事件傳不過來，攻擊只會靠 Max Duration 逾時結束。", this);
     }
 
     private void OnDisable()
@@ -215,7 +238,7 @@ public class ModularEntityMeleeManager : MonoBehaviour
             acc += attacks[i].chance;
             if (roll < acc) { pick = i; break; }
         }
-        if (pick < 0) return false;   // 落在「什麼都不做」的區間
+        if (pick < 0) return false;
 
         // 攻擊名額：拿不到就不出招（也不消耗冷卻）
         if (!_brain.TryAcquireMeleeSlot()) return false;
@@ -234,28 +257,55 @@ public class ModularEntityMeleeManager : MonoBehaviour
         return true;
     }
 
+    // ═══════════════════════ 動畫事件（由 EntityMeleeAnimationRelay 轉過來） ═══════════════════════
+
+    public void OnMeleeDashStart()
+    {
+        if (_current == null) return;
+        Log("DashStart");
+        _phase = Phase.Active;
+        SetDashDir(ComputeChaseDirection(DashSpeed(_current)));   // 依當下的預判鎖定衝刺方向
+    }
+    public void OnMeleeDashEnd()   { if (_current == null) return; Log("DashEnd");   _phase = Phase.Recovery; }
+    public void OnMeleeHitOpen()   { if (_current == null) return; Log("HitOpen");   _hitOpen = true; }
+    public void OnMeleeHitClose()  { if (_current == null) return; Log("HitClose");  _hitOpen = false; }
+    public void OnMeleeEnd()       { if (_current == null) return; Log("End");       EndAttack(cancelled: false); }
+    public void OnMeleeWarning()   { if (_current == null) return; Log("Warning");   if (_effects != null) _effects.PlayAttackWarning(); }
+
     // ═══════════════════════ 攻擊流程 ═══════════════════════
 
     private void BeginAttack(int index, float now)
     {
         _current = attacks[index];
         _readyTime[index] = now + _current.cooldown;
+        _phase = Phase.Windup;
         _elapsed = 0f;
+        _hitOpen = false;
         _hasHit = false;
+        _dashPlatform = null;
+        _dashDirLocal = Vector3.zero;
 
-        if (_animator != null && !string.IsNullOrEmpty(_current.animatorTrigger) && HasTrigger(_current.animatorTrigger))
-            _animator.SetTrigger(_current.animatorTrigger);
+        if (_animator != null && !string.IsNullOrEmpty(_current.animatorTrigger))
+        {
+            if (HasTrigger(_current.animatorTrigger))
+                _animator.SetTrigger(_current.animatorTrigger);
+            else
+                Debug.LogWarning($"[MeleeManager] Animator 沒有名為 '{_current.animatorTrigger}' 的 Trigger。", this);
+        }
 
+        if (_current.showWarning && _effects != null)
+            _effects.PlayAttackWarning();
+
+        Log($"Begin '{_current.name}'");
         enabled = true;
-        StepMovement(0f);   // 這一步就開始減速、轉向，不用等下一個物理步
+        StepMovement(0f);   // 這一步就開始減速、轉向
     }
 
     private void FixedUpdate()
     {
         if (_current == null) { enabled = false; return; }
 
-        float dt = Time.fixedDeltaTime;
-        _elapsed += dt;
+        _elapsed += Time.fixedDeltaTime;
 
         // ── 中斷條件 ──
         if (_brain == null || _brain.currentState != EntityState.Combat ||
@@ -267,90 +317,154 @@ public class ModularEntityMeleeManager : MonoBehaviour
             return;
         }
 
-        if (_elapsed >= _current.TotalDuration)
+        // ── 保險逾時 ──
+        // 舊資料升級上來的招式 maxDuration 會是 0 → 用 3 秒當預設，避免一出招就逾時
+        float limit = _current.maxDuration > 0.05f ? _current.maxDuration : 3f;
+        if (_elapsed >= limit)
         {
+            Log("Timeout");
             EndAttack(cancelled: false);
             return;
         }
 
-        StepMovement(_elapsed);
-        StepHit(_elapsed);
+        StepMovement(Time.fixedDeltaTime);
+        if (_hitOpen && !_hasHit) StepHit();
     }
 
-    private void StepMovement(float t)
+    private void StepMovement(float dt)
     {
         EntityMeleeAttack a = _current;
-        Transform target = _brain.CombatTarget;
-        Vector3 self = _brain.transform.position;
-        Vector3 aim = _brain.GetTargetAimPoint(target);
-
         float slowSpeed = _stats.sprintSpeed * a.slowdownPercent / 100f;
-        bool inRecovery = t >= a.windup + a.activeDuration;
-        bool inActive = !inRecovery && t >= a.windup;
+        float fullAccel = Mathf.Max(_stats.decelerationSpeed, _stats.accelerationSpeed);
 
-        float speed;
-        float accel;
-        if (inActive && a.moveMode == EntityMeleeMoveMode.Dash)
+        // ── 收招：沿目前朝向滑行，不再追蹤 ──
+        if (_phase == Phase.Recovery)
         {
-            speed = _stats.dashSpeed * a.dashSpeedMultiplier;
-            accel = 0f;                                     // 衝刺：立刻到達
-        }
-        else if (inActive)
-        {
-            speed = slowSpeed;
-            accel = _stats.accelerationSpeed;
-        }
-        else
-        {
-            speed = slowSpeed;                              // 預備 / 收招：降到減速後的速度
-            accel = Mathf.Max(_stats.decelerationSpeed, _stats.accelerationSpeed);
-        }
-
-        // 收招：沿目前朝向滑行，不再追蹤
-        if (inRecovery)
-        {
-            _movement.SetVelocityOverride(_movement.MeshForward, speed, accel);
+            _movement.SetVelocityOverride(_movement.MeshForward, slowSpeed, fullAccel);
             return;
         }
 
-        // ── 攻擊預判：朝「到達時目標會在的位置」──
-        Vector3 goal = aim;
-        if (a.usePrediction && speed > 0.01f)
-            goal = PredictIntercept(self, aim, _brain.GetCombatTargetVelocity(), speed);
+        // ── Dash 衝刺段：沿鎖定的方向直線衝刺，只允許有限修正；不檢查停止距離 ──
+        if (_phase == Phase.Active && a.moveMode == EntityMeleeMoveMode.Dash)
+        {
+            float dashSpeed = DashSpeed(a);
+            Vector3 dashDir = GetDashDir();
+            if (dashDir.sqrMagnitude < 0.0001f) dashDir = _movement.MeshForward;
 
-        Vector3 toGoal = goal - self;
-        toGoal.y = 0f;
-        Vector3 toTarget = aim - self;
+            if (a.dashTurnRate > 0f && dt > 0f)
+            {
+                Vector3 want = ComputeChaseDirection(dashSpeed);
+                dashDir = Vector3.RotateTowards(dashDir, want, a.dashTurnRate * Mathf.Deg2Rad * dt, 0f);
+            }
+            SetDashDir(dashDir);   // 重新存一次：上下船時換成新的基準
+            dashDir = GetDashDir();
+
+            _movement.SetVelocityOverride(dashDir, dashSpeed, 0f);   // 衝刺：立刻到達（相對於船）
+            _movement.SetFacingTarget(dashDir, 1f);
+            return;
+        }
+
+        // ── 預備階段、Normal 攻擊段：持續轉向目標（含預判），靠近到停止距離就不再推進 ──
+        float speed = slowSpeed;
+        float accel = (_phase == Phase.Active) ? _stats.accelerationSpeed : fullAccel;
+
+        Vector3 self = _brain.transform.position;
+        Vector3 toTarget = _brain.GetTargetAimPoint(_brain.CombatTarget) - self;
         toTarget.y = 0f;
+        if (toTarget.magnitude <= a.stopDistance) speed = 0f;
 
-        // 已經貼到目標：不再往前推進（避免穿過去），只維持減速後的速度
-        if (toTarget.magnitude <= a.stopDistance) speed = Mathf.Min(speed, slowSpeed);
-
-        Vector3 dir = toGoal.sqrMagnitude > 0.0001f ? toGoal : _movement.MeshForward;
+        Vector3 dir = ComputeChaseDirection(Mathf.Max(slowSpeed, 0.01f));
         _movement.SetVelocityOverride(dir, speed, accel);
         _movement.SetFacingTarget(toTarget.sqrMagnitude > 0.0001f ? toTarget : dir, 1f);
     }
 
-    private void StepHit(float t)
+    private Vector3 GetDashDir()
+    {
+        Vector3 d = _dashPlatform != null ? _dashPlatform.TransformDirection(_dashDirLocal) : _dashDirLocal;
+        d.y = 0f;
+        return d.sqrMagnitude > 0.0001f ? d.normalized : Vector3.zero;
+    }
+
+    private void SetDashDir(Vector3 world)
+    {
+        world.y = 0f;
+        if (world.sqrMagnitude < 0.0001f) return;
+        world.Normalize();
+        _dashPlatform = _movement.PlatformTransform;
+        _dashDirLocal = _dashPlatform != null ? _dashPlatform.InverseTransformDirection(world) : world;
+    }
+
+    private float DashSpeed(EntityMeleeAttack a)
+    {
+        return a.moveMode == EntityMeleeMoveMode.Dash
+            ? _stats.dashSpeed * a.dashSpeedMultiplier
+            : _stats.sprintSpeed * a.slowdownPercent / 100f;
+    }
+
+    /// <summary>朝目標的水平方向；開啟預判時，朝「以 speed 前進、到達時目標會在的位置」。</summary>
+    private Vector3 ComputeChaseDirection(float speed)
+    {
+        Vector3 self = _brain.transform.position;
+        Vector3 aim = _brain.GetTargetAimPoint(_brain.CombatTarget);
+        Vector3 goal = aim;
+        if (_current != null && _current.usePrediction && speed > 0.01f)
+        {
+            // ★ 用「相對於自己腳下平台」的目標速度預判。
+            //   Movement 的速度是相對於船的（最後才加上船速），如果拿目標的世界速度來解，
+            //   兩隻都在船上時會把船速多算一次，預判點整個偏到船前進的方向 —— 撲空。
+            Vector3 relVel = _brain.GetCombatTargetVelocity() - _movement.PlatformVelocity;
+            goal = PredictIntercept(self, aim, relVel, speed);
+        }
+
+        Vector3 dir = goal - self;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f)
+        {
+            dir = aim - self;
+            dir.y = 0f;
+        }
+        return dir.sqrMagnitude > 0.0001f ? dir.normalized : _movement.MeshForward;
+    }
+
+    private void StepHit()
     {
         EntityMeleeAttack a = _current;
-        if (_hasHit || t < a.hitWindow.x || t > a.hitWindow.y) return;
+        if (a.hitbox == null) return;
 
-        IDamageable victim = GetTargetDamageable(_brain.CombatTarget);
-        if (victim == null) return;
+        int n = a.hitbox.Overlap(s_Hits, hitLayers);
+        if (n == 0) return;
 
-        Vector3 center = hitReference.TransformPoint(a.hitOffset);
-        int n = Physics.OverlapSphereNonAlloc(center, a.hitRadius, s_Hits, hitLayers, QueryTriggerInteraction.Collide);
+        Transform target = _brain.CombatTarget;
+        IDamageable targetDamageable = target != null ? target.GetComponentInParent<IDamageable>() : null;
+        Rigidbody targetBody = target != null ? target.GetComponentInParent<Rigidbody>() : null;
+
         for (int i = 0; i < n; i++)
         {
             Collider c = s_Hits[i];
             if (c == null) continue;
+
             IDamageable d = c.GetComponentInParent<IDamageable>();
-            if (d == null || !ReferenceEquals(d, victim)) continue;   // 只打 Brain 的交戰目標
+            if (d == null) continue;
+
+            // 不打自己、不打其他敵人
+            if (d is Component comp)
+            {
+                if (comp.transform.IsChildOf(_brain.transform)) continue;
+                if (comp.GetComponentInParent<ModularEntityStats>() != null) continue;
+            }
+
+            if (onlyHitCombatTarget)
+            {
+                // 同一個 IDamageable，或屬於同一個 Rigidbody（玩家的 hurtbox 與被偵測到的碰撞體可能掛在不同物件上）
+                bool sameDamageable = targetDamageable != null && ReferenceEquals(d, targetDamageable);
+                bool sameBody = targetBody != null && c.attachedRigidbody == targetBody;
+                if (!sameDamageable && !sameBody) continue;
+            }
 
             var dmg = new DamageInfo(a.physicalDamage, a.explosionDamage, a.energyDamage, a.coldDamage);
-            victim.TakeDamage(dmg, _brain.gameObject);
-            _hasHit = true;
+            d.TakeDamage(dmg, _brain.gameObject);
+            _hasHit = true;   // 每招只打中一次
+            Log($"Hit '{c.name}'");
             break;
         }
     }
@@ -361,8 +475,13 @@ public class ModularEntityMeleeManager : MonoBehaviour
 
         if (cancelled && _animator != null && !string.IsNullOrEmpty(_current.animatorTrigger) && HasTrigger(_current.animatorTrigger))
             _animator.ResetTrigger(_current.animatorTrigger);
+        if (cancelled && _effects != null)
+            _effects.StopAttackWarning();   // 攻擊被打斷：預警也收掉
+
+        Log(cancelled ? "Cancelled" : "Finished");
 
         _current = null;
+        _hitOpen = false;
         _globalReadyTime = Time.time + globalCooldown;
         if (_movement != null) _movement.ClearVelocityOverride();
         enabled = false;
@@ -373,17 +492,6 @@ public class ModularEntityMeleeManager : MonoBehaviour
     private static bool IsTargetValid(Transform t)
     {
         return t != null && t.gameObject.activeInHierarchy;
-    }
-
-    /// <summary>目標身上負責受傷的 IDamageable（換目標才重新找）。</summary>
-    private IDamageable GetTargetDamageable(Transform target)
-    {
-        if (target != _targetDamageableOwner)
-        {
-            _targetDamageableOwner = target;
-            _targetDamageable = target != null ? target.GetComponentInParent<IDamageable>() : null;
-        }
-        return _targetDamageable;
     }
 
     /// <summary>
@@ -415,29 +523,23 @@ public class ModularEntityMeleeManager : MonoBehaviour
         return false;
     }
 
+    private void Log(string msg)
+    {
+        if (logEvents) Debug.Log($"[MeleeManager] {(_brain != null ? _brain.name : name)} {msg} (t={_elapsed:F2})", this);
+    }
+
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        if (!drawGizmos || attacks == null) return;
-
-        Transform reference = hitReference;
-        if (reference == null)
-        {
-            var anim = GetComponentInParent<ModularEntityBrain>() != null
-                ? GetComponentInParent<ModularEntityBrain>().GetComponentInChildren<Animator>()
-                : GetComponentInChildren<Animator>();
-            reference = anim != null ? anim.transform : transform;
-        }
+        if (attacks == null) return;
         Transform root = GetComponentInParent<ModularEntityBrain>() != null ? GetComponentInParent<ModularEntityBrain>().transform : transform;
+        Animator anim = root.GetComponentInChildren<Animator>();
+        Transform body = anim != null ? anim.transform : root;
 
         for (int i = 0; i < attacks.Length; i++)
         {
             EntityMeleeAttack a = attacks[i];
             if (a == null || !a.enabled) continue;
-
-            // 命中範圍（紅）
-            Gizmos.color = new Color(1f, 0.25f, 0.2f, 0.8f);
-            Gizmos.DrawWireSphere(reference.TransformPoint(a.hitOffset), a.hitRadius);
 
             // 觸發距離（黃：最大、橘：最小）
             UnityEditor.Handles.color = new Color(1f, 0.9f, 0.2f, 0.6f);
@@ -449,7 +551,7 @@ public class ModularEntityMeleeManager : MonoBehaviour
             }
 
             // 觸發角度
-            Vector3 fwd = reference.forward;
+            Vector3 fwd = body.forward;
             fwd.y = 0f;
             if (fwd.sqrMagnitude > 0.0001f && a.maxAngle < 180f)
             {
@@ -458,6 +560,10 @@ public class ModularEntityMeleeManager : MonoBehaviour
                 Vector3 from = Quaternion.AngleAxis(-a.maxAngle, Vector3.up) * fwd;
                 UnityEditor.Handles.DrawSolidArc(root.position, Vector3.up, from, a.maxAngle * 2f, a.distanceRange.y);
             }
+
+            // 停止推進距離（白）
+            UnityEditor.Handles.color = new Color(1f, 1f, 1f, 0.35f);
+            UnityEditor.Handles.DrawWireDisc(root.position, Vector3.up, a.stopDistance);
         }
     }
 #endif
