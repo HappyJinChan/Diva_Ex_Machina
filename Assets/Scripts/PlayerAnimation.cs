@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using MoreMountains.Feedbacks;
 using System;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -28,15 +27,6 @@ public class PlayerAnimation : MonoBehaviour
     private float baseHeight;
     private Vector3 baseCenter;
     private float baseGroundPointY;
-    //Thruster flame adjustment
-    public Transform thrusterFlamePointL;
-    public Transform thrusterFlamePointR;
-    public GameObject normalThrusterFlameL;
-    public GameObject normalThrusterFlameR;
-    public GameObject boostedThrusterFlameL;
-    public GameObject boostedThrusterFlameR;
-    public GameObject meleeThrusterFlameL;
-    public GameObject meleeThrusterFlameR;
 
     // ===== Attack Layer Blend (Smooth) =====
     [SerializeField] private float weaponHoldBlendTime = 0.15f; // 主人可調：持槍/雙持切換的混合時間
@@ -50,21 +40,6 @@ public class PlayerAnimation : MonoBehaviour
 
     public CinemachineCamera Camera;
 
-    public MMF_Player leftAttackFeedback;//Range
-    public MMF_Player rightAttackFeedback;//Range
-    public MMF_Player meleeAttackFeedback;
-    public MMF_Player swordSwingFeedback;
-    public MMF_Player reloadFeedback;
-    public MMF_Player walkFeedback;
-
-    public MMF_Player dustFeedback;
-    public MMF_Player dustFeedback_OnShip;
-    [Header("Gun")]
-    [SerializeField] private ParticleSystem[] leftMuzzle;
-    [SerializeField] private ParticleSystem[] rightMuzzle;
-    [Header("Dust Particle")]
-    [SerializeField] private ParticleSystem dustParticle;
-    [SerializeField] private Transform landshipTransform;
 
     public bool IsDashAnimationActive { get; private set; }
 
@@ -113,15 +88,11 @@ public class PlayerAnimation : MonoBehaviour
 
         PlayerStats.Instance.OnLegVisualChanged += ApplyLegVisualChange;
         PlayerStats.Instance.OnHandWeaponDataChanged += RefreshWeaponHoldLayers;
-
-        PlayerStats.Instance.OnThrusterVisualChanged += ApplyThrusterVfxChange;
-        PlayerStats.Instance.OnThrusterFlameOffsetChanged += ApplyThrusterFlameTramformChange;
+        PlayerStats.Instance.OnDamaged += OnPlayerDamaged;
 
         // �i���P�B�]����GVFX + Offset ���n�^
         ApplyLegVisualChange(PlayerStats.Instance.CurrentLegVisual);
         RefreshWeaponHoldLayers();
-        ApplyThrusterVfxChange(PlayerStats.Instance.CurrentThruster);
-        ApplyThrusterFlameTramformChange(PlayerStats.Instance.CurrentThrusterFlameOffset);
     }
 
     private void OnDisable()
@@ -132,8 +103,7 @@ public class PlayerAnimation : MonoBehaviour
         {
             PlayerStats.Instance.OnLegVisualChanged -= ApplyLegVisualChange;
             PlayerStats.Instance.OnHandWeaponDataChanged -= RefreshWeaponHoldLayers;
-            PlayerStats.Instance.OnThrusterFlameOffsetChanged -= ApplyThrusterFlameTramformChange;
-            PlayerStats.Instance.OnThrusterVisualChanged -= ApplyThrusterVfxChange;
+            PlayerStats.Instance.OnDamaged -= OnPlayerDamaged;
         }
     }
 
@@ -144,15 +114,6 @@ public class PlayerAnimation : MonoBehaviour
         ApplyColliderHeightOffset(vc.heightOffset);
         ApplyLocomotion(vc.animationType);
     }
-    private void ApplyThrusterFlameTramformChange(Vector3 offset)
-    {
-        if (thrusterFlamePointL != null) thrusterFlamePointL.localPosition = offset;
-        if (thrusterFlamePointR != null)
-        {
-            offset.x = -offset.x; // �k�䪺 X �b����
-            thrusterFlamePointR.localPosition = offset;
-        }
-    }
     private void ApplyColliderHeightOffset(float heightOffset)
     {
         if (capsuleCollider == null) return;
@@ -160,7 +121,7 @@ public class PlayerAnimation : MonoBehaviour
         float newHeight = Mathf.Max(0.1f, baseHeight + heightOffset);
         capsuleCollider.height = newHeight;
 
-        // �T�w�Y���G���׼W�[�Acenter ���U���@�b
+
         var c = baseCenter;
         c.y -= (newHeight - baseHeight) * 0.5f;
         capsuleCollider.center = c;
@@ -172,59 +133,6 @@ public class PlayerAnimation : MonoBehaviour
             gp.y = baseGroundPointY - (newHeight - baseHeight);
             groundPoint.localPosition = gp;
         }
-    }
-    private void ApplyThrusterVfxChange(Thruster thr)
-    {
-        // 1) 先清掉舊的（避免重複堆疊）
-        ClearThrusterVfxInstances();
-        // 2) 沒裝 thruster（或卸下）→ 清空後直接結束
-        if (thr == null) return;
-
-        // 3) Instantiate normal flames
-        if (thr.normalThrusterFlame != null)
-        {
-            if (thrusterFlamePointL != null)
-                normalThrusterFlameL = Instantiate(thr.normalThrusterFlame, thrusterFlamePointL.transform, false);
-
-            if (thrusterFlamePointR != null)
-                normalThrusterFlameR = Instantiate(thr.normalThrusterFlame, thrusterFlamePointR.transform, false);
-        }
-
-        // 4) Instantiate boosted flames（通常預設先關閉，等 Boost 時再開）
-        if (thr.boostedThrusterFlame != null)
-        {
-            if (thrusterFlamePointL != null)
-                boostedThrusterFlameL = Instantiate(thr.boostedThrusterFlame, thrusterFlamePointL.transform, false);
-
-            if (thrusterFlamePointR != null)
-                boostedThrusterFlameR = Instantiate(thr.boostedThrusterFlame, thrusterFlamePointR.transform, false);
-
-        }
-        // 5) Instantiate melee flames
-        if (thr.meleeThrusterFlame != null)
-        {
-            if (thrusterFlamePointL != null)
-                meleeThrusterFlameL = Instantiate(thr.meleeThrusterFlame, thrusterFlamePointL.transform, false);
-            if (thrusterFlamePointR != null)
-                meleeThrusterFlameR = Instantiate(thr.meleeThrusterFlame, thrusterFlamePointR.transform, false);
-        }
-    }
-
-    private void ClearThrusterVfxInstances()
-    {
-        if (normalThrusterFlameL != null) Destroy(normalThrusterFlameL);
-        if (normalThrusterFlameR != null) Destroy(normalThrusterFlameR);
-        if (boostedThrusterFlameL != null) Destroy(boostedThrusterFlameL);
-        if (boostedThrusterFlameR != null) Destroy(boostedThrusterFlameR);
-        if (meleeThrusterFlameL != null) Destroy(meleeThrusterFlameL);
-        if (meleeThrusterFlameR != null) Destroy(meleeThrusterFlameR);
-
-        normalThrusterFlameL = null;
-        normalThrusterFlameR = null;
-        boostedThrusterFlameL = null;
-        boostedThrusterFlameR = null;
-        meleeThrusterFlameL = null;
-        meleeThrusterFlameR = null;
     }
     private void ApplyLocomotion(AnimationType type)
     {
@@ -632,21 +540,11 @@ public class PlayerAnimation : MonoBehaviour
         return IsShoulderFireState(cur.shortNameHash);
     }
 
-    public void LeftWeaponMuzzleFlash()
-    {
-        leftAttackFeedback?.PlayFeedbacks(this.transform.position);
-        TriggerFireLeft();
-    }
-    public void RightWeaponMuzzleFlash()
-    {
-        rightAttackFeedback?.PlayFeedbacks(this.transform.position);
-        TriggerFireRight();
-    }
 
     // 遠程武器每次生成子彈時觸發開槍動畫：
     //   左手 → fire_L（Dual_Wielding_Weapon_Left 層）
     //   右手 → fire_R（Dual_Wielding_Weapon_Right 層）
-    // RangeAttackController 在每顆子彈 Spawn 前呼叫 Left/RightWeaponMuzzleFlash()，
+    // RangeAttackController 在每顆子彈 Spawn 前呼叫 TriggerFireLeft / TriggerFireRight（槍口特效在 PlayerEffectManager），
     // 散彈槍一發多顆時同一幀會重複 SetTrigger，效果等同一次，不會多播。
     private static readonly int FireLeftTriggerHash = Animator.StringToHash("fire_L");
     private static readonly int FireRightTriggerHash = Animator.StringToHash("fire_R");
@@ -685,36 +583,61 @@ public class PlayerAnimation : MonoBehaviour
         }
         return isLeft ? _hasFireShoulderL : _hasFireShoulderR;
     }
-    public void DustEffect()
-    {
-        dustFeedback?.PlayFeedbacks(this.transform.position);
-    }
-    public void DustEffect_OnShip()
-    {
-        dustFeedback_OnShip?.PlayFeedbacks(this.transform.position);
-    }
-    public void StopDustEffect()
-    {
-        dustFeedback?.StopFeedbacks();
-        dustFeedback_OnShip?.StopFeedbacks();
-    }
-    public void AnimEvent_MeleeImpact()
-    {
-        PlayMeleeHitFeedback(transform.position);
-    }
 
-    public void AnimEvent_SwordSwing()
+    // ────────────────────────────────────────────────
+    //  受擊反應
+    //
+    //  Animator 裡建一個 Additive 圖層（放在最下面、上半身遮罩），
+    //  Any State → TakeDamage 用 Trigger「hit」觸發（Can Transition To Self 打開）。
+    //  沒有 hit 參數時直接略過，不會每次受傷都噴警告。
+    //
+    //  連續中彈（機槍）每發都觸發會變成一直抽搐，所以有兩道節流：
+    //    · 冷卻：觸發後 hitReactionCooldown 秒內不再觸發
+    //    · 門檻：單次傷害低於最大血量的 hitReactionMinDamageRatio 就不觸發
+    // ────────────────────────────────────────────────
+
+    [Header("Hit Reaction")]
+    [Tooltip("受擊動畫觸發後，多久內不再觸發（秒）。避免連續中彈時一直抽搐。")]
+    [SerializeField, Min(0f)] private float hitReactionCooldown = 0.35f;
+    [Tooltip("單次傷害至少要佔最大血量的這個比例才觸發受擊動畫。\n0 = 任何傷害都觸發；0.01 = 最大血量的 1%。")]
+    [SerializeField, Range(0f, 0.5f)] private float hitReactionMinDamageRatio = 0f;
+
+    private static readonly int HitTriggerHash = Animator.StringToHash("hit");
+    private bool _hitParamChecked;
+    private bool _hasHitParam;
+    private float _nextHitReactionTime;
+
+    private void OnPlayerDamaged(float amount)
     {
-        swordSwingFeedback?.PlayFeedbacks(this.transform.position);
+        PlayHitReaction(amount);
     }
 
     /// <summary>
-    /// 近戰命中的打擊回饋。由 MeleeAttackController 在 hitbox 實際造成傷害時呼叫，
-    /// 所以只有真的打到才會播 —— 揮空不會。
+    /// 播放受擊動畫（受冷卻與門檻限制）。damage 用來判斷門檻；
+    /// 傳 float.MaxValue 可以略過門檻（例如劇情演出強制播放）。回傳是否真的觸發了。
     /// </summary>
-    public void PlayMeleeHitFeedback(Vector3 position)
+    public bool PlayHitReaction(float damage)
     {
-        meleeAttackFeedback?.PlayFeedbacks(position);
+        if (anim == null) return false;
+        if (Time.time < _nextHitReactionTime) return false;
+
+        if (hitReactionMinDamageRatio > 0f && PlayerStats.Instance != null)
+        {
+            float threshold = PlayerStats.Instance.maxHealth * hitReactionMinDamageRatio;
+            if (damage < threshold) return false;
+        }
+
+        if (!_hitParamChecked)
+        {
+            _hitParamChecked = true;
+            foreach (AnimatorControllerParameter p in anim.parameters)
+                if (p.nameHash == HitTriggerHash && p.type == AnimatorControllerParameterType.Trigger) { _hasHitParam = true; break; }
+        }
+        if (!_hasHitParam) return false;
+
+        anim.SetTrigger(HitTriggerHash);
+        _nextHitReactionTime = Time.time + hitReactionCooldown;
+        return true;
     }
 
     // ────────────────────────────────────────────────
@@ -750,66 +673,4 @@ public class PlayerAnimation : MonoBehaviour
     public void AnimEvent_MeleeComboWindow() => meleeController?.OnComboWindow();
 
     public void AnimEvent_MeleeStepEnd() => meleeController?.OnStepEnd();
-    public void AnimEvent_Reload()
-    {
-        reloadFeedback?.PlayFeedbacks(this.transform.position);
-    }
-
-
-    public void OnCollisionEnter(Collision collision)
-    {
-        Debug.Log("Hit:" + collision.gameObject);
-        if (collision.gameObject.tag == "Enemy" && attackManager.playerRb.linearVelocity.magnitude > 8f)
-        {
-            meleeAttackFeedback.PlayFeedbacks(this.transform.position);
-        }
-    }
-
-    public void SetSimulationSpaceLandship()
-    {
-        if (dustParticle == null) return;
-        var main = dustParticle.main;
-        main.simulationSpace = ParticleSystemSimulationSpace.Custom;
-        main.customSimulationSpace = landshipTransform;
-
-        for (int i = 0; i < leftMuzzle.Length; i++)
-        {
-            var leftMuzzleMain = leftMuzzle[i].main;
-            leftMuzzleMain.simulationSpace = ParticleSystemSimulationSpace.Custom;
-            leftMuzzleMain.customSimulationSpace = landshipTransform;
-        }
-        for (int i = 0; i < rightMuzzle.Length; i++)
-        {
-            var rightMuzzleMain = rightMuzzle[i].main;
-            rightMuzzleMain.simulationSpace = ParticleSystemSimulationSpace.Custom;
-            rightMuzzleMain.customSimulationSpace = landshipTransform;
-        }
-    }
-
-    public void SetSimulationSpaceWorld()
-    {
-        if (dustParticle == null) return;
-        var main = dustParticle.main;
-        main.simulationSpace = ParticleSystemSimulationSpace.World;
-
-        for (int i = 0; i < leftMuzzle.Length; i++)
-        {
-            var leftMuzzleMain = leftMuzzle[i].main;
-            leftMuzzleMain.simulationSpace = ParticleSystemSimulationSpace.World;
-        }
-        for (int i = 0; i < rightMuzzle.Length; i++)
-        {
-            var rightMuzzleMain = rightMuzzle[i].main;
-            rightMuzzleMain.simulationSpace = ParticleSystemSimulationSpace.World;
-        }
-    }
-
-    public void PlayWalkFeedback()
-    {
-        walkFeedback?.PlayFeedbacks(this.transform.position);
-    }
-    public void StopWalkFeedback()
-    {
-        walkFeedback?.StopFeedbacks();
-    }
 }

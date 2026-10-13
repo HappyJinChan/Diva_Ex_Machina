@@ -162,6 +162,7 @@ public class AttackManager : MonoBehaviour
         outWeapon.range.bulletSpeed = 0f;
         outWeapon.range.firingMode = 0;
         outWeapon.range.piercing = 0;
+        outWeapon.range.effectiveRange = 0f;
 
         // runtime 不一定要清，但清咗 Inspector 會更直觀
         outWeapon.rangeRuntime.bulletsLeft = 0;
@@ -221,6 +222,7 @@ public class AttackManager : MonoBehaviour
         outWeapon.range.bulletSpeed = 0f;
         outWeapon.range.firingMode = 0;
         outWeapon.range.piercing = 0;
+        outWeapon.range.effectiveRange = 0f;
 
         // runtime 不一定要清，但清咗 Inspector 會更直觀
         outWeapon.rangeRuntime.bulletsLeft = 0;
@@ -327,6 +329,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.range.bulletSpeed = hand.GetAttribute(Attributes.BulletSpeed);
             outWeapon.range.firingMode = Mathf.RoundToInt(hand.GetAttribute(Attributes.FiringMode));
             outWeapon.range.piercing = ResolvePiercing(hand.buffs);
+            outWeapon.range.effectiveRange = Mathf.Max(0f, hand.GetAttribute(Attributes.EffectiveRange));
 
             if (changedWeapon)
             {
@@ -482,6 +485,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.range.bulletSpeed = shoulder.GetAttribute(Attributes.BulletSpeed);
             outWeapon.range.firingMode = Mathf.RoundToInt(shoulder.GetAttribute(Attributes.FiringMode));
             outWeapon.range.piercing = ResolvePiercing(shoulder.buffs);
+            outWeapon.range.effectiveRange = Mathf.Max(0f, shoulder.GetAttribute(Attributes.EffectiveRange));
 
             if (changedWeapon)
             {

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class FlameEffect : MonoBehaviour
 {
@@ -9,7 +9,7 @@ public class FlameEffect : MonoBehaviour
         Melee
     }
     [Header("Dash VFX")]
-    [SerializeField] private float dashOffDelay = 0.2f; // �D�H�n������ɶ�
+    [SerializeField] private float dashOffDelay = 0.2f; // 主人要的延遲時間
     private float _dashLingerUntil = 0f;
     [Header("Type")]
     [SerializeField] private FlameKind flameKind = FlameKind.Normal;
@@ -18,11 +18,11 @@ public class FlameEffect : MonoBehaviour
     [SerializeField] private PlayerMovement playerMovement;
 
     [Header("What to Toggle")]
-    [Tooltip("��J�����K�n����Ҧ� ParticleSystem�]�P�@�դ@�_�}���^")]
+    [Tooltip("拖入此火焰要控制的所有 ParticleSystem（同一組一起開關）")]
     [SerializeField] private ParticleSystem[] particles;
 
     [Header("Tuning")]
-    [Tooltip("�U���P�w�Gy �t�קC�󦹭Ȥ~�� falling�A�קK�L�p�ݰʤ���")]
+    [Tooltip("下落判定：y 速度低於此值才算 falling，避免微小抖動切換")]
     [SerializeField] private float fallingVelocityThreshold = -0.1f;
 
     private bool _isOn;
@@ -31,6 +31,12 @@ public class FlameEffect : MonoBehaviour
     [Tooltip("ThrusterFlameControllers that get Boost() when a dash starts. Leave empty to auto-find them in children.")]
     [SerializeField] private ThrusterFlameController[] thrusterFlames;
     private bool _wasDashing;
+
+    [Header("Assault Boost")]
+    [Tooltip("突擊推進中，這組火焰（Boosted）的油門 0～1。推進結束後恢復成原本的油門。")]
+    [Range(0f, 1f)] [SerializeField] private float assaultBoostThrottle = 1f;
+    private bool _wasAssaultBoosting;
+    private float[] _baseThrottles;   // 推進前的油門，結束時還原
 
     private void Awake()
     {
@@ -49,7 +55,7 @@ public class FlameEffect : MonoBehaviour
         if (playerMovement == null)
             playerMovement = GetComponentInParent<PlayerMovement>(true);
 
-        // �ҥήɥ����@���A�קK prefab PlayOnAwake �y����ͦ��N�G��
+        // 啟用時先關一次，避免 prefab PlayOnAwake 造成剛生成就亮錯
         SetEffectActive(false, clear: true);
         _isOn = false;
     }
@@ -58,16 +64,18 @@ public class FlameEffect : MonoBehaviour
     {
         if (playerMovement == null)
         {
-            // ����h�ŭY�ܰʡA���@���۰ʸɱ�
+            // 角色層級若變動，給一次自動補救
             playerMovement = GetComponentInParent<PlayerMovement>(true);
             if (playerMovement == null) { EnsureOff(); return; }
         }
 
-        // ���A
+        // 狀態
         bool grounded = playerMovement.IsGrounded;
         bool flying = playerMovement.IsFlyingActive;
 
-        bool dash = playerMovement.IsDashActive;
+        // 近戰衝刺也算 Dash（IsDashActive 只涵蓋一般 Dash，跟下面規矩寫的「Dash / MeleeDash」對不上）
+        bool dash = playerMovement.IsDashActive || playerMovement.IsMeleeDashing;
+        bool assaultBoost = playerMovement.IsAssaultBoosting;
 
         if (dash)
         {
@@ -79,14 +87,19 @@ public class FlameEffect : MonoBehaviour
         float vy = playerMovement.VerticalVelocity;
         bool falling = !grounded && !flying && vy < fallingVelocityThreshold;
 
-        // �W�x�]�u���ťѰ���C�^�G
-        // 1) Dash / MeleeDash�G�u�} Melee flame
-        // 2) �a�W�G����
-        // 3) ����G�u�} Boosted flame
-        // 4) �U���G�u�} Normal flame
+        // 規矩（優先級由高到低）：
+        // 1) Dash / MeleeDash：只開 Melee flame
+        // 2) 地上：全關
+        // 3) 飛行：只開 Boosted flame
+        // 4) 下落：只開 Normal flame
+        // 0) 突擊推進：只開 Boosted flame（油門 assaultBoostThrottle），優先於以上全部
         bool shouldOn = false;
 
-        if (dashWithLinger )
+        if (assaultBoost)
+        {
+            shouldOn = (flameKind == FlameKind.Boosted);
+        }
+        else if (dashWithLinger )
         {
             shouldOn = (flameKind == FlameKind.Melee);
         }
@@ -117,6 +130,36 @@ public class FlameEffect : MonoBehaviour
                 if (t != null) t.Boost();
         }
         _wasDashing = dash;
+
+        // 突擊推進開始 / 結束：Boosted 油門拉高、點火爆發；結束時還原油門
+        if (flameKind == FlameKind.Boosted && assaultBoost != _wasAssaultBoosting)
+            OnAssaultBoostChanged(assaultBoost);
+        _wasAssaultBoosting = assaultBoost;
+    }
+
+    private void OnAssaultBoostChanged(bool on)
+    {
+        if (thrusterFlames == null) return;
+
+        if (_baseThrottles == null || _baseThrottles.Length != thrusterFlames.Length)
+            _baseThrottles = new float[thrusterFlames.Length];
+
+        for (int i = 0; i < thrusterFlames.Length; i++)
+        {
+            var t = thrusterFlames[i];
+            if (t == null) continue;
+
+            if (on)
+            {
+                _baseThrottles[i] = t.Throttle;
+                t.SetThrottle(assaultBoostThrottle);
+                t.Boost();   // 點火瞬間：衝擊環 + 火花 + 短暫加長
+            }
+            else
+            {
+                t.SetThrottle(_baseThrottles[i]);
+            }
+        }
     }
 
     private void ApplyDesired(bool on)
@@ -124,7 +167,7 @@ public class FlameEffect : MonoBehaviour
         if (_isOn == on) return;
         _isOn = on;
 
-        // off �� clear�A�קK�ݯd
+        // off 時 clear，避免殘留
         SetEffectActive(on, clear: !on);
     }
 

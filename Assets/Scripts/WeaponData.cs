@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [System.Serializable]
 public class WeaponDamage
@@ -57,6 +57,9 @@ public class RangeWeaponSettings
     // 穿透：0 = 命中即消失；N = 可貫穿 N 個敵人，命中第 N+1 個時消失；-1 = 無限穿透。
     // 由 AttackManager 從 Attributes.piercing 算出，開火時寫進 Bullet.penetration。
     public int piercing;
+
+    // 全傷距離 R（公尺）。0 = 不衰減。由 AttackManager 從 Attributes.EffectiveRange 算出，開火時寫進 Bullet.effectiveRange。
+    public float effectiveRange;
 }
 
 [System.Serializable]

@@ -1,4 +1,4 @@
-using MoreMountains.Feedbacks;
+﻿using MoreMountains.Feedbacks;
 using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,6 +8,11 @@ public class ModularEntityEffectManager : MonoBehaviour
 
     public MMF_Player damageFeedback;
 
+    [Tooltip("受擊閃光。用 MMF_Property 動畫 EntityHitFlash.FlashAmount（0 → 1 → 0）。\n" +
+             "跟傷害數字分開：傷害數字是用傷害值當 intensity 播的，閃光放進同一個 MMF_Player 會被乘上傷害值。\n" +
+             "連續中彈的頻率用這個 MMF_Player 的 Cooldown Duration 限制。")]
+    public MMF_Player hitFlashFeedback;
+
     [Tooltip("攻擊預警（例如頭上亮一下）。由 Tools > Diva Ex Machina > Attack Warning Builder 建立並自動指定。\n" +
              "近戰出招時會自動播放；其他攻擊也可以隨時呼叫 PlayAttackWarning()。")]
     public MMF_Player attackWarningFeedback;
@@ -15,6 +20,10 @@ public class ModularEntityEffectManager : MonoBehaviour
     public void PlayDamageFeedback(float damage)
     {
         damageFeedback.PlayFeedbacks(this.transform.position, RoundForDisplay(damage));
+
+        // 閃光固定用強度 1 播（不能傳傷害值）
+        if (hitFlashFeedback != null)
+            hitFlashFeedback.PlayFeedbacks(this.transform.position);
     }
 
     /// <summary>

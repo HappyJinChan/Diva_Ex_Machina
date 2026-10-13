@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -14,6 +14,18 @@ using UnityEngine;
 public class RangeAttackController : MonoBehaviour
 {
     [SerializeField] private AttackManager attackManager;
+
+    [Tooltip("玩家特效（槍口、換彈回饋）。留空會從 attackManager.playerAnimation 的物件上自動抓。")]
+    [SerializeField] private PlayerEffectManager playerEffects;
+    private PlayerEffectManager Effects
+    {
+        get
+        {
+            if (playerEffects == null && attackManager != null && attackManager.playerAnimation != null)
+                playerEffects = attackManager.playerAnimation.GetComponent<PlayerEffectManager>();
+            return playerEffects;
+        }
+    }
 
     [Header("Just for testing")]
     [Tooltip("武器沒有指定 bullet 時的後備彈藥 prefab")]
@@ -152,11 +164,13 @@ public class RangeAttackController : MonoBehaviour
 
                 if (isLeft)
                 {
-                    attackManager.playerAnimation.LeftWeaponMuzzleFlash();
+                    if (Effects != null) Effects.PlayLeftMuzzleFeedback();
+                    attackManager.playerAnimation.TriggerFireLeft();
                 }
                 else if (isRight)
                 {
-                    attackManager.playerAnimation.RightWeaponMuzzleFlash();
+                    if (Effects != null) Effects.PlayRightMuzzleFeedback();
+                    attackManager.playerAnimation.TriggerFireRight();
                 }
 
                 Vector3 targetPoint;
@@ -270,6 +284,11 @@ public class RangeAttackController : MonoBehaviour
                     //    （敵人的子彈不走這裡，仍然吃 prefab 上的值）
                     bulletComp.penetration = w.range.piercing;
 
+                    // 3.5) 距離衰減：全傷距離由武器的 EffectiveRange 決定（0 = 不衰減）。
+                    //      繼承的船速告訴子彈，算飛行距離時扣掉（距離 = 彈速 × 飛行時間）。
+                    bulletComp.effectiveRange = w.range.effectiveRange;
+                    bulletComp.SetInheritedVelocity(movingPlatformOffset);
+
                     // 4) 發射平台：只給曳光（BulletTracer）用，讓站在船上開火時曳光從槍口延伸出去（見 Bullet.SetPlatform）。
                     //    不看 movingPlatformOffset —— 鎖定目標時它是 0（子彈不繼承船速），
                     //    但鏡頭仍然跟著船走，拖尾一樣要補償。
@@ -340,7 +359,7 @@ public class RangeAttackController : MonoBehaviour
         w.rangeRuntime.reloading = true;
         w.reloadNormalized = 0f;
         attackManager.PushAmmoUI();
-        attackManager.playerAnimation.AnimEvent_Reload();
+        if (Effects != null) Effects.AnimEvent_Reload();
 
         if (w.range.reloadTime <= 0f)
         {

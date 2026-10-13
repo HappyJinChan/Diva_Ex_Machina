@@ -136,7 +136,9 @@ public class PlayerAiming : MonoBehaviour
     [SerializeField] private float shoulderOffsetYJumpLerpSpeed = 10f;  // 跳躍：快
     [SerializeField] private float shoulderOffsetYFlyLerpSpeed = 2f;    // 飛行/下落：慢
     [SerializeField] private float shoulderOffsetYGroundLerpSpeed = 5f; // 落地回預設：正常
-
+    [Header("Assault Boost Shoulder Offset")]
+    [SerializeField] private float assaultBoostShoulderOffsetZForward = 0.5f;
+    [SerializeField] private float assaultBoostShoulderOffsetX = 1f;
 
     private CinemachineThirdPersonFollow _thirdPersonFollow;
 
@@ -970,7 +972,13 @@ public class PlayerAiming : MonoBehaviour
         float currentX = _thirdPersonFollow.ShoulderOffset.x;
         float newX;
 
-        if (inputX < -0.1f || inputX > 0.1f)
+        if (playerMovement != null && playerMovement.IsAssaultBoosting)
+        {
+            // 突擊推進：鏡頭固定偏到一側，角色被推到畫面另一邊（正值 = 鏡頭往右、角色在左）。
+            // 不看左右輸入 —— 推進中的左右鍵是側移，鏡頭跟著甩會晃。
+            newX = Mathf.Lerp(currentX, assaultBoostShoulderOffsetX, Time.deltaTime * shoulderOffsetLerpSpeed);
+        }
+        else if (inputX < -0.1f || inputX > 0.1f)
         {
             // 有左右輸入：移向目標側，帶阻力
             float targetX = inputX < -0.1f ? shoulderOffsetXLeft : shoulderOffsetXRight;
@@ -996,7 +1004,11 @@ public class PlayerAiming : MonoBehaviour
         float currentZ = _thirdPersonFollow.ShoulderOffset.z;
         float targetZ;
 
-        if (inputY > 0.1f)
+        if (playerMovement != null && playerMovement.IsAssaultBoosting)
+        {
+            targetZ = assaultBoostShoulderOffsetZForward;   // 突擊推進：拉近鏡頭（推進中前後鍵沒有作用，不看輸入）
+        }
+        else if (inputY > 0.1f)
             targetZ = shoulderOffsetZForward;       // 向前：拉近鏡頭
         else if (inputY < -0.1f)
             targetZ = shoulderOffsetZBackward;      // 向後：推遠鏡頭

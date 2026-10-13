@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 近戰連段狀態機。
@@ -30,6 +30,17 @@ public class MeleeAttackController : MonoBehaviour
 {
     [SerializeField] private AttackManager attackManager;
     [SerializeField] private PlayerAnimation playerAnimation;
+    [Tooltip("玩家特效（MMF、粒子、推進器火焰）。留空會從 playerAnimation 的物件上自動抓。")]
+    [SerializeField] private PlayerEffectManager playerEffects;
+    private PlayerEffectManager Effects
+    {
+        get
+        {
+            if (playerEffects == null && playerAnimation != null)
+                playerEffects = playerAnimation.GetComponent<PlayerEffectManager>();
+            return playerEffects;
+        }
+    }
 
     [Tooltip("突進的實際位移由 PlayerMovement 執行（那裡才有 Rigidbody 與平台速度）。")]
     [SerializeField] private PlayerMovement playerMovement;
@@ -445,10 +456,11 @@ public class MeleeAttackController : MonoBehaviour
     /// </summary>
     private void HandleMeleeHit(MeleeHitResult result)
     {
-        if (playerAnimation == null) return;
+        PlayerEffectManager fx = Effects;
+        if (fx == null) return;
 
-        Vector3 pos = feedbackAtHitPoint ? result.point : playerAnimation.transform.position;
-        playerAnimation.PlayMeleeHitFeedback(pos);
+        Vector3 pos = feedbackAtHitPoint ? result.point : fx.transform.position;
+        fx.PlayMeleeHitFeedback(pos);
     }
 
     /// <summary>刀刃結束傷害判定。</summary>

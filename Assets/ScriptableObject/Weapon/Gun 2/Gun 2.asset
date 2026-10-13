@@ -61,6 +61,9 @@ MonoBehaviour:
   - attribute: 33
     mode: 0
     value: 40
+  - attribute: 42
+    mode: 0
+    value: 30
   randomBuffs:
   - buff:
       attribute: 0

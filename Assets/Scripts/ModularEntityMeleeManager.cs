@@ -1,4 +1,5 @@
 ﻿using System;
+using MoreMountains.Feedbacks;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -42,6 +43,11 @@ public class EntityMeleeAttack
     [Tooltip("這招使用的判定（掛在爪子、頭等骨頭底下的 EntityMeleeHitbox）。\n" +
              "由動畫事件 MeleeHitOpen / MeleeHitClose 開關。")]
     public EntityMeleeHitbox hitbox;
+
+    [Tooltip("判定開啟期間的特效（例如爪擊的粒子）。\n" +
+             "MeleeHitOpen 時 PlayFeedbacks、MeleeHitClose 時 StopFeedbacks；攻擊中斷 / 結束也會停。\n" +
+             "每招各自指定：左爪的招就拖左爪的 MMF_Player，咬的招就留空或拖頭部的。")]
+    public MMF_Player hitFeedback;
 
     [Header("移動")]
     public EntityMeleeMoveMode moveMode = EntityMeleeMoveMode.Dash;
@@ -108,6 +114,15 @@ public class ModularEntityMeleeManager : MonoBehaviour
     [Min(0.05f)] [SerializeField] private float evaluationInterval = 0.5f;
     [Tooltip("任何一招結束後，至少隔多久才能再出下一招（秒）。")]
     [Min(0f)] [SerializeField] private float globalCooldown = 1f;
+
+    [Header("動畫")]
+    [Tooltip("攻擊動畫狀態的 Tag（在 Animator 裡把每個攻擊狀態的 Tag 設成這個）。\n" +
+             "Animator 目前（或正要轉換過去）的狀態帶有這個 Tag 時不出新招 ——\n" +
+             "攻擊被打斷後舊動畫還在播，這時出招的話，舊動畫的事件（HitOpen、End…）會套到新的這一招上。\n" +
+             "留空 = 不檢查。")]
+    [SerializeField] private string meleeStateTag = "Melee";
+    [Tooltip("要檢查的 Animator 圖層。")]
+    [Min(0)] [SerializeField] private int meleeStateLayer = 0;
 
     [Header("命中")]
     [Tooltip("判定會掃描的層（例如 Player Hurtbox）。")]
@@ -212,6 +227,7 @@ public class ModularEntityMeleeManager : MonoBehaviour
         Transform target = _brain.CombatTarget;
         if (!IsTargetValid(target)) return false;
         if (_movement.IsKnockedBack) return false;
+        if (IsAnimatorInMeleeState()) return false;   // 上一招（被打斷的）動畫還沒播完
 
         if (_readyTime.Length != attacks.Length) Array.Resize(ref _readyTime, attacks.Length);
 
@@ -267,8 +283,8 @@ public class ModularEntityMeleeManager : MonoBehaviour
         SetDashDir(ComputeChaseDirection(DashSpeed(_current)));   // 依當下的預判鎖定衝刺方向
     }
     public void OnMeleeDashEnd()   { if (_current == null) return; Log("DashEnd");   _phase = Phase.Recovery; }
-    public void OnMeleeHitOpen()   { if (_current == null) return; Log("HitOpen");   _hitOpen = true; }
-    public void OnMeleeHitClose()  { if (_current == null) return; Log("HitClose");  _hitOpen = false; }
+    public void OnMeleeHitOpen()   { if (_current == null) return; Log("HitOpen");   _hitOpen = true;  PlayHitFeedback(); }
+    public void OnMeleeHitClose()  { if (_current == null) return; Log("HitClose");  _hitOpen = false; StopHitFeedback(); }
     public void OnMeleeEnd()       { if (_current == null) return; Log("End");       EndAttack(cancelled: false); }
     public void OnMeleeWarning()   { if (_current == null) return; Log("Warning");   if (_effects != null) _effects.PlayAttackWarning(); }
 
@@ -479,6 +495,7 @@ public class ModularEntityMeleeManager : MonoBehaviour
             _effects.StopAttackWarning();   // 攻擊被打斷：預警也收掉
 
         Log(cancelled ? "Cancelled" : "Finished");
+        StopHitFeedback();   // 漏了 MeleeHitClose（逾時、被打斷）時也要停
 
         _current = null;
         _hitOpen = false;
@@ -513,6 +530,39 @@ public class ModularEntityMeleeManager : MonoBehaviour
         if (toSolved.magnitude > toTarget.magnitude * predictionMaxLeadMultiplier) return targetPos;
         if (toSolved.magnitude / speed > predictionMaxTime) return targetPos;
         return solved;
+    }
+
+    /// <summary>Animator 目前的狀態、或正在轉換過去的狀態，是否帶有攻擊 Tag。</summary>
+    private bool IsAnimatorInMeleeState()
+    {
+        if (string.IsNullOrEmpty(meleeStateTag)) return false;
+        if (_animator == null || _animator.runtimeAnimatorController == null) return false;
+        if (meleeStateLayer >= _animator.layerCount) return false;
+
+        if (_animator.GetCurrentAnimatorStateInfo(meleeStateLayer).IsTag(meleeStateTag)) return true;
+        return _animator.IsInTransition(meleeStateLayer) &&
+               _animator.GetNextAnimatorStateInfo(meleeStateLayer).IsTag(meleeStateTag);
+    }
+
+    // ═══════════════════════ 判定期間的特效 ═══════════════════════
+
+    private MMF_Player _playingHitFeedback;   // 目前在播的那個（停的時候用，避免招式切換後停錯）
+
+    private void PlayHitFeedback()
+    {
+        StopHitFeedback();   // 同一招有第二段 HitOpen：從頭播
+        MMF_Player fb = _current != null ? _current.hitFeedback : null;
+        if (fb == null) return;
+
+        fb.PlayFeedbacks(fb.transform.position);
+        _playingHitFeedback = fb;
+    }
+
+    private void StopHitFeedback()
+    {
+        if (_playingHitFeedback == null) return;
+        _playingHitFeedback.StopFeedbacks();
+        _playingHitFeedback = null;
     }
 
     private bool HasTrigger(string trigger)

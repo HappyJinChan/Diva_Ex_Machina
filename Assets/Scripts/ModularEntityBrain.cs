@@ -1,4 +1,4 @@
-using NaughtyAttributes;
+﻿using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -1028,6 +1028,10 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
     {
         if (!_hasAttackSlot) return;
         if (attackSlotHoldSeconds <= 0f) return;          // 0 = 不設上限
+        // 近戰出招中不交還名額、不對調目標：否則 CombatTarget 會在出招途中被換掉，
+        // 預備階段轉向新目標、判定也改比對新目標，原本撲過去的那個人反而打不到。
+        // 收招後下一次思考就會照常處理逾時。
+        if (IsMeleeAttacking) return;
         if (Time.time < _attackSlotExpireTime) return;
 
         ReleaseAttackSlot();

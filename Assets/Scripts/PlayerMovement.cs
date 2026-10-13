@@ -38,14 +38,16 @@ public class PlayerMovement : MonoBehaviour
     // ───── 突擊推進（Assault Boost）─────
     //
     // 按一下開啟、再按一下關閉。啟動時相對平台速度歸零，之後：
-    //   水平：朝鏡頭方向，以 dashSpeed 為目標速度、accelerationSpeed 為加速度。
-    //         按下左 / 右：跟一般 Dash 一樣的爆發側推（dashDuration 內推到 dashSpeed），
-    //         消耗 dashEnergyCost、受 dashCooldown 限制；推完後側向速度以 accelerationSpeed 收回。
-    //   垂直：鏡頭往上就爬升、往下就俯衝；按住飛行鍵則像平常飛行一樣往上升。
-    //         速度上限 flySpeed、加速度 flyAcceleration。
-    //         沒有裝推進器（flySpeed = 0）時只能水平衝刺。期間關閉重力。
-    //   能量：啟動扣一次完整的 dashEnergyCost；之後推進期間每秒扣 flyEnergyCost、
-    //         側推每次扣 dashEnergyCost，這兩者都乘上 assaultBoostEnergyCostMultiplier（預設減半）。
+    //   方向：沿著鏡頭正前方直線飛，速度 dashSpeed、加速度 accelerationSpeed（水平、垂直相同，軌跡才會是直線）。
+    //         水平 = dashSpeed × cos(俯仰)，垂直 = dashSpeed × sin(俯仰)；俯仰先扣掉 assaultBoostPitchDeadZone。
+    //         垂直速度沒有上限，只受鏡頭能轉到的角度限制。
+    //         按住左 / 右：以 sprintSpeed × assaultBoostSideSpeedRatio 往側邊移動（類比輸入依推的程度），
+    //         放開就收回；側向速度一律以 accelerationSpeed 增減。不另外扣能量、不碰 Dash 冷卻。
+    //         前 / 後鍵在推進中沒有作用。
+    //   飛行鍵：按住時至少以 flySpeed 往上升（鏡頭已經往上看、爬得比 flySpeed 快時不會被拖慢）。
+    //   沒有裝推進器（flySpeed = 0）時只能水平衝刺。期間關閉重力。
+    //   能量：啟動扣一次完整的 dashEnergyCost；之後推進期間每秒扣 flyEnergyCost
+    //         × assaultBoostEnergyCostMultiplier（預設減半）。
     //         期間不回復。
     // 結束（再按一次 / 能量耗盡 / 按 Dash / 按近戰）時保留當下速度，交回一般移動慢慢減速。
     [Header("Assault Boost")]
@@ -54,8 +56,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField, Range(0f, 45f)] private float assaultBoostPitchDeadZone = 10f;
 
     [Tooltip("推進期間的能量消耗倍率（啟動那一下不打折）。\n" +
-             "套用在：每秒的 flyEnergyCost、每次側推的 dashEnergyCost。0.5 = 減半。")]
+             "套用在每秒的 flyEnergyCost。0.5 = 減半。")]
     [SerializeField, Range(0f, 1f)] private float assaultBoostEnergyCostMultiplier = 0.5f;
+
+    [Tooltip("推進中按住左 / 右時的側移速度 = sprintSpeed × 這個比例。\n" +
+             "側向速度以 accelerationSpeed 增減，放開就收回 0。")]
+    [SerializeField, Range(0f, 2f)] private float assaultBoostSideSpeedRatio = 0.333f;
 
     [Tooltip("Animator 上的 bool 參數名稱。Animator 沒有這個參數時會自動略過，不會報錯。")]
     [SerializeField] private string assaultBoostAnimBool = "assaultBoost";
@@ -64,9 +70,6 @@ public class PlayerMovement : MonoBehaviour
     private bool _abPrevGravity = true;
     private Vector2 _moveInput;                       // 原始移動輸入（x = 左右，y = 前後）
     private float _abFlyRequestUntil;                 // 推進中按住飛行鍵（同 flyRequestUntil 的緩衝做法）
-    private int _abSideBurstSign;                     // 側推方向：+1 右、-1 左
-    private float _abSideBurstUntil;                  // 側推視窗結束時間
-    private float _abSideBurstAccel = -1f;            // 側推加速度；-1 = 下一個 physics step 再算
     private Vector3 _abFacing = Vector3.forward;      // 突擊推進中角色面向（水平）
     private Vector3 _abAnimDir = Vector3.forward;     // 突擊推進中給移動動畫用的方向（水平）
     private int _abAnimHash;
@@ -156,6 +159,17 @@ public class PlayerMovement : MonoBehaviour
     private Weapon meleeBufferedWeapon;
     [Header("Animation")]
     [SerializeField] private PlayerAnimation playerAnimation;
+    [Tooltip("玩家特效（MMF、粒子、推進器火焰）。留空會從 playerAnimation 的物件上自動抓。")]
+    [SerializeField] private PlayerEffectManager playerEffects;
+    private PlayerEffectManager Effects
+    {
+        get
+        {
+            if (playerEffects == null && playerAnimation != null)
+                playerEffects = playerAnimation.GetComponent<PlayerEffectManager>();
+            return playerEffects;
+        }
+    }
     [SerializeField] private float movementBlendSpeed = 3f; // 控制 0↔1 的快慢
     private float animX = 0f; // 水平（左右）動畫輸入
     private float animY = 0f; // 垂直（前後）動畫輸入
@@ -199,7 +213,7 @@ public class PlayerMovement : MonoBehaviour
         HandleDustEffect();
         if (!grounded)
         {
-            playerAnimation.StopWalkFeedback();
+            if (Effects != null) Effects.StopWalkFeedback();
         }
         UIManager.Instance.speedText.text = playerRigidbody.linearVelocity.magnitude < 0.0001f ? 0.ToString("F2") : playerRigidbody.linearVelocity.magnitude.ToString("F2");
     }
@@ -474,15 +488,7 @@ public class PlayerMovement : MonoBehaviour
     }
     public void HorizontalMovement(float moveX, float moveZ)
     {
-        // 突擊推進中：左 / 右「按下的那一刻」觸發一次爆發側推（按住不會連發）
-        if (_assaultBoosting)
-        {
-            const float press = 0.5f;
-            bool wasPressed = Mathf.Abs(_moveInput.x) >= press;
-            bool isPressed = Mathf.Abs(moveX) >= press;
-            if (isPressed && !wasPressed)
-                TryAssaultBoostSideBurst(moveX > 0f ? 1 : -1);
-        }
+        // 突擊推進中的側移由 ApplyAssaultBoostFixed 讀 _moveInput.x 處理
         _moveInput = new Vector2(moveX, moveZ);
 
         // 只更新 moveDirection（給 RotateCharacter / 動畫用），不要在 Update 內碰剛體
@@ -571,7 +577,7 @@ public class PlayerMovement : MonoBehaviour
         if (meleeController != null && meleeController.IsBlockingDash) return false;
 
         // 突擊推進中按 Dash：一定會打斷推進 —— 放在冷卻 / 能量檢查之前，
-        // 所以就算這次 Dash 因冷卻（例如剛側推完）或能量不足而放不出來，推進也照樣結束。
+        // 所以就算這次 Dash 因冷卻或能量不足而放不出來，推進也照樣結束。
         // 放得出來的話，下面會直接接一般 Dash（緊急閃避）。
         if (_assaultBoosting) EndAssaultBoost();
 
@@ -1336,33 +1342,11 @@ public class PlayerMovement : MonoBehaviour
         _abFacing = FlatForwardOr(characterModel != null ? characterModel.forward : transform.forward, Vector3.forward);
         _abAnimDir = _abFacing;
         _abFlyRequestUntil = 0f;
-        _abSideBurstUntil = 0f;
-        _abSideBurstSign = 0;
         _assaultBoosting = true;
         SetAssaultBoostAnim(true);
 
         // 推進中手動轉鏡頭受 AimTurnRate 限制（推進方向跟著鏡頭，所以推進的轉向也一起受限）
         if (PlayerAiming.Instance != null) PlayerAiming.Instance.SetManualTurnRateLimit(true);
-        return true;
-    }
-
-    /// <summary>
-    /// 推進中的爆發側推：跟一般 Dash 一樣的成本與冷卻，只是方向固定為推進方向的左 / 右，
-    /// 而且不會結束推進。不鎖攻擊、不播 Dash 動畫（推進中照樣可以開槍）。
-    /// </summary>
-    private bool TryAssaultBoostSideBurst(int sign)
-    {
-        var stats = PlayerStats.Instance;
-        if (stats == null || sign == 0) return false;
-        if (Time.time < nextDashTime) return false;
-        if (stats.currentEnergy <= 0f) return false;
-
-        stats.currentEnergy -= stats.dashEnergyCost * assaultBoostEnergyCostMultiplier;   // 推進中的側推打折
-        nextDashTime = Time.time + dashCooldown;
-
-        _abSideBurstSign = sign;
-        _abSideBurstUntil = Time.time + Mathf.Max(0.02f, dashDuration);
-        _abSideBurstAccel = -1f;   // 下一個 physics step 依當下的側向速度算出加速度
         return true;
     }
 
@@ -1417,54 +1401,41 @@ public class PlayerMovement : MonoBehaviour
         Vector3 platformVel = GetMobilePlatformVelocity();
         Vector3 vRel = playerRigidbody.linearVelocity - platformVel;
 
-        // 3) 水平：拆成「前進」與「側向」兩個分量各自控制。
-        //    前進：目標 dashSpeed，加速度 accelerationSpeed。
-        //    側向：側推視窗內跟一般 Dash 一樣，在 dashDuration 內推到 dashSpeed；
-        //          視窗外目標 0，以 accelerationSpeed 收回。
+        // 3) 俯仰：鏡頭超出死區的部分才算數。沒有推進器（flySpeed = 0）時一律當作水平。
+        float pitch = Mathf.Asin(Mathf.Clamp(aimDir.y, -1f, 1f)) * Mathf.Rad2Deg;
+        float effectivePitch = Mathf.Sign(pitch) * Mathf.Max(0f, Mathf.Abs(pitch) - assaultBoostPitchDeadZone);
+        if (stats.flySpeed <= 0f) effectivePitch = 0f;
+        float pitchRad = effectivePitch * Mathf.Deg2Rad;
+
+        // 4) 水平：拆成「前進」與「側向」兩個分量各自控制。
+        //    前進：目標 dashSpeed × cos(俯仰)，加速度 accelerationSpeed。
+        //    側向：目標 = 左右輸入 × sprintSpeed × assaultBoostSideSpeedRatio（放開 = 0），
+        //          以 accelerationSpeed 增減。
         //    轉鏡頭時，原本的前進速度有一部分會變成側向速度，再慢慢收回 —— 自然帶一點甩尾的慣性
         Vector3 horizontalRel = new Vector3(vRel.x, 0f, vRel.z);
         float vForward = Vector3.Dot(horizontalRel, flatForward);
         float vSide = Vector3.Dot(horizontalRel, right);
 
-        vForward = Mathf.MoveTowards(vForward, stats.dashSpeed, stats.accelerationSpeed * dt);
+        vForward = Mathf.MoveTowards(vForward, stats.dashSpeed * Mathf.Cos(pitchRad), stats.accelerationSpeed * dt);
 
-        if (Time.time <= _abSideBurstUntil && _abSideBurstSign != 0)
-        {
-            float targetSide = _abSideBurstSign * stats.dashSpeed;
-            if (_abSideBurstAccel < 0f)
-            {
-                // 跟 DashAction 同一套算法：剩下要補的速度 ÷ 持續時間
-                float deltaV = Mathf.Max(0f, stats.dashSpeed - _abSideBurstSign * vSide);
-                _abSideBurstAccel = deltaV / Mathf.Max(0.02f, dashDuration);
-            }
-            vSide = Mathf.MoveTowards(vSide, targetSide, _abSideBurstAccel * dt);
-        }
-        else
-        {
-            _abSideBurstSign = 0;
-            vSide = Mathf.MoveTowards(vSide, 0f, stats.accelerationSpeed * dt);
-        }
+        float sideInput = Mathf.Clamp(_moveInput.x, -1f, 1f);
+        float targetSide = sideInput * stats.sprintSpeed * assaultBoostSideSpeedRatio;
+        vSide = Mathf.MoveTowards(vSide, targetSide, stats.accelerationSpeed * dt);
 
         horizontalRel = flatForward * vForward + right * vSide;
 
-        // 4) 垂直：鏡頭超出死區的俯仰才算數；超出的部分換成爬升 / 俯衝速度，上限 flySpeed
-        float pitch = Mathf.Asin(Mathf.Clamp(aimDir.y, -1f, 1f)) * Mathf.Rad2Deg;
-        float effectivePitch = Mathf.Sign(pitch) * Mathf.Max(0f, Mathf.Abs(pitch) - assaultBoostPitchDeadZone);
-        float targetVy = Mathf.Sin(effectivePitch * Mathf.Deg2Rad) * stats.dashSpeed;
-        targetVy = Mathf.Clamp(targetVy, -stats.flySpeed, stats.flySpeed);
+        // 5) 垂直：dashSpeed × sin(俯仰)，沒有上限（只受鏡頭能轉到的角度限制）
+        float targetVy = stats.dashSpeed * Mathf.Sin(pitchRad);
 
-        // 按住飛行鍵：像平常飛行一樣以 flySpeed 往上升（能量已經在推進中按每秒 flyEnergyCost 扣，不重複扣）
+        // 按住飛行鍵：至少以 flySpeed 往上升（能量已經在推進中按每秒 flyEnergyCost 扣，不重複扣）。
+        // 用 Max：鏡頭已經往上看、爬得比 flySpeed 快時，按飛行鍵不會反而變慢
         if (Time.time <= _abFlyRequestUntil && stats.flySpeed > 0f)
-            targetVy = stats.flySpeed;
+            targetVy = Mathf.Max(targetVy, stats.flySpeed);
 
         if (grounded && targetVy < 0f) targetVy = 0f;   // 貼地時不往地面裡推
 
-        // 爬升 / 俯衝用 flyAcceleration；回到水平（目標 0）時至少用 accelerationSpeed 拉平，
-        // 否則沒有推進器（flyAcceleration = 0）時，撞到東西產生的垂直速度會一直留著
-        float vAccel = Mathf.Approximately(targetVy, 0f)
-            ? Mathf.Max(stats.flyAcceleration, stats.accelerationSpeed)
-            : stats.flyAcceleration;
-        float vy = Mathf.MoveTowards(vRel.y, targetVy, vAccel * dt);
+        // 垂直跟水平用同一個加速度，軌跡才會沿著鏡頭方向走直線
+        float vy = Mathf.MoveTowards(vRel.y, targetVy, stats.accelerationSpeed * dt);
 
         Vector3 newVRel = new Vector3(horizontalRel.x, vy, horizontalRel.z);
         playerRigidbody.linearVelocity = newVRel + platformVel;
@@ -1472,7 +1443,7 @@ public class PlayerMovement : MonoBehaviour
         // 撞飛前方的小型敵人
         RamSmallEnemies(newVRel, platformVel, dt);
 
-        // 5) 給 RotateCharacter：角色面向推進方向，移動動畫用實際的水平移動方向（側推時會往旁邊）
+        // 6) 給 RotateCharacter：角色面向推進方向，移動動畫用實際的水平移動方向（側移時會偏向旁邊）
         _abFacing = flatForward;
         if (horizontalRel.sqrMagnitude > 0.0001f) _abAnimDir = horizontalRel.normalized;
     }
@@ -1997,7 +1968,7 @@ public class PlayerMovement : MonoBehaviour
         _mobilePlatformRotInit = true;
         _onMobilePlatform = true;
 
-        playerAnimation.SetSimulationSpaceLandship();
+        if (Effects != null) Effects.SetSimulationSpaceLandship();
         attackManager.SetOnShip(rb);
 
         if (PlayerAiming.Instance != null)
@@ -2010,7 +1981,7 @@ public class PlayerMovement : MonoBehaviour
         _mobilePlatformRb = null;
         _mobilePlatformTf = null;
         _mobilePlatformRotInit = false;
-        playerAnimation.SetSimulationSpaceWorld();
+        if (Effects != null) Effects.SetSimulationSpaceWorld();
         attackManager.SetOffShip();
 
         if (PlayerAiming.Instance != null)
@@ -2075,11 +2046,11 @@ public class PlayerMovement : MonoBehaviour
             _nextDustTime = Time.time + interval;
             if (!_onMobilePlatform)
             {
-                playerAnimation.DustEffect();
+                if (Effects != null) Effects.DustEffect();
             }
             else
             {
-                playerAnimation.DustEffect_OnShip();
+                if (Effects != null) Effects.DustEffect_OnShip();
             }
         }
     }

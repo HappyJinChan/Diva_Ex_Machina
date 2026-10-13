@@ -52,6 +52,7 @@ public enum Attributes
     MagazineSize = 14,
     BulletSpeed = 15,
     FiringMode = 16,          //0:Single, 1:Auto, 2:Charge
+    EffectiveRange = 42,      // 全傷距離 R（公尺）。超過後線性衰減，到 2R 剩 30%。0 = 不衰減。武器本體 Add，槍管 Multiplier
     piercing = 41,          // 子彈穿透力，0 = 無穿透，1 = 穿透 1 個目標，2 = 穿透 2 個目標，依此類推；-1 = 無限穿透
 
     //Energy
@@ -349,6 +350,9 @@ public class PlayerStats : MonoBehaviour, IDamageable
     public Vector3 CurrentThrusterFlameOffset { get; private set; } = Vector3.zero;
     public event Action OnHandWeaponDataChanged;
 
+    /// <summary>受到傷害（扣完防禦、實際扣血之後）。參數 = 實際扣掉的血量。受擊動畫等表現層訂閱這個。</summary>
+    public event Action<float> OnDamaged;
+
 
     public static PlayerStats Instance { get; private set; }
 
@@ -583,6 +587,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
         if (amount <= 0f) return;
 
         currentHealth -= amount;
+        OnDamaged?.Invoke(amount);
 
         // 受傷回饋。
         //
@@ -882,6 +887,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
             case Attributes.BulletSpeed:
             case Attributes.FiringMode:
             case Attributes.piercing:
+            case Attributes.EffectiveRange:
             case Attributes.CriticalChance:
             case Attributes.CriticalMultiplier:
             case Attributes.MeleeReloadTime:

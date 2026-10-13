@@ -82,6 +82,28 @@ public class Bullet : MonoBehaviour, IPooled
     //   所以它必須進 prefab 快照，回收重用時還原，否則穿透彈只有第一輪有穿透。
     public int penetration = 0;
 
+    // ── 距離衰減 ──
+    //
+    //   d ≤ R          ：100%
+    //   R < d < E      ：從 100% 線性降到 falloffMinDamage（E = R × falloffEndMultiplier）
+    //   d ≥ E          ：固定 falloffMinDamage
+    //
+    //   d = 子彈「相對發射者」的累計飛行距離（彈速 × 飛行時間），不是世界座標的位移：
+    //   在行進中的船上開火時，子彈繼承的船速不算進距離，否則船越快衰減越早開始。
+    //   追蹤彈、貫穿後繼續飛的子彈，路徑變長，距離也跟著變長。
+    //
+    //   玩家的子彈：開火時由 RangeAttackController 用武器的 EffectiveRange 蓋掉。
+    //   敵人的子彈：吃 prefab 上的值（砲塔不覆寫）。
+    [Header("Damage Falloff")]
+    [Tooltip("全傷距離 R（公尺）。0 = 不衰減。\n玩家子彈開火時會被武器的 EffectiveRange 蓋掉；敵人子彈吃這裡的值。")]
+    [Min(0f)] public float effectiveRange = 0f;
+
+    [Tooltip("衰減結束的距離 = R × 這個倍率。超過之後傷害固定在最低值。")]
+    [Min(1f)] public float falloffEndMultiplier = 2f;
+
+    [Tooltip("衰減到底時的傷害比例（0.3 = 30%）。")]
+    [Range(0f, 1f)] public float falloffMinDamage = 0.3f;
+
     // 發射平台（玩家站在行進中的船上開火時，就是那艘船的 Rigidbody）與發射點。
     // 只給曳光（BulletTracer）用，不影響飛行與命中。
     //
@@ -106,6 +128,31 @@ public class Bullet : MonoBehaviour, IPooled
 
     /// <summary>發射點目前在世界中的位置（在船上開火時會跟著船移動）。</summary>
     public Vector3 SpawnPoint => _platform != null ? _platform.transform.TransformPoint(_spawnLocal) : _spawnWorld;
+
+    // 距離衰減用的 runtime 狀態（每次上場歸零）
+    private float _flightDistance;        // 相對發射者的累計飛行距離
+    private Vector3 _inheritedVelocity;   // 發射時繼承的速度（例如船速），計算飛行距離時扣掉
+
+    /// <summary>
+    /// 發射時疊加在子彈上的速度（例如站在行進中的船上開火時的船速）。
+    /// 只用來計算距離衰減：飛行距離扣掉這部分，才是「彈速 × 飛行時間」。沒繼承任何速度時不用呼叫。
+    /// </summary>
+    public void SetInheritedVelocity(Vector3 velocity) => _inheritedVelocity = velocity;
+
+    /// <summary>目前累計的飛行距離（公尺，相對發射者）。</summary>
+    public float FlightDistance => _flightDistance;
+
+    /// <summary>在距離 distance 命中時的傷害倍率（距離衰減）。</summary>
+    public float GetFalloffMultiplier(float distance)
+    {
+        if (effectiveRange <= 0f || distance <= effectiveRange) return 1f;
+
+        float end = effectiveRange * Mathf.Max(1f, falloffEndMultiplier);
+        if (end <= effectiveRange || distance >= end) return Mathf.Clamp01(falloffMinDamage);
+
+        float t = (distance - effectiveRange) / (end - effectiveRange);
+        return Mathf.Lerp(1f, Mathf.Clamp01(falloffMinDamage), t);
+    }
 
     // _live：這顆子彈是否「在場上活著」。
     // 取代原本的 _destroyed —— 池化之後子彈不會真的被銷毀，只會在 live / 待命之間切換。
@@ -264,6 +311,7 @@ public class Bullet : MonoBehaviour, IPooled
         public bool lockAssignedTarget;
 
         public int penetration;
+        public float effectiveRange, falloffEndMultiplier, falloffMinDamage;
         public CollisionDetectionMode collisionDetectionMode;
 
         public GameObject hitEffect;
@@ -305,6 +353,9 @@ public class Bullet : MonoBehaviour, IPooled
         _defaults.lockAssignedTarget = lockAssignedTarget;
 
         _defaults.penetration = penetration;
+        _defaults.effectiveRange = effectiveRange;
+        _defaults.falloffEndMultiplier = falloffEndMultiplier;
+        _defaults.falloffMinDamage = falloffMinDamage;
 
         // Predict() 命中時會把 CCD 模式改成 ContinuousSpeculative，改了就回不去
         _defaults.collisionDetectionMode = (rb != null)
@@ -347,6 +398,9 @@ public class Bullet : MonoBehaviour, IPooled
         lockAssignedTarget = _defaults.lockAssignedTarget;
 
         penetration = _defaults.penetration;
+        effectiveRange = _defaults.effectiveRange;
+        falloffEndMultiplier = _defaults.falloffEndMultiplier;
+        falloffMinDamage = _defaults.falloffMinDamage;
 
         if (rb != null)
         {
@@ -415,6 +469,9 @@ public class Bullet : MonoBehaviour, IPooled
         _homingReadyTime = Time.time + homingStartDelay;
 
         _despawnTime = Time.time + Mathf.Max(0f, lifespan);
+
+        _flightDistance = 0f;
+        _inheritedVelocity = Vector3.zero;
 
         // 發射點：transform 已經由物件池擺到槍口了。平台由發射端稍後透過 SetPlatform 指定。
         _spawnWorld = transform.position;
@@ -535,6 +592,11 @@ public class Bullet : MonoBehaviour, IPooled
     protected virtual void FixedUpdate()
     {
         if (!_live) return;
+
+        // 0) 累計飛行距離：上一個 physics step 子彈相對發射者移動的距離。
+        //    剛上場的第一次 FixedUpdate 還沒經過任何 physics step，不算。
+        if (_steppedSinceSpawn && rb != null)
+            _flightDistance += (rb.linearVelocity - _inheritedVelocity).magnitude * Time.fixedDeltaTime;
 
         // 這個 FixedUpdate 之後就是這一世的第一個 physics step，下一次渲染時插值已經可靠
         _steppedSinceSpawn = true;
@@ -966,12 +1028,15 @@ public class Bullet : MonoBehaviour, IPooled
             if (Random.value < Mathf.Clamp01(criticalChance))
                 critMul = Mathf.Max(1f, criticalMultiplier);
 
+            // 距離衰減：乘在整份傷害上（之後加新的傷害欄位也會自動跟著衰減）
+            float mul = critMul * GetFalloffMultiplier(_flightDistance);
+
             // 只交出「原始四種傷害」，防禦由被打的目標自己套用
             DamageInfo dmg = new DamageInfo(
-                physicalDamage * critMul,
-                explosionDamage * critMul,
-                energyDamage * critMul,
-                coldDamage * critMul
+                physicalDamage * mul,
+                explosionDamage * mul,
+                energyDamage * mul,
+                coldDamage * mul
             );
 
             target.TakeDamage(dmg, attacker);
