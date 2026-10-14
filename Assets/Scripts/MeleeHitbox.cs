@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -162,12 +162,16 @@ public class MeleeHitbox : MonoBehaviour
         bool crit = UnityEngine.Random.value < Mathf.Clamp01(_data.criticalChance);
         float critMul = crit ? Mathf.Max(1f, _data.criticalMultiplier) : 1f;
 
-        // 只交出「原始四種傷害」，防禦由被打的目標自己套用
+        // 只交出「原始四種傷害 + 衝擊值」，防禦由被打的目標自己套用。衝擊值不吃暴擊。
         var dealt = new DamageInfo(
             _data.baseDamage.physical * critMul,
             _data.baseDamage.explosion * critMul,
             _data.baseDamage.energy * critMul,
-            _data.baseDamage.cold * critMul);
+            _data.baseDamage.cold * critMul,
+            _data.baseDamage.impact)
+        {
+            kind = DamageKind.Melee,
+        };
 
         target.TakeDamage(dealt, _data.attacker);
 

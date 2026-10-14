@@ -897,6 +897,36 @@ public class PlayerAiming : MonoBehaviour
     // Public helpers
     // =========================
     public Rigidbody GetTargetRigidbody() => currentTargetRb;
+
+    // AutoAim 目標的 Rigidbody 快取（目標換了才重新找）
+    private Transform _autoAimRbOwner;
+    private Rigidbody _autoAimRb;
+
+    /// <summary>
+    /// AutoAim（中鍵鎖定）中的目標。跟 GetTargetRigidbody 不同：目標暫時跑出鎖定圈（鏡頭還在追）時也拿得到。
+    /// 沒有在 AutoAim、或目標已失效時回傳 false。
+    /// aimPoint = 瞄準位置（有 AimPoint 用它，沒有就是 transform 原點）；rb 可能是 null（目標沒有 Rigidbody）。
+    /// </summary>
+    public bool TryGetAutoAimTarget(out Transform target, out Vector3 aimPoint, out Rigidbody rb)
+    {
+        target = null;
+        aimPoint = default;
+        rb = null;
+
+        if (!_autoAimActive || _autoAimTarget == null || !_autoAimTarget.gameObject.activeInHierarchy)
+            return false;
+
+        if (_autoAimRbOwner != _autoAimTarget)
+        {
+            _autoAimRbOwner = _autoAimTarget;
+            _autoAimRb = _autoAimTarget.GetComponentInParent<Rigidbody>();
+        }
+
+        target = _autoAimTarget;
+        aimPoint = GetTargetAimPoint(_autoAimTarget);
+        rb = _autoAimRb;
+        return true;
+    }
     public Ray GetRay() => ray;
 
     /// <summary>

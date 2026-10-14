@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class TurretController : MonoBehaviour
@@ -231,6 +231,7 @@ public class TurretController : MonoBehaviour
     // ============================================================
     public void Shoot()
     {
+        if (IsOwnerStaggered) return;                     // 機體失衡 → 停止攻擊
         if (isFiring || isReloading) return;              // 正在連發或換彈 → 忽略
         if (Time.time < nextFireAllowedTime) return;      // fire 冷卻未到 → 忽略
 
@@ -243,6 +244,23 @@ public class TurretController : MonoBehaviour
         StartCoroutine(FireSequence());
     }
 
+    // 機體（敵人）的狀態。玩家的防禦砲塔沒有 ModularEntityStats，永遠不會失衡。
+    private ModularEntityStats _ownerStats;
+    private bool _ownerResolved;
+
+    private bool IsOwnerStaggered
+    {
+        get
+        {
+            if (!_ownerResolved)
+            {
+                _ownerResolved = true;
+                _ownerStats = GetComponentInParent<ModularEntityStats>();
+            }
+            return _ownerStats != null && _ownerStats.Status.IsStaggered;
+        }
+    }
+
     // 一次 fire：連續打 roundsPerFire 個 round，round 之間隔 timeBetweenShots
     private IEnumerator FireSequence()
     {
@@ -252,6 +270,7 @@ public class TurretController : MonoBehaviour
         for (int i = 0; i < rounds; i++)
         {
             if (ammoInMagazine <= 0) break;   // 連發途中打空就停
+            if (IsOwnerStaggered) break;      // 連發途中機體失衡 → 中斷
 
             FireOneRound();
             ammoInMagazine--;

@@ -31,6 +31,35 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
+      name: Wolf_Rig|a_Wolf_Deafult
+      takeName: Wolf_Rig|a_Wolf_Deafult
+      internalID: 2156023283955270467
+      firstFrame: 0
+      lastFrame: 0
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
       name: Wolf_Rig|Wolf_Attack
       takeName: Wolf_Rig|Wolf_Attack
       internalID: 7694027117216459332
@@ -60,11 +89,11 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: Wolf_Rig|Wolf_Deafult
-      takeName: Wolf_Rig|Wolf_Deafult
-      internalID: -8473552626398561032
+      name: Wolf_Rig|Wolf_Run
+      takeName: Wolf_Rig|Wolf_Run
+      internalID: -5497905955023616184
       firstFrame: 0
-      lastFrame: 0
+      lastFrame: 30
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -89,9 +118,9 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: Wolf_Rig|Wolf_Run
-      takeName: Wolf_Rig|Wolf_Run
-      internalID: -5497905955023616184
+      name: Wolf_Rig|Wolf_Stagger
+      takeName: Wolf_Rig|Wolf_Stagger
+      internalID: -6835644757048196998
       firstFrame: 0
       lastFrame: 30
       wrapMode: 0
@@ -187,7 +216,7 @@ ModelImporter:
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
-  avatarSetup: 1
+  avatarSetup: 0
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1
   importBlendShapeDeformPercent: 1
   remapMaterialsIfMaterialImportModeIsNone: 0

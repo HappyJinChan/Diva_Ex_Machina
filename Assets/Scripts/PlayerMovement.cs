@@ -49,6 +49,9 @@ public class PlayerMovement : MonoBehaviour
     //   能量：啟動扣一次完整的 dashEnergyCost；之後推進期間每秒扣 flyEnergyCost
     //         × assaultBoostEnergyCostMultiplier（預設減半）。
     //         期間不回復。
+    //   攔截（只在 AutoAim / 中鍵鎖定時）：推進方向改朝「以推進速度前進、會跟目標相遇的點」，
+    //         用的是近戰突進同一套攔截解算與防呆（解不出來就直接朝目標）。不受俯仰死區影響（高度直接對準）。
+    //         推進方向每秒最多轉 AimTurnRate 度（自由飛行時也一樣，所以跟原本手感相同）。左右側移照常保留。
     // 結束（再按一次 / 能量耗盡 / 按 Dash / 按近戰）時保留當下速度，交回一般移動慢慢減速。
     [Header("Assault Boost")]
     [Tooltip("鏡頭俯仰在這個角度（度）以內視為水平，不爬升也不俯衝。\n" +
@@ -72,6 +75,7 @@ public class PlayerMovement : MonoBehaviour
     private float _abFlyRequestUntil;                 // 推進中按住飛行鍵（同 flyRequestUntil 的緩衝做法）
     private Vector3 _abFacing = Vector3.forward;      // 突擊推進中角色面向（水平）
     private Vector3 _abAnimDir = Vector3.forward;     // 突擊推進中給移動動畫用的方向（水平）
+    private Vector3 _abSteerDir = Vector3.forward;    // 實際推進方向（3D）。每步以 AimTurnRate 轉向「鏡頭方向」或「攔截方向」
     private int _abAnimHash;
     private bool? _abAnimHasParam;
 
@@ -123,6 +127,49 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("同一隻敵人被撞擊傷害後，幾秒內不會再吃撞擊傷害（仍然會被撞飛）。\n" +
              "有移動腳本的敵人在擊退期間本來就不會再被撞；這是給沒有移動腳本、會在膠囊裡停留好幾幀的小型實體用的。")]
     [SerializeField, Min(0f)] private float assaultBoostRamDamageCooldown = 0.5f;
+
+    // ───── 突擊推進踢（Assault Boost Kick）─────
+    //
+    // 推進中再按一次突擊推進鍵：不是直接結束，而是以一記踢擊收尾。
+    //   · 踢擊期間不再推進（不扣能量、維持當下速度、重力仍關閉），面向維持推進方向。
+    //   · Animator：踢擊開始時 assaultBoost bool 就關掉、同時觸發 assaultBoostKick Trigger；
+    //     踢擊狀態用 Exit Time 轉出去（不要再用 assaultBoost bool 當條件）。
+    //   · 時間點由動畫事件決定（跟一般近戰一樣）：
+    //       AnimEvent_AssaultKickHitOn  → 開始判定
+    //       AnimEvent_AssaultKickHitOff → 結束判定
+    //       AnimEvent_AssaultKickEnd    → 踢擊結束，突擊推進正式結束（保留當下速度、恢復重力）
+    //   · 判定：從重心沿移動方向往前掃一個膠囊（跟撞擊同一種做法，高速時不會漏判）。
+    //     每隻敵人每次踢擊只吃一次傷害；大小不限（撞擊只撞小型）。
+    //   · 傷害 = 撞擊傷害 × assaultKickDamageMultiplier
+    //          = 撞擊係數 × 玩家總重量 × 相對速度 × 3。物理傷害、近戰類型（DamageKind.Melee）。
+    //     踢擊沒有撞擊的最低速度門檻。
+    //   · 小型敵人會照撞擊的參數被踢飛；中型、大型只吃傷害。
+    //   · Dash、近戰、能量歸零、打開介面一樣會中斷（直接結束推進）。
+    [Header("Assault Boost Kick")]
+    [Tooltip("踢擊傷害 = 撞擊傷害（係數 × 總重量 × 相對速度）× 這個倍率。")]
+    [SerializeField, Min(0f)] private float assaultKickDamageMultiplier = 3f;
+
+    [Tooltip("踢擊判定的半徑（公尺）。")]
+    [SerializeField, Min(0.1f)] private float assaultKickRadius = 1.8f;
+
+    [Tooltip("踢擊判定從重心往前延伸多遠（公尺），另外再加上這一步移動的距離。")]
+    [SerializeField, Min(0f)] private float assaultKickReach = 2f;
+
+    [Tooltip("保險：超過這個秒數還沒收到 AnimEvent_AssaultKickEnd 就強制結束（事件漏掉時用）。")]
+    [SerializeField, Min(0.1f)] private float assaultKickMaxDuration = 1.5f;
+
+    [Tooltip("Animator 上的 Trigger 參數名稱。沒有這個參數時略過動畫，只靠 Max Duration 結束。")]
+    [SerializeField] private string assaultKickAnimTrigger = "assaultBoostKick";
+
+    private bool _abKicking;
+    private bool _abKickHitOpen;
+    private float _abKickEndTime;
+    private readonly HashSet<ModularEntityStats> _abKickHit = new HashSet<ModularEntityStats>();
+    private int _abKickAnimHash;
+    private bool? _abKickAnimHasParam;
+
+    /// <summary>是否正在突擊推進踢（此時 IsAssaultBoosting 也是 true）。</summary>
+    public bool IsAssaultKicking => _abKicking;
 
     // 每隻敵人最後一次吃撞擊傷害的時間
     private readonly Dictionary<ModularEntityStats, float> _ramDamageTimes = new Dictionary<ModularEntityStats, float>();
@@ -224,8 +271,9 @@ public class PlayerMovement : MonoBehaviour
         CarryWithPlatformRotation(Time.fixedDeltaTime);
         if (_assaultBoosting)
         {
-            // 突擊推進接管水平與垂直速度；一般移動與飛行暫停
-            ApplyAssaultBoostFixed(Time.fixedDeltaTime);
+            // 突擊推進接管水平與垂直速度；一般移動與飛行暫停。踢擊中改跑踢擊。
+            if (_abKicking) ApplyAssaultKickFixed(Time.fixedDeltaTime);
+            else ApplyAssaultBoostFixed(Time.fixedDeltaTime);
         }
         else
         {
@@ -1087,15 +1135,17 @@ public class PlayerMovement : MonoBehaviour
     //   1) 速度比太高 → 根本不解
     //   2) 攔截點比目標遠太多倍 → 拒絕
     //   3) 預估抵達時間太長 → 拒絕（那麼久之後戰況早變了）
+    //
+    // speed：自己的前進速度。不給（≤ 0）= 近戰突進速度；突擊推進的攔截傳推進速度。
     private bool TrySolveIntercept(Vector3 selfPos, Vector3 targetPos,
                                    Vector3 toTarget, Vector3 targetVelRel,
-                                   out Vector3 intercept)
+                                   out Vector3 intercept, float speed = -1f)
     {
         intercept = targetPos;
 
         if (targetVelRel.sqrMagnitude <= 0.01f) return false;
 
-        float dashSpeed = Mathf.Max(0.01f, _meleeDashSpeed);
+        float dashSpeed = Mathf.Max(0.01f, speed > 0f ? speed : _meleeDashSpeed);
 
         // 1) 速度比：接近 1 時方程退化
         if (targetVelRel.magnitude / dashSpeed >= interceptMaxSpeedRatio) return false;
@@ -1301,10 +1351,13 @@ public class PlayerMovement : MonoBehaviour
     //  突擊推進（Assault Boost）
     // ────────────────────────────────────────────────
 
-    /// <summary>突擊推進按鍵：沒在推進就開始，正在推進就結束。</summary>
+    /// <summary>突擊推進按鍵：沒在推進就開始；正在推進就以踢擊收尾（踢擊中再按沒有作用）。</summary>
     public void AssaultBoostAction()
     {
-        if (_assaultBoosting) EndAssaultBoost();
+        if (_assaultBoosting)
+        {
+            if (!_abKicking) BeginAssaultKick();
+        }
         else TryBeginAssaultBoost();
     }
 
@@ -1341,6 +1394,10 @@ public class PlayerMovement : MonoBehaviour
 
         _abFacing = FlatForwardOr(characterModel != null ? characterModel.forward : transform.forward, Vector3.forward);
         _abAnimDir = _abFacing;
+        {
+            Camera startCam = (PlayerAiming.Instance != null) ? PlayerAiming.Instance.MainCamera : Camera.main;
+            _abSteerDir = (startCam != null) ? startCam.transform.forward : _abFacing;   // 從鏡頭方向開始轉
+        }
         _abFlyRequestUntil = 0f;
         _assaultBoosting = true;
         SetAssaultBoostAnim(true);
@@ -1361,6 +1418,15 @@ public class PlayerMovement : MonoBehaviour
         _assaultBoosting = false;
         playerRigidbody.useGravity = _abPrevGravity;
         SetAssaultBoostAnim(false);
+
+        // 踢擊中被中斷（Dash、近戰、能量歸零…）或正常結束：一起收掉
+        if (_abKicking)
+        {
+            _abKicking = false;
+            _abKickHitOpen = false;
+            _abKickHit.Clear();
+            ResetAssaultKickTrigger();
+        }
 
         if (PlayerAiming.Instance != null) PlayerAiming.Instance.SetManualTurnRateLimit(false);
     }
@@ -1394,16 +1460,32 @@ public class PlayerMovement : MonoBehaviour
         if (aimDir.sqrMagnitude < 0.0001f) aimDir = _abFacing;
         aimDir.Normalize();
 
-        Vector3 flatForward = FlatForwardOr(aimDir, _abFacing);
-        Vector3 right = Vector3.Cross(Vector3.up, flatForward);
-
         // 一律以「相對平台」的速度計算（跟一般移動、Dash 相同）
         Vector3 platformVel = GetMobilePlatformVelocity();
         Vector3 vRel = playerRigidbody.linearVelocity - platformVel;
 
-        // 3) 俯仰：鏡頭超出死區的部分才算數。沒有推進器（flySpeed = 0）時一律當作水平。
+        // 2.5) 攔截：AutoAim（中鍵鎖定）中，推進改朝攔截點（解不出來就直接朝目標）
+        bool intercepting = TryGetAssaultBoostInterceptDir(platformVel, stats.dashSpeed, out Vector3 interceptDir);
+        Vector3 wantDir = intercepting ? interceptDir : aimDir;
+
+        // 推進方向每秒最多轉 AimTurnRate 度。自由飛行時鏡頭本身的轉速也被同一個值限制，所以手感不變；
+        // 攔截時系統只幫忙修正，大角度的閃避仍然甩得開。
+        float turnRate = Mathf.Max(0f, stats.GetAimTurnRate());
+        if (_abSteerDir.sqrMagnitude < 0.0001f) _abSteerDir = wantDir;
+        _abSteerDir = Vector3.RotateTowards(_abSteerDir.normalized, wantDir, turnRate * Mathf.Deg2Rad * dt, 0f);
+        if (_abSteerDir.sqrMagnitude < 0.0001f) _abSteerDir = wantDir;
+        _abSteerDir.Normalize();
+        aimDir = _abSteerDir;
+
+        Vector3 flatForward = FlatForwardOr(aimDir, _abFacing);
+        Vector3 right = Vector3.Cross(Vector3.up, flatForward);
+
+        // 3) 俯仰：鏡頭超出死區的部分才算數（攔截時不套死區，高度直接對準目標）。
+        //    沒有推進器（flySpeed = 0）時一律當作水平。
         float pitch = Mathf.Asin(Mathf.Clamp(aimDir.y, -1f, 1f)) * Mathf.Rad2Deg;
-        float effectivePitch = Mathf.Sign(pitch) * Mathf.Max(0f, Mathf.Abs(pitch) - assaultBoostPitchDeadZone);
+        float effectivePitch = intercepting
+            ? pitch
+            : Mathf.Sign(pitch) * Mathf.Max(0f, Mathf.Abs(pitch) - assaultBoostPitchDeadZone);
         if (stats.flySpeed <= 0f) effectivePitch = 0f;
         float pitchRad = effectivePitch * Mathf.Deg2Rad;
 
@@ -1446,6 +1528,197 @@ public class PlayerMovement : MonoBehaviour
         // 6) 給 RotateCharacter：角色面向推進方向，移動動畫用實際的水平移動方向（側移時會偏向旁邊）
         _abFacing = flatForward;
         if (horizontalRel.sqrMagnitude > 0.0001f) _abAnimDir = horizontalRel.normalized;
+    }
+
+    // ═══════════════════════ 突擊推進踢 ═══════════════════════
+
+    private void BeginAssaultKick()
+    {
+        _abKicking = true;
+        _abKickHitOpen = false;
+        _abKickHit.Clear();
+        _abKickEndTime = Time.time + assaultKickMaxDuration;
+
+        // 踢擊一開始就把推進的 bool 關掉，只靠 Trigger 進踢擊。
+        // 否則 bool 還是 true，Any State → Assault Boost 會在踢擊途中又把狀態搶回去。
+        // （推進的邏輯狀態 _assaultBoosting 仍然是 true，要等踢擊結束才真正結束。）
+        SetAssaultBoostAnim(false);
+        if (!TrySetAssaultKickTrigger())
+            Debug.LogWarning($"[PlayerMovement] Animator 沒有 Trigger「{assaultKickAnimTrigger}」，踢擊沒有動畫，" +
+                             $"會在 {assaultKickMaxDuration} 秒後自動結束。", this);
+    }
+
+    /// <summary>動畫事件：踢擊開始判定。</summary>
+    public void OnAssaultKickHitOn()
+    {
+        if (!_abKicking) return;
+        _abKickHitOpen = true;
+        AssaultKickSweep(Time.fixedDeltaTime);   // 這一幀就先判一次
+    }
+
+    /// <summary>動畫事件：踢擊結束判定。</summary>
+    public void OnAssaultKickHitOff()
+    {
+        if (!_abKicking) return;
+        _abKickHitOpen = false;
+    }
+
+    /// <summary>動畫事件：踢擊結束 → 突擊推進正式結束。</summary>
+    public void OnAssaultKickEnd()
+    {
+        if (!_abKicking) return;
+        EndAssaultBoost();
+    }
+
+    /// <summary>踢擊期間每個物理步：不推進、不扣能量，維持當下速度；判定開啟時掃描前方。</summary>
+    private void ApplyAssaultKickFixed(float dt)
+    {
+        if (Time.time >= _abKickEndTime)
+        {
+            EndAssaultBoost();   // 保險：動畫事件沒來
+            return;
+        }
+
+        if (_abKickHitOpen) AssaultKickSweep(dt);
+    }
+
+    private void AssaultKickSweep(float dt)
+    {
+        Vector3 platformVel = GetMobilePlatformVelocity();
+        Vector3 vRel = playerRigidbody.linearVelocity - platformVel;
+        float speed = vRel.magnitude;
+
+        // 掃描方向：在動就沿移動方向，幾乎沒在動就沿面向
+        Vector3 dir = (speed > 1f) ? vRel / speed : _abFacing;
+        Vector3 start = playerRigidbody.worldCenterOfMass;
+        Vector3 end = start + dir * (assaultKickReach + speed * dt);
+
+        int mask = assaultBoostRamLayers.value != 0 ? assaultBoostRamLayers.value : LayerMask.GetMask("Enemy");
+        int count = Physics.OverlapCapsuleNonAlloc(start, end, assaultKickRadius, s_RamHits, mask,
+                                                   QueryTriggerInteraction.Ignore);
+        if (count == 0) return;
+
+        Vector3 flatDir = new Vector3(dir.x, 0f, dir.z);
+        if (flatDir.sqrMagnitude < 0.0001f) flatDir = _abFacing;
+        flatDir.Normalize();
+
+        float weight = (PlayerStats.Instance != null) ? PlayerStats.Instance.GetTotalWeight() : 0f;
+
+        for (int i = 0; i < count; i++)
+        {
+            Collider col = s_RamHits[i];
+            if (col == null) continue;
+
+            var stats = col.GetComponentInParent<ModularEntityStats>();
+            if (stats == null || stats.IsDead) continue;
+            if (!_abKickHit.Add(stats)) continue;   // 每隻敵人每次踢擊只吃一次
+
+            // ── 傷害 = 撞擊傷害 × 倍率（敵人速度要在踢飛之前讀）──
+            Rigidbody enemyRb = col.attachedRigidbody;
+            if (enemyRb == null) enemyRb = stats.GetComponentInParent<Rigidbody>();
+            float closing = RamClosingSpeed(vRel + platformVel, enemyRb, stats.transform.position, dir, Mathf.Max(speed, 0.01f));
+            float damage = assaultBoostRamDamagePerMomentum * weight * closing * assaultKickDamageMultiplier;
+
+            if (damage > 0f)
+            {
+                var info = new DamageInfo(damage, 0f, 0f, 0f) { kind = DamageKind.Melee };
+                stats.TakeDamage(info, gameObject);
+
+                if (Effects != null) Effects.PlayMeleeHitFeedback(col.ClosestPoint(start));
+            }
+
+            if (stats.IsDead) continue;
+            if (stats.entitySize != EntitySize.Small) continue;   // 中型、大型只吃傷害
+
+            // ── 小型：照撞擊的參數踢飛 ──
+            var movement = stats.GetComponent<ModularEntityMovement>();
+            if (movement == null) movement = stats.GetComponentInChildren<ModularEntityMovement>();
+
+            Vector3 toEnemy = stats.transform.position - playerRigidbody.position;
+            toEnemy.y = 0f;
+            Vector3 side = toEnemy - flatDir * Vector3.Dot(toEnemy, flatDir);
+            Vector3 knockDir = flatDir;
+            if (side.sqrMagnitude > 0.0001f)
+                knockDir = (flatDir + side.normalized * assaultBoostRamSideBias).normalized;
+
+            Vector3 knockWorld = knockDir * (speed * assaultBoostRamSpeedMultiplier)
+                               + Vector3.up * assaultBoostRamUpwardSpeed
+                               + platformVel;
+
+            if (movement != null)
+            {
+                movement.ApplyKnockback(knockWorld, assaultBoostRamKnockbackDuration);
+            }
+            else
+            {
+                Rigidbody rb = col.attachedRigidbody;
+                if (rb != null && !rb.isKinematic) rb.linearVelocity = knockWorld;
+            }
+        }
+    }
+
+    private bool TrySetAssaultKickTrigger()
+    {
+        Animator anim = (playerAnimation != null) ? playerAnimation.anim : null;
+        if (!HasAssaultKickTrigger(anim)) return false;
+        anim.SetTrigger(_abKickAnimHash);
+        return true;
+    }
+
+    private void ResetAssaultKickTrigger()
+    {
+        Animator anim = (playerAnimation != null) ? playerAnimation.anim : null;
+        if (HasAssaultKickTrigger(anim)) anim.ResetTrigger(_abKickAnimHash);
+    }
+
+    private bool HasAssaultKickTrigger(Animator anim)
+    {
+        if (anim == null || string.IsNullOrEmpty(assaultKickAnimTrigger)) return false;
+
+        if (_abKickAnimHasParam == null)
+        {
+            _abKickAnimHash = Animator.StringToHash(assaultKickAnimTrigger);
+            _abKickAnimHasParam = false;
+            foreach (var p in anim.parameters)
+            {
+                if (p.nameHash == _abKickAnimHash && p.type == AnimatorControllerParameterType.Trigger)
+                {
+                    _abKickAnimHasParam = true;
+                    break;
+                }
+            }
+        }
+        return _abKickAnimHasParam == true;
+    }
+
+    /// <summary>
+    /// 突擊推進的攔截方向（3D，單位向量）。只在 AutoAim（中鍵鎖定）中有目標時回傳 true。
+    /// 用近戰突進同一套攔截解算與防呆，速度換成推進速度；解不出來就直接朝目標的瞄準點。
+    /// 目標速度扣掉自己腳下的平台速度（兩者都在船上時，共同的船速不算提前量）。
+    /// </summary>
+    private bool TryGetAssaultBoostInterceptDir(Vector3 platformVel, float boostSpeed, out Vector3 dir)
+    {
+        dir = Vector3.zero;
+        PlayerAiming aiming = PlayerAiming.Instance;
+        if (aiming == null || !aiming.TryGetAutoAimTarget(out _, out Vector3 targetPos, out Rigidbody targetRb))
+            return false;
+
+        Vector3 selfPos = playerRigidbody.worldCenterOfMass;
+        Vector3 toTarget = targetPos - selfPos;
+        if (toTarget.sqrMagnitude < 0.01f) return false;   // 已經貼在目標身上：照鏡頭方向
+
+        Vector3 targetVelRel = (targetRb != null && !targetRb.isKinematic)
+            ? targetRb.linearVelocity - platformVel
+            : Vector3.zero;
+
+        Vector3 goal = targetPos;
+        if (TrySolveIntercept(selfPos, targetPos, toTarget, targetVelRel, out Vector3 intercept, boostSpeed))
+            goal = intercept;
+
+        Vector3 d = goal - selfPos;
+        if (d.sqrMagnitude < 0.0001f) d = toTarget;
+        dir = d.normalized;
+        return true;
     }
 
     /// <summary>

@@ -10,6 +10,10 @@ public class Bullet : MonoBehaviour, IPooled
     public float energyDamage = 0;
     public float coldDamage = 0;
 
+    // 衝擊值：扣目標的 ACS，扣到 0 觸發失衡。受距離衰減，不吃暴擊。
+    // 玩家的子彈開火時由 RangeAttackController 用武器的 Impact 蓋掉；敵人的子彈吃 prefab 上的值。
+    public float impact = 0;
+
     public float criticalChance = 0.05f;
     public float criticalMultiplier = 1.5f;
 
@@ -297,6 +301,7 @@ public class Bullet : MonoBehaviour, IPooled
     private struct Defaults
     {
         public float physicalDamage, explosionDamage, energyDamage, coldDamage;
+        public float impact;
         public float criticalChance, criticalMultiplier;
         public float lifespan;
         public LayerMask ignoreLayer, enemyLayer;
@@ -327,6 +332,7 @@ public class Bullet : MonoBehaviour, IPooled
         _defaults.explosionDamage = explosionDamage;
         _defaults.energyDamage = energyDamage;
         _defaults.coldDamage = coldDamage;
+        _defaults.impact = impact;
 
         _defaults.criticalChance = criticalChance;
         _defaults.criticalMultiplier = criticalMultiplier;
@@ -372,6 +378,7 @@ public class Bullet : MonoBehaviour, IPooled
         explosionDamage = _defaults.explosionDamage;
         energyDamage = _defaults.energyDamage;
         coldDamage = _defaults.coldDamage;
+        impact = _defaults.impact;
 
         criticalChance = _defaults.criticalChance;
         criticalMultiplier = _defaults.criticalMultiplier;
@@ -593,16 +600,11 @@ public class Bullet : MonoBehaviour, IPooled
     {
         if (!_live) return;
 
-        // 0) 累計飛行距離：上一個 physics step 子彈相對發射者移動的距離。
-        //    剛上場的第一次 FixedUpdate 還沒經過任何 physics step，不算。
-        if (_steppedSinceSpawn && rb != null)
-            _flightDistance += (rb.linearVelocity - _inheritedVelocity).magnitude * Time.fixedDeltaTime;
-
-        // 這個 FixedUpdate 之後就是這一世的第一個 physics step，下一次渲染時插值已經可靠
-        _steppedSinceSpawn = true;
-
         // 1) 上一個 physics step 由 Predict() 預測到的命中，延一步後才結算。
         //    對應原本 Predict() 裡的 yield return null。
+        //
+        //    ★ 一定要在「累計飛行距離」之前：Predict 已經把距離補到命中點，
+        //      先累計的話，命中會多算一整個 physics step（30 Hz、300 m/s 就是 10 m）。
         if (_hasPendingHit)
         {
             _hasPendingHit = false;
@@ -611,11 +613,22 @@ public class Bullet : MonoBehaviour, IPooled
 
             // 目標可能在這一步之間被銷毀了；原本的 coroutine 版在這裡會丟例外
             if (pending != null)
-            {
                 OnTriggerEnterFixed(pending);
-                if (!_live) return;
-            }
+
+            // 預測的命中點只屬於這一次命中。不清掉的話，貫穿彈之後沒經過預測的命中，
+            // 特效會出現在這個舊位置。
+            _hasPendingHitPoint = false;
+
+            if (!_live) return;
         }
+
+        // 0) 累計飛行距離：上一個 physics step 子彈相對發射者移動的距離。
+        //    剛上場的第一次 FixedUpdate 還沒經過任何 physics step，不算。
+        if (_steppedSinceSpawn && rb != null)
+            _flightDistance += (rb.linearVelocity - _inheritedVelocity).magnitude * Time.fixedDeltaTime;
+
+        // 這個 FixedUpdate 之後就是這一世的第一個 physics step，下一次渲染時插值已經可靠
+        _steppedSinceSpawn = true;
 
         // 2) 壽命
         if (Time.time >= _despawnTime)
@@ -725,6 +738,13 @@ public class Bullet : MonoBehaviour, IPooled
         int layerMask = BuildReactMask();
         if (Physics.Linecast(from, to, out RaycastHit hit, layerMask))
         {
+            // 距離衰減：子彈被拉回命中點，「from → 命中點」這段之後的 physics step 不會再算到，這裡補上。
+            // 補完之後 _flightDistance 就是命中點的距離 —— 這一步內的 Trigger 回呼、
+            // 下一個 FixedUpdate 的結算，用的都是它。換算成相對發射者的距離（扣掉繼承的船速）。
+            float speed = rb.linearVelocity.magnitude;
+            if (speed > 0.0001f)
+                _flightDistance += hit.distance * ((rb.linearVelocity - _inheritedVelocity).magnitude / speed);
+
             transform.position = hit.point;
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
@@ -1028,15 +1048,17 @@ public class Bullet : MonoBehaviour, IPooled
             if (Random.value < Mathf.Clamp01(criticalChance))
                 critMul = Mathf.Max(1f, criticalMultiplier);
 
-            // 距離衰減：乘在整份傷害上（之後加新的傷害欄位也會自動跟著衰減）
-            float mul = critMul * GetFalloffMultiplier(_flightDistance);
+            // 距離衰減：乘在四種傷害與衝擊值上。暴擊只乘傷害，不乘衝擊值。
+            float falloff = GetFalloffMultiplier(_flightDistance);
+            float mul = critMul * falloff;
 
-            // 只交出「原始四種傷害」，防禦由被打的目標自己套用
+            // 只交出「原始四種傷害 + 衝擊值」，防禦由被打的目標自己套用
             DamageInfo dmg = new DamageInfo(
                 physicalDamage * mul,
                 explosionDamage * mul,
                 energyDamage * mul,
-                coldDamage * mul
+                coldDamage * mul,
+                impact * falloff
             );
 
             target.TakeDamage(dmg, attacker);

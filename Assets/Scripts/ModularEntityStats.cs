@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Pool;
 using System;
 using System.Collections;
@@ -74,14 +74,44 @@ public class ModularEntityStats : MonoBehaviour, IDamageable
 
     private static readonly Collider[] s_ExplosionHits = new Collider[128];
 
+    // 特殊狀態（失衡等）。沒有掛的話第一次用到時自動補上，見 EntityStatusEffects。
+    private EntityStatusEffects _status;
+
+    /// <summary>這個實體的特殊狀態管理（失衡、ACS…）。</summary>
+    public EntityStatusEffects Status
+    {
+        get
+        {
+            if (_status == null)
+            {
+                _status = GetComponent<EntityStatusEffects>();
+                if (_status == null) _status = gameObject.AddComponent<EntityStatusEffects>();
+            }
+            return _status;
+        }
+    }
+
     public void TakeDamage(DamageInfo dmg, GameObject attacker)
     {
         if (_dead) return;
 
-        float amount = DefenseFormula.Apply(dmg, physicalDefense, explosionDefense, energyDefense, coldDefense);
+        EntityStatusEffects status = Status;
 
-        if (amount <= 0f) return;
+        // 失衡中受到的傷害增加。倍率看的是「這一擊之前」的狀態 ——
+        // 打到失衡的那一擊本身不加成。
+        float amount = DefenseFormula.Apply(dmg, physicalDefense, explosionDefense, energyDefense, coldDefense)
+                       * status.DamageTakenMultiplier;
 
+        if (amount > 0f)
+            ApplyDamage(amount, attacker);
+
+        // 衝擊：扣 ACS。只有衝擊、沒有傷害的攻擊也算。這一擊打死的話就不用了。
+        if (!_dead && dmg.impact > 0f)
+            status.ApplyImpact(dmg.impact);
+    }
+
+    private void ApplyDamage(float amount, GameObject attacker)
+    {
         health -= amount;
         modularEntityEffectManager.PlayDamageFeedback(amount);
 

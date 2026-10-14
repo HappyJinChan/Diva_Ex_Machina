@@ -8,6 +8,10 @@ public class WeaponDamage
     public float energyDamage;
     public float coldDamage;
 
+    // 衝擊值（Attributes.Impact）：扣目標的 ACS，扣到 0 觸發失衡。
+    // 子彈：跟傷害一樣受距離衰減，不吃暴擊。近戰：跟傷害一樣乘 meleeOutput 與該段倍率，不吃暴擊。
+    public float impact;
+
     // 暴擊：以武器本體為基礎（覆蓋玩家基礎暴擊）+ 零件 / 手甲 / 頭盔的加成。
     // 由 AttackManager 在裝備變動時寫入，子彈與近戰 hitbox 直接讀這裡。
     public float criticalChance;

@@ -318,7 +318,8 @@ public class MeleeAttackController : MonoBehaviour
                 _activeWeapon.damage.physicalDamage * mul,
                 _activeWeapon.damage.explosionDamage * mul,
                 _activeWeapon.damage.energyDamage * mul,
-                _activeWeapon.damage.coldDamage * mul),
+                _activeWeapon.damage.coldDamage * mul,
+                _activeWeapon.damage.impact * mul),   // 衝擊值：跟傷害同倍率（meleeOutput × 該段倍率）
             // 暴擊：以武器本體為基礎 + 零件 / 手甲 / 頭盔的加成（由 AttackManager 算好）
             criticalChance = _activeWeapon.damage.criticalChance,
             criticalMultiplier = _activeWeapon.damage.criticalMultiplier,

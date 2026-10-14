@@ -53,6 +53,7 @@ public enum Attributes
     BulletSpeed = 15,
     FiringMode = 16,          //0:Single, 1:Auto, 2:Charge
     EffectiveRange = 42,      // 全傷距離 R（公尺）。超過後線性衰減，到 2R 剩 30%。0 = 不衰減。武器本體 Add，槍管 Multiplier
+    Impact = 43,              // 衝擊值：扣目標的 ACS，扣到 0 觸發失衡。不吃防禦、不吃暴擊；子彈的衝擊值受距離衰減
     piercing = 41,          // 子彈穿透力，0 = 無穿透，1 = 穿透 1 個目標，2 = 穿透 2 個目標，依此類推；-1 = 無限穿透
 
     //Energy
@@ -362,6 +363,9 @@ public class PlayerStats : MonoBehaviour, IDamageable
              "GetComponentInChildren 很容易抓到錯的那一個。")]
     [SerializeField] private MMF_Player hitFeedback;
 
+    [Tooltip("被近戰打中時播這個（DamageKind.Melee），取代上面的 Hit Feedback。留空 = 近戰也播 Hit Feedback。")]
+    [SerializeField] private MMF_Player meleeHitFeedback;
+
     //Buff之前全身基礎屬性 
     [Header("Base Stats (Foldout)")]
     public BaseStats baseStats = new BaseStats();
@@ -597,8 +601,12 @@ public class PlayerStats : MonoBehaviour, IDamageable
         //   要做「重擊震得更兇」的話，intensity 要先正規化到 0~1 再傳。
         //
         // 連續中彈時靠 MMF_Player 自己的 Cooldown Duration 節流，不在這裡擋。
-        if (hitFeedback != null)
-            hitFeedback.PlayFeedbacks();
+        // 近戰：有指定 meleeHitFeedback 就播它（比較重的震動），否則照常播 hitFeedback。
+        MMF_Player feedback = (dmg.kind == DamageKind.Melee && meleeHitFeedback != null)
+            ? meleeHitFeedback
+            : hitFeedback;
+        if (feedback != null)
+            feedback.PlayFeedbacks();
 
         if (currentHealth <= 0f)
         {
@@ -888,6 +896,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
             case Attributes.FiringMode:
             case Attributes.piercing:
             case Attributes.EffectiveRange:
+            case Attributes.Impact:
             case Attributes.CriticalChance:
             case Attributes.CriticalMultiplier:
             case Attributes.MeleeReloadTime:

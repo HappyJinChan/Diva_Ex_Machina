@@ -141,6 +141,7 @@ public class AttackManager : MonoBehaviour
         outWeapon.damage.explosionDamage = 0f;
         outWeapon.damage.energyDamage = 0f;
         outWeapon.damage.coldDamage = 0f;
+        outWeapon.damage.impact = 0f;
         outWeapon.damage.criticalChance = 0f;
         outWeapon.damage.criticalMultiplier = 1f;
 
@@ -201,6 +202,7 @@ public class AttackManager : MonoBehaviour
         outWeapon.damage.explosionDamage = 0f;
         outWeapon.damage.energyDamage = 0f;
         outWeapon.damage.coldDamage = 0f;
+        outWeapon.damage.impact = 0f;
         outWeapon.damage.criticalChance = 0f;
         outWeapon.damage.criticalMultiplier = 1f;
 
@@ -310,6 +312,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.damage.explosionDamage = hand.GetAttribute(Attributes.ExplosionDamage);
             outWeapon.damage.energyDamage = hand.GetAttribute(Attributes.EnergyDamage);
             outWeapon.damage.coldDamage = hand.GetAttribute(Attributes.ColdDamage);
+            outWeapon.damage.impact = Mathf.Max(0f, hand.GetAttribute(Attributes.Impact));
             ApplyCritical(hand.buffs, outWeapon);
 
             outWeapon.range.reloadTime = hand.GetAttribute(Attributes.ReloadTime);
@@ -362,6 +365,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.damage.explosionDamage = hand.GetAttribute(Attributes.ExplosionDamage);
             outWeapon.damage.energyDamage = hand.GetAttribute(Attributes.EnergyDamage);
             outWeapon.damage.coldDamage = hand.GetAttribute(Attributes.ColdDamage);
+            outWeapon.damage.impact = Mathf.Max(0f, hand.GetAttribute(Attributes.Impact));
             ApplyCritical(hand.buffs, outWeapon);
 
             // 2) 武器類型：每次現算，不存進 Instance。
@@ -466,6 +470,7 @@ public class AttackManager : MonoBehaviour
             outWeapon.damage.explosionDamage = shoulder.GetAttribute(Attributes.ExplosionDamage);
             outWeapon.damage.energyDamage = shoulder.GetAttribute(Attributes.EnergyDamage);
             outWeapon.damage.coldDamage = shoulder.GetAttribute(Attributes.ColdDamage);
+            outWeapon.damage.impact = Mathf.Max(0f, shoulder.GetAttribute(Attributes.Impact));
             ApplyCritical(shoulder.buffs, outWeapon);
 
             outWeapon.range.reloadTime = shoulder.GetAttribute(Attributes.ReloadTime);

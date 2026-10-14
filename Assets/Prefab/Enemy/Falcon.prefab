@@ -1189,7 +1189,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4692694177610837441}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: cbe1864c09c4f56488cbb304c07200a3, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1212,7 +1212,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4692694177610837441}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: cbe1864c09c4f56488cbb304c07200a3, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1233,7 +1233,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4692694177610837441}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: cbe1864c09c4f56488cbb304c07200a3, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1724,6 +1724,7 @@ GameObject:
   - component: {fileID: 5651169939837934045}
   - component: {fileID: 6744390417566336108}
   - component: {fileID: 7897646302885439734}
+  - component: {fileID: 8430547879345299795}
   m_Layer: 9
   m_Name: Falcon
   m_TagString: Enemy
@@ -1979,6 +1980,24 @@ MonoBehaviour:
   overlayShader: {fileID: 4800000, guid: 4015c7514db91f74ebe092e401033253, type: 3}
   flashColor: {r: 1, g: 1, b: 1, a: 1}
   exclude: []
+--- !u!114 &8430547879345299795
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7283447650030811870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87c589be52c8e3d44b1214bdaf3acadc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityStatusEffects
+  maxACS: 100
+  currentACS: 0
+  staggerDuration: 3
+  staggerDamageTakenMultiplier: 1.5
+  staggerAnimBool: stagger
+  staggerFeedback: {fileID: 0}
 --- !u!1 &7319143396022305101
 GameObject:
   m_ObjectHideFlags: 0

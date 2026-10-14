@@ -43,11 +43,67 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
     {
         GroundCheck();
 
+        // 失衡開始的那一步：水平速度（相對平台）先砍到 staggerSpeedRetain，之後用 decelerationSpeed 減速到 0。
+        // 正在被撞飛時不砍，讓它照物理飛完。
+        bool staggered = IsStaggered;
+        if (staggered && !_wasStaggered && !IsKnockedBack)
+            CutHorizontalSpeedForStagger();
+        _wasStaggered = staggered;
+
         // 被撞飛期間：不控制移動也不轉向，交給物理（速度、重力）自己飛
         if (IsKnockedBack) return;
 
+        // 失衡：無法行動。清掉移動輸入、朝向、近戰覆寫，下面照常用 decelerationSpeed 減速到停。
+        // 失衡結束後由 Brain 的下一次思考重新指定。
+        if (staggered)
+        {
+            moveDirection = Vector3.zero;
+            _hasFacingTarget = false;
+            _hasVelocityOverride = false;
+        }
+
         ApplyHorizontalMovementFixed(dt);
         UpdateFacing();
+    }
+
+    // ── 失衡 ─────────────────────────────────────────────────────────────
+
+    /// <summary>這個實體的特殊狀態管理（失衡、ACS…）。</summary>
+    public EntityStatusEffects Status => modularEntityStats != null ? modularEntityStats.Status : null;
+
+    [Header("Stagger")]
+    [Tooltip("失衡開始時，水平速度（相對平台）保留的比例，之後用 decelerationSpeed 減速到 0。\n" +
+             "0.1 = 瞬間降到原本的 10%。1 = 不砍，直接用 decelerationSpeed 慢慢停。")]
+    [SerializeField, Range(0f, 1f)] protected float staggerSpeedRetain = 0.1f;
+
+    private bool _wasStaggered;
+
+    private void CutHorizontalSpeedForStagger() => ScaleHorizontalVelocity(staggerSpeedRetain);
+
+    /// <summary>
+    /// 把水平速度（相對平台）立刻乘上 ratio。垂直速度、平台速度不變。
+    /// 失衡開始、近戰衝刺結束（MeleeDashEnd）用來「踩煞車」。
+    /// </summary>
+    public void ScaleHorizontalVelocity(float ratio)
+    {
+        if (entityRigidbody == null || entityRigidbody.isKinematic) return;
+
+        ratio = Mathf.Clamp01(ratio);
+        Vector3 platformVel = GetMobilePlatformVelocity();
+        Vector3 vRel = entityRigidbody.linearVelocity - platformVel;
+        vRel.x *= ratio;
+        vRel.z *= ratio;
+        entityRigidbody.linearVelocity = vRel + platformVel;
+    }
+
+    /// <summary>是否正在失衡（期間無法行動）。</summary>
+    public bool IsStaggered
+    {
+        get
+        {
+            EntityStatusEffects s = Status;
+            return s != null && s.IsStaggered;
+        }
     }
 
     // ── 撞飛 ─────────────────────────────────────────────────────────────

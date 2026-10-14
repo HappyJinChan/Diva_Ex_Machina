@@ -1,4 +1,4 @@
-using NaughtyAttributes;
+﻿using NaughtyAttributes;
 using UnityEngine;
 
 public class FalconBrain : ModularEntityBrain
@@ -286,6 +286,13 @@ public class FalconBrain : ModularEntityBrain
 
     private void LaunchMissile()
     {
+        // 失衡中不發射（這是 1.5 秒前排程的）。同時取消，失衡結束後不補發。
+        if (modularEntityMovement != null && modularEntityMovement.IsStaggered)
+        {
+            CancelInvoke(nameof(LaunchMissile));
+            return;
+        }
+
         // 檢查隼的高度是否大於 retreatHeight 的一半
         if (falconMovement.FlyHeight() > retreatHeight / 2)
         {

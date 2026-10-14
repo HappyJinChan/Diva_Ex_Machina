@@ -673,4 +673,31 @@ public class PlayerAnimation : MonoBehaviour
     public void AnimEvent_MeleeComboWindow() => meleeController?.OnComboWindow();
 
     public void AnimEvent_MeleeStepEnd() => meleeController?.OnStepEnd();
+
+    // ────────────────────────────────────────────────
+    //  突擊推進踢（Assault Boost Kick）的動畫事件 → PlayerMovement
+    //
+    //  在 Assault Boost Kick 動畫上依序放：
+    //    AnimEvent_AssaultKickHitOn   腳踢出去、開始有判定
+    //    AnimEvent_AssaultKickHitOff  判定結束
+    //    AnimEvent_AssaultKickEnd     踢擊結束（突擊推進在這裡正式結束）
+    //  End 漏掉的話會靠 PlayerMovement 的 Assault Kick Max Duration 兜底。
+    // ────────────────────────────────────────────────
+
+    private PlayerMovement _playerMovement;
+    private PlayerMovement Movement
+    {
+        get
+        {
+            if (_playerMovement == null) _playerMovement = GetComponentInParent<PlayerMovement>();
+            if (_playerMovement == null && attackManager != null) _playerMovement = attackManager.GetComponentInParent<PlayerMovement>();
+            return _playerMovement;
+        }
+    }
+
+    public void AnimEvent_AssaultKickHitOn() => Movement?.OnAssaultKickHitOn();
+
+    public void AnimEvent_AssaultKickHitOff() => Movement?.OnAssaultKickHitOff();
+
+    public void AnimEvent_AssaultKickEnd() => Movement?.OnAssaultKickEnd();
 }

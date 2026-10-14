@@ -241,6 +241,17 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
     /// <summary>一次完整的思考。子類別要加邏輯就覆寫這裡（記得呼叫 base.Think()）。</summary>
     protected virtual void Think()
     {
+        // 失衡：不做任何決策（移動、朝向、近戰由 Movement / MeleeManager 自己停掉，砲塔自己停火）。
+        // 只維持偵測與目標優先度，失衡結束時才有正確的目標可以接著打。
+        // 攻擊名額交還，讓其他敵人可以補上。
+        if (modularEntityMovement != null && modularEntityMovement.IsStaggered)
+        {
+            ReleaseAttackSlot();
+            RunSensors();
+            PriorityUpdate();
+            return;
+        }
+
         // 這次思考沒有決定朝向的話，就不要再轉（跟原本「沒呼叫 FaceMoveDirection 就不轉」一致）。
         // 近戰攻擊中的朝向由近戰每個物理步指定，這裡不能清掉。
         if (!IsMeleeAttacking)

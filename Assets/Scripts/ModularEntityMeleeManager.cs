@@ -63,6 +63,10 @@ public class EntityMeleeAttack
              "預備階段不受影響，照樣會一直轉向目標。")]
     [Range(0f, 360f)] public float dashTurnRate = 0f;
 
+    [Tooltip("MeleeDashEnd 那一刻，水平速度立刻保留的比例；之後用 decelerationSpeed 減速到 0。\n" +
+             "0.3 = 瞬間降到 30%。1 = 不砍，只靠 decelerationSpeed 慢慢停。0 = 當場停住。")]
+    [Range(0f, 1f)] public float dashEndSpeedRetain = 0.3f;
+
     [Tooltip("Normal 模式（以及預備階段）：離目標小於這個水平距離就不再往前推進。\n" +
              "Dash 的衝刺段不檢查這個距離，會照鎖定的方向衝過頭，直到 MeleeDashEnd。")]
     [Min(0f)] public float stopDistance = 3f;
@@ -132,7 +136,7 @@ public class ModularEntityMeleeManager : MonoBehaviour
 
     [Header("攻擊預判")]
     [Tooltip("目標速度 ÷ 自身速度超過這個比例就不預判（方程式會退化）。")]
-    [SerializeField, Range(0.1f, 0.99f)] private float predictionMaxSpeedRatio = 0.9f;
+    [SerializeField, Range(0.1f, 2f)] private float predictionMaxSpeedRatio = 0.9f;
     [Tooltip("預判點最多可以比目標現在的位置遠幾倍。")]
     [SerializeField, Min(1f)] private float predictionMaxLeadMultiplier = 2f;
     [Tooltip("預估抵達時間超過這個秒數就不預判。")]
@@ -227,6 +231,7 @@ public class ModularEntityMeleeManager : MonoBehaviour
         Transform target = _brain.CombatTarget;
         if (!IsTargetValid(target)) return false;
         if (_movement.IsKnockedBack) return false;
+        if (_movement.IsStaggered) return false;
         if (IsAnimatorInMeleeState()) return false;   // 上一招（被打斷的）動畫還沒播完
 
         if (_readyTime.Length != attacks.Length) Array.Resize(ref _readyTime, attacks.Length);
@@ -282,7 +287,16 @@ public class ModularEntityMeleeManager : MonoBehaviour
         _phase = Phase.Active;
         SetDashDir(ComputeChaseDirection(DashSpeed(_current)));   // 依當下的預判鎖定衝刺方向
     }
-    public void OnMeleeDashEnd()   { if (_current == null) return; Log("DashEnd");   _phase = Phase.Recovery; }
+    public void OnMeleeDashEnd()
+    {
+        if (_current == null) return;
+        Log("DashEnd");
+        _phase = Phase.Recovery;
+
+        // 踩煞車：速度先砍到 dashEndSpeedRetain，之後 Recovery 用 decelerationSpeed 減速到 0
+        if (_movement != null) _movement.ScaleHorizontalVelocity(_current.dashEndSpeedRetain);
+        StepMovement(0f);   // 這一步就換成收招的移動指令，不要再沿用衝刺的「立刻到達」
+    }
     public void OnMeleeHitOpen()   { if (_current == null) return; Log("HitOpen");   _hitOpen = true;  PlayHitFeedback(); }
     public void OnMeleeHitClose()  { if (_current == null) return; Log("HitClose");  _hitOpen = false; StopHitFeedback(); }
     public void OnMeleeEnd()       { if (_current == null) return; Log("End");       EndAttack(cancelled: false); }
@@ -326,7 +340,7 @@ public class ModularEntityMeleeManager : MonoBehaviour
         // ── 中斷條件 ──
         if (_brain == null || _brain.currentState != EntityState.Combat ||
             !IsTargetValid(_brain.CombatTarget) ||
-            _movement == null || _movement.IsKnockedBack ||
+            _movement == null || _movement.IsKnockedBack || _movement.IsStaggered ||
             (_stats != null && _stats.IsDead))
         {
             EndAttack(cancelled: true);
@@ -353,10 +367,11 @@ public class ModularEntityMeleeManager : MonoBehaviour
         float slowSpeed = _stats.sprintSpeed * a.slowdownPercent / 100f;
         float fullAccel = Mathf.Max(_stats.decelerationSpeed, _stats.accelerationSpeed);
 
-        // ── 收招：沿目前朝向滑行，不再追蹤 ──
+        // ── 收招：沿目前朝向用 decelerationSpeed 減速到停，不再追蹤 ──
+        //    （衝刺結束那一刻已經在 OnMeleeDashEnd 先砍過一次速度）
         if (_phase == Phase.Recovery)
         {
-            _movement.SetVelocityOverride(_movement.MeshForward, slowSpeed, fullAccel);
+            _movement.SetVelocityOverride(_movement.MeshForward, 0f, Mathf.Max(0.01f, _stats.decelerationSpeed));
             return;
         }
 
@@ -477,7 +492,10 @@ public class ModularEntityMeleeManager : MonoBehaviour
                 if (!sameDamageable && !sameBody) continue;
             }
 
-            var dmg = new DamageInfo(a.physicalDamage, a.explosionDamage, a.energyDamage, a.coldDamage);
+            var dmg = new DamageInfo(a.physicalDamage, a.explosionDamage, a.energyDamage, a.coldDamage)
+            {
+                kind = DamageKind.Melee,
+            };
             d.TakeDamage(dmg, _brain.gameObject);
             _hasHit = true;   // 每招只打中一次
             Log($"Hit '{c.name}'");

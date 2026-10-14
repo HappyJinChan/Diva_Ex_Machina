@@ -64,6 +64,9 @@ MonoBehaviour:
   - attribute: 42
     mode: 0
     value: 15
+  - attribute: 43
+    mode: 0
+    value: 10
   randomBuffs: []
   attachmentPoints:
   - pointTransform: {fileID: 3485054189337614310, guid: f04f1c9db0b40ea42bc1c055693c2426, type: 3}

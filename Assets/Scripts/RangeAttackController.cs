@@ -275,6 +275,7 @@ public class RangeAttackController : MonoBehaviour
                     bulletComp.explosionDamage = w.damage.explosionDamage;
                     bulletComp.energyDamage = w.damage.energyDamage;
                     bulletComp.coldDamage = w.damage.coldDamage;
+                    bulletComp.impact = w.damage.impact;   // 衝擊值（失衡用），命中時跟傷害一起受距離衰減
 
                     // 2) 暴擊：以武器本體為基礎 + 零件 / 手甲 / 頭盔的加成（由 AttackManager 算好）
                     bulletComp.criticalChance = w.damage.criticalChance;
