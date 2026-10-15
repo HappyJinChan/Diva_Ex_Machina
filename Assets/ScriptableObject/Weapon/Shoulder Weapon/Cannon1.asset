@@ -21,7 +21,7 @@ MonoBehaviour:
   buffs:
   - attribute: 0
     mode: 0
-    value: 300
+    value: 30
   - attribute: 8
     mode: 0
     value: 1.8
@@ -39,7 +39,7 @@ MonoBehaviour:
     value: 0
   - attribute: 13
     mode: 0
-    value: 0
+    value: 0.1
   - attribute: 14
     mode: 0
     value: 5
@@ -61,9 +61,12 @@ MonoBehaviour:
   - attribute: 33
     mode: 0
     value: 160
+  - attribute: 43
+    mode: 0
+    value: 30
   randomBuffs: []
   attachmentPoints:
   - pointTransform: {fileID: 182432132562085845, guid: 841c3463a80cc75439fab24dfeee53da, type: 3}
     allowPart: 7
   meshRenderer: {fileID: 3014630391301834794, guid: 41d6c10c498fa4d4d96cf0cddf8f3e2c, type: 3}
-  bullet: {fileID: 3891428710695554583, guid: 3f51b8f62efcd18439903b57d9bee00c, type: 3}
+  bullet: {fileID: 3891428710695554583, guid: 957e3fab6b467a941a3f260567ab942c, type: 3}

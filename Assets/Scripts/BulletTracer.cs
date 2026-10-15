@@ -14,7 +14,7 @@
 ///   長度 = 相對速度 × lengthTime，而且不超過「頭到發射點」的距離（發射點跟著船移動）
 /// 所以永遠是一條從槍口方向延伸過來的直線，幀數高低、船怎麼開都一樣。
 ///
-/// 用法：掛在子彈 prefab 上（跟 Bullet、TrailRenderer 同一個物件）。
+/// 用法：掛在子彈 prefab 上（跟 Bullet 同一個物件）。TrailRenderer 可以在同一個物件或子物件上。
 /// 外觀（材質、寬度曲線、顏色漸層）直接沿用同一個物件上的 TrailRenderer 設定，
 /// TrailRenderer 的 Time 就是這裡的長度秒數；啟動後 TrailRenderer 本身會被關掉。
 /// 想調外觀，照舊調 TrailRenderer 的欄位即可。
@@ -54,7 +54,9 @@ public class BulletTracer : MonoBehaviour
         _line.receiveShadows = false;
         _line.enabled = false;
 
+        // 先找自己身上的；沒有的話找子物件（例如子彈裡套了特效 prefab，TrailRenderer 在特效裡面）
         var trail = GetComponent<TrailRenderer>();
+        if (trail == null) trail = GetComponentInChildren<TrailRenderer>(true);
         if (copyFromTrailRenderer && trail != null)
         {
             lengthTime = trail.time;

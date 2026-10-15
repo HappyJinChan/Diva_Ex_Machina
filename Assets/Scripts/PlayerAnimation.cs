@@ -482,6 +482,13 @@ public class PlayerAnimation : MonoBehaviour
     ///
     /// Animator 沒有 fireShoulder_* 參數、或圖層不存在時立刻結束（子彈照常生成，不會卡住）；
     /// 等超過 shoulderFireStateTimeout 也會結束，並清掉沒被消耗的 Trigger。
+    ///
+    /// 肩武器原本是收著的（沒有瞄準 / 鎖定）時：
+    ///   · 開火會把肩武器舉起來（跟有目標時一樣），瞄準約束打開，砲管才會對準準星；
+    ///     之後照 shoulderLowerDelay 收回。
+    ///   · 要等轉場「結束」才生成子彈 —— 轉場剛開始時砲管還在收起的位置，
+    ///     子彈從那裡生成，曳光看起來就不是從砲口出來的。
+    /// 已經舉著的時候維持原本的行為（轉場一開始就生成），連射的射速不受影響。
     /// </summary>
     public IEnumerator FireShoulderAndWait(bool isLeft)
     {
@@ -492,26 +499,54 @@ public class PlayerAnimation : MonoBehaviour
 
         int trigger = isLeft ? FireShoulderLeftTriggerHash : FireShoulderRightTriggerHash;
 
+        // 開火前肩武器是不是已經舉著。收著的話：舉起來，而且要等轉場結束才生成子彈。
+        bool wasRaised = isLeft ? _leftShoulderRaised : _rightShoulderRaised;
+        bool waitUntilSettled = !wasRaised;
+
+        // 開火視同「有目標」：肩武器舉起、瞄準約束打開，開完火後照 shoulderLowerDelay 收回
+        _lastShoulderTargetTime = Time.time;
+        UpdateShoulderAim();
+
         // 觸發前的狀態當基準：之後只要「進入了另一個開火狀態」或「同一個開火狀態從頭播」就算開始
         bool hadFire = TryGetFireStateKey(layer, out int baseHash, out float baseTime);
 
         anim.SetTrigger(trigger);
 
         float waited = 0f;
+        bool started = false;
         while (waited < shoulderFireStateTimeout)
         {
             yield return null;
             waited += Time.deltaTime;
 
+            // 開火期間持續視為有目標，免得等待中途剛好過了 shoulderLowerDelay 被收回去
+            _lastShoulderTargetTime = Time.time;
+
+            if (started)
+            {
+                // 已經開始往 Attack_Fire 轉了，等轉場結束（砲管轉到位）
+                if (!anim.IsInTransition(layer)) yield break;
+                continue;
+            }
+
             bool inFire = TryGetFireStateKey(layer, out int hash, out float time);
             if (inFire && (!hadFire || hash != baseHash || time < baseTime - 0.0001f))
-                yield break;   // Attack_Fire 開始播放 → 生成子彈
+            {
+                // Attack_Fire 開始播放
+                if (!waitUntilSettled || !anim.IsInTransition(layer))
+                    yield break;   // → 生成子彈
+                started = true;    // 原本收著：等轉場結束再生成
+                continue;
+            }
 
             // 還在上一發的後座裡：持續更新基準，才偵測得到之後「從頭播」
             hadFire = inFire;
             baseHash = hash;
             baseTime = time;
         }
+
+        // 逾時但已經開始轉場：Trigger 已被消耗，直接生成
+        if (started) yield break;
 
         // 逾時：Animator 沒反應（缺轉場、圖層權重 0…）→ 不等了，清掉 Trigger 免得之後無緣無故補播一次
         anim.ResetTrigger(trigger);

@@ -100,6 +100,7 @@ MonoBehaviour:
   explosionDamage: 0
   energyDamage: 0
   coldDamage: 0
+  impact: 0
   criticalChance: 0.05
   criticalMultiplier: 1.5
   lifespan: 5
@@ -128,6 +129,9 @@ MonoBehaviour:
   homingStartDelay: 0
   lockAssignedTarget: 1
   penetration: 0
+  effectiveRange: 0
+  falloffEndMultiplier: 2
+  falloffMinDamage: 0.3
   explodePrefab: {fileID: 0}
 --- !u!1001 &8511368318867935596
 PrefabInstance:

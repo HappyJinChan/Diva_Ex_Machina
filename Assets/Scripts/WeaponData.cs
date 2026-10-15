@@ -82,6 +82,10 @@ public class RangeWeaponRuntimeState
 
     // 最後一次開火的時間。用來判斷「停火了沒」—— 衰減只在停火後進行。
     public float lastShotTime;
+
+    // 下一次可以扣扳機的時間（Time.time）。冷卻用「排定的時間」累加，不用「從現在等多久」，
+    // 平均射速才不會被畫面幀率進位吃掉（見 RangeAttackController.TryStartShoot）。
+    public float nextShootTime;
 }
 
 [System.Serializable]

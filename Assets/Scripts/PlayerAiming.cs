@@ -368,7 +368,8 @@ public class PlayerAiming : MonoBehaviour
             if (dist > lockOnDistance) continue;
 
             // 必須在相機前方
-            Vector3 sp = mainCam.WorldToScreenPoint(GetTargetAimPoint(enemy.transform));
+            Vector3 aimPos = GetTargetAimPoint(enemy.transform);
+            Vector3 sp = mainCam.WorldToScreenPoint(aimPos);
             if (sp.z <= 0f) continue;
 
             Vector2 pt = new Vector2(sp.x, sp.y);
@@ -380,6 +381,10 @@ public class PlayerAiming : MonoBehaviour
             // 條件 3：在符合上述條件的目標中，選離螢幕中心最近的
             if (prox < bestProximity)
             {
+                // 條件 4：不能在牆後（跟第一次鎖定 TryPickAssistTarget 用同一個視線檢查）。
+                // 放在這裡：只對「會成為新答案」的敵人打射線，省掉多餘的 Raycast。
+                if (requireLineOfSight && !HasLineOfSight(enemy.transform, aimPos)) continue;
+
                 bestProximity = prox;
                 best = enemy;
             }

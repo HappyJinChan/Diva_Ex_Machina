@@ -16,6 +16,13 @@ public class SpeedMotionBlur : MonoBehaviour
     [Tooltip("退出模糊的速度（越小尾巴拖越長）")]
     [SerializeField] private float blurOutLerp = 8f;
 
+    [Header("Assault Boost Motion Blur")]
+    [Tooltip("突擊推進也套用模糊。往前高速移動時，畫面邊緣的移動量比中心大，自然形成「中心清楚、邊緣糊」。")]
+    [SerializeField] private bool includeAssaultBoost = true;
+
+    [Tooltip("突擊推進的模糊強度。推進會持續一段時間，太高會看不清楚前方。")]
+    [Range(0f, 1f)][SerializeField] private float assaultBoostIntensity = 0.6f;
+
     [Header("Melee Dash Motion Blur")]
     [Tooltip("近戰突進也套用模糊")]
     [SerializeField] private bool includeMeleeDash = true;
@@ -46,6 +53,11 @@ public class SpeedMotionBlur : MonoBehaviour
         if (playerMovement.IsDashActive)
         {
             target = dashIntensity;
+            active = true;
+        }
+        else if (includeAssaultBoost && playerMovement.IsAssaultBoosting)
+        {
+            target = assaultBoostIntensity;
             active = true;
         }
         else if (includeMeleeDash && IsMeleeBlurActive())

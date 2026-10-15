@@ -138,7 +138,9 @@ public class PlayerMovement : MonoBehaviour
     //       AnimEvent_AssaultKickHitOn  → 開始判定
     //       AnimEvent_AssaultKickHitOff → 結束判定
     //       AnimEvent_AssaultKickEnd    → 踢擊結束，突擊推進正式結束（保留當下速度、恢復重力）
-    //   · 判定：從重心沿移動方向往前掃一個膠囊（跟撞擊同一種做法，高速時不會漏判）。
+    //   · 判定：腿上的 EntityMeleeHitbox（跟敵人近戰同一個元件：Collider 只描述形狀，
+    //     判定開啟期間每個物理步做 Overlap 查詢，跟著骨頭動）。
+    //     沒有指定時退回「從重心沿移動方向往前掃一個膠囊」。
     //     每隻敵人每次踢擊只吃一次傷害；大小不限（撞擊只撞小型）。
     //   · 傷害 = 撞擊傷害 × assaultKickDamageMultiplier
     //          = 撞擊係數 × 玩家總重量 × 相對速度 × 3。物理傷害、近戰類型（DamageKind.Melee）。
@@ -149,10 +151,15 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("踢擊傷害 = 撞擊傷害（係數 × 總重量 × 相對速度）× 這個倍率。")]
     [SerializeField, Min(0f)] private float assaultKickDamageMultiplier = 3f;
 
-    [Tooltip("踢擊判定的半徑（公尺）。")]
+    [Tooltip("踢擊的判定：掛在腿（腳）骨頭底下的 EntityMeleeHitbox，形狀用 Sphere / Box / Capsule Collider 決定。\n" +
+             "推進速度很快（一個物理步移動 1～2 公尺），形狀太小可能從敵人身上跳過去 —— 做大一點比較保險。\n" +
+             "留空 = 改用下面的「前方膠囊」判定。")]
+    [SerializeField] private EntityMeleeHitbox assaultKickHitbox;
+
+    [Tooltip("（沒有指定 Hitbox 時）前方膠囊判定的半徑（公尺）。")]
     [SerializeField, Min(0.1f)] private float assaultKickRadius = 1.8f;
 
-    [Tooltip("踢擊判定從重心往前延伸多遠（公尺），另外再加上這一步移動的距離。")]
+    [Tooltip("（沒有指定 Hitbox 時）前方膠囊判定從重心往前延伸多遠（公尺），另外再加上這一步移動的距離。")]
     [SerializeField, Min(0f)] private float assaultKickReach = 2f;
 
     [Tooltip("保險：超過這個秒數還沒收到 AnimEvent_AssaultKickEnd 就強制結束（事件漏掉時用）。")]
@@ -1590,12 +1597,23 @@ public class PlayerMovement : MonoBehaviour
 
         // 掃描方向：在動就沿移動方向，幾乎沒在動就沿面向
         Vector3 dir = (speed > 1f) ? vRel / speed : _abFacing;
-        Vector3 start = playerRigidbody.worldCenterOfMass;
-        Vector3 end = start + dir * (assaultKickReach + speed * dt);
-
         int mask = assaultBoostRamLayers.value != 0 ? assaultBoostRamLayers.value : LayerMask.GetMask("Enemy");
-        int count = Physics.OverlapCapsuleNonAlloc(start, end, assaultKickRadius, s_RamHits, mask,
+
+        // 判定：腿上的 Hitbox；沒指定才退回前方膠囊
+        Vector3 start;
+        int count;
+        if (assaultKickHitbox != null)
+        {
+            start = assaultKickHitbox.transform.position;   // 命中特效從腳的位置找最近點
+            count = assaultKickHitbox.Overlap(s_RamHits, mask);
+        }
+        else
+        {
+            start = playerRigidbody.worldCenterOfMass;
+            Vector3 end = start + dir * (assaultKickReach + speed * dt);
+            count = Physics.OverlapCapsuleNonAlloc(start, end, assaultKickRadius, s_RamHits, mask,
                                                    QueryTriggerInteraction.Ignore);
+        }
         if (count == 0) return;
 
         Vector3 flatDir = new Vector3(dir.x, 0f, dir.z);

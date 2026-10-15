@@ -88,10 +88,12 @@ public class PlayerController : MonoBehaviour
         bool reloadHeld = playerControls.Player.Reload.IsPressed();
         bool leftPressed = playerControls.Player.LeftHandAttack.WasPressedThisFrame();
         bool rightPressed = playerControls.Player.RightHandAttack.WasPressedThisFrame();
+        bool leftShoulderPressed = playerControls.Player.LeftShoulderAttack.WasPressedThisFrame();
+        bool rightShoulderPressed = playerControls.Player.RightShoulderAttack.WasPressedThisFrame();
 
         var stats = PlayerStats.Instance;
 
-        if (reloadHeld && (leftPressed || rightPressed))
+        if (reloadHeld && (leftPressed || rightPressed || leftShoulderPressed || rightShoulderPressed))
         {
             if (leftPressed)
             {
@@ -107,6 +109,13 @@ public class PlayerController : MonoBehaviour
                 else playerMovement.ProcessAttackFacingAndAttack(attackManager, attackManager.rightHandWeapon, playerControls.Player.RightHandAttack);
             }
 
+            // 肩武器只有遠程：R + 肩武器鍵 = 提前換彈。沒裝肩武器（bullet 是 null）就不理會。
+            if (leftShoulderPressed && HasShoulderWeapon(attackManager.leftShoulderWeapon))
+                attackManager.StartReload(attackManager.leftShoulderWeapon);
+
+            if (rightShoulderPressed && HasShoulderWeapon(attackManager.rightShoulderWeapon))
+                attackManager.StartReload(attackManager.rightShoulderWeapon);
+
             return;
         }
 
@@ -116,5 +125,8 @@ public class PlayerController : MonoBehaviour
         playerMovement.ProcessAttackFacingAndAttack(attackManager, attackManager.leftShoulderWeapon, playerControls.Player.LeftShoulderAttack);
         playerMovement.ProcessAttackFacingAndAttack(attackManager, attackManager.rightShoulderWeapon, playerControls.Player.RightShoulderAttack);
     }
+
+    /// <summary>這個肩槽有裝遠程武器（AttackManager 清空武器時會把 bullet 設成 null）。</summary>
+    private static bool HasShoulderWeapon(Weapon w) => w != null && w.bullet != null;
 
 }

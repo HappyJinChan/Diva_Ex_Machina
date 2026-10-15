@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class Bullet : MonoBehaviour, IPooled
 {
@@ -246,7 +247,49 @@ public class Bullet : MonoBehaviour, IPooled
     /// <summary>這顆子彈是否在場上飛行中。</summary>
     public bool IsLive => _live;
 
-    public GameObject explodePrefab;
+    // ─────────────────────────── Explosion ───────────────────────────
+    //
+    // 爆炸傷害 = 這顆子彈的「總傷害」× 各屬性的轉換倍率。
+    //   總傷害 = physicalDamage + explosionDamage + energyDamage + coldDamage
+    //   用的是子彈身上的原始值：已經包含武器、零件的 buff，但「暴擊前、距離衰減前」。
+    //   → 爆炸不吃距離衰減，也不吃暴擊。
+    //
+    //   例：physical 3、cold 5、coldExplosionDamageConversionRate 2.5
+    //       直擊 8 點（再乘暴擊與衰減），爆炸 (3 + 5) × 2.5 = 20 點冷凍傷害。
+    //
+    // 什麼時候爆炸：
+    //   · 每命中一個敵人爆一次（貫穿彈每穿過一個就爆一次）。直擊的目標也在範圍內，也會吃到爆炸。
+    //   · 撞到牆壁、地面時爆炸。
+    //   · 壽命到了、在空中消失時也爆炸。
+    // 範圍內均一傷害（不隨距離遞減），每個目標只算一次（多碰撞箱去重），只打 enemyLayer。
+    //
+    // 所有欄位都會在物件池重用時還原成 prefab 值（見 Defaults）。
+    [Header("Explosion")]
+    [Tooltip("總傷害轉換成「物理」爆炸傷害的倍率。0 = 不轉換。")]
+    [Min(0f)] public float physicalExplosionDamageConversionRate = 0f;
+
+    [Tooltip("總傷害轉換成「爆炸」屬性爆炸傷害的倍率。0 = 不轉換。")]
+    [Min(0f)] public float explosionDamageConversionRate = 0f;
+
+    [Tooltip("總傷害轉換成「能量」爆炸傷害的倍率。0 = 不轉換。")]
+    [Min(0f)] public float energyExplosionDamageConversionRate = 0f;
+
+    [Tooltip("總傷害轉換成「冷凍」爆炸傷害的倍率。0 = 不轉換。")]
+    [Min(0f)] public float coldExplosionDamageConversionRate = 0f;
+
+    [Tooltip("總傷害轉換成爆炸「衝擊值」（扣 ACS）的倍率。0 = 爆炸不造成衝擊。")]
+    [Min(0f)] public float explosionACSConversion = 0f;
+
+    [Tooltip("爆炸半徑（公尺）。0 = 不造成爆炸傷害（只播特效）。")]
+    [Min(0f)] public float explosionRadius = 0f;
+
+    [Tooltip("爆炸時生成的特效。走 PrefabPool。\n" +
+             "特效上有 ExplosionEffect 且開了 Despawn When Finished 時由它自己回收，否則由子彈排程回收。")]
+    [FormerlySerializedAs("explodePrefab")]
+    public GameObject explosionPrefab;
+
+    // 爆炸範圍內的去重（同一個目標多個碰撞箱只算一次）
+    private readonly HashSet<int> _explosionSeen = new HashSet<int>();
 
     // ═══════════════════ 外部指定目標 API ═══════════════════
 
@@ -322,6 +365,11 @@ public class Bullet : MonoBehaviour, IPooled
         public GameObject hitEffect;
         public float hitEffectLifetime;
         public float hitEffectSurfaceOffset;
+
+        public float physicalExplosionDamageConversionRate, explosionDamageConversionRate;
+        public float energyExplosionDamageConversionRate, coldExplosionDamageConversionRate;
+        public float explosionACSConversion, explosionRadius;
+        public GameObject explosionPrefab;
     }
 
     private Defaults _defaults;
@@ -362,6 +410,14 @@ public class Bullet : MonoBehaviour, IPooled
         _defaults.effectiveRange = effectiveRange;
         _defaults.falloffEndMultiplier = falloffEndMultiplier;
         _defaults.falloffMinDamage = falloffMinDamage;
+
+        _defaults.physicalExplosionDamageConversionRate = physicalExplosionDamageConversionRate;
+        _defaults.explosionDamageConversionRate = explosionDamageConversionRate;
+        _defaults.energyExplosionDamageConversionRate = energyExplosionDamageConversionRate;
+        _defaults.coldExplosionDamageConversionRate = coldExplosionDamageConversionRate;
+        _defaults.explosionACSConversion = explosionACSConversion;
+        _defaults.explosionRadius = explosionRadius;
+        _defaults.explosionPrefab = explosionPrefab;
 
         // Predict() 命中時會把 CCD 模式改成 ContinuousSpeculative，改了就回不去
         _defaults.collisionDetectionMode = (rb != null)
@@ -408,6 +464,14 @@ public class Bullet : MonoBehaviour, IPooled
         effectiveRange = _defaults.effectiveRange;
         falloffEndMultiplier = _defaults.falloffEndMultiplier;
         falloffMinDamage = _defaults.falloffMinDamage;
+
+        physicalExplosionDamageConversionRate = _defaults.physicalExplosionDamageConversionRate;
+        explosionDamageConversionRate = _defaults.explosionDamageConversionRate;
+        energyExplosionDamageConversionRate = _defaults.energyExplosionDamageConversionRate;
+        coldExplosionDamageConversionRate = _defaults.coldExplosionDamageConversionRate;
+        explosionACSConversion = _defaults.explosionACSConversion;
+        explosionRadius = _defaults.explosionRadius;
+        explosionPrefab = _defaults.explosionPrefab;
 
         if (rb != null)
         {
@@ -630,9 +694,10 @@ public class Bullet : MonoBehaviour, IPooled
         // 這個 FixedUpdate 之後就是這一世的第一個 physics step，下一次渲染時插值已經可靠
         _steppedSinceSpawn = true;
 
-        // 2) 壽命
+        // 2) 壽命：在空中消失時也會爆炸
         if (Time.time >= _despawnTime)
         {
+            Explode(transform.position, null);
             Despawn();
             return;
         }
@@ -1065,6 +1130,10 @@ public class Bullet : MonoBehaviour, IPooled
 
             SpawnHitEffect(other);
 
+            // 爆炸：每命中一個敵人爆一次（貫穿彈每穿過一個就爆一次），直擊的目標也在範圍內
+            Explode(GetImpactPoint(), other);
+            if (!_live) return;
+
             // 避免穿過同一 collider 時重複觸發
             // （這個配對狀態會在子彈退場時由 _selfCol.enabled = false 清掉）
             if (_selfCol != null && other != null)
@@ -1091,7 +1160,94 @@ public class Bullet : MonoBehaviour, IPooled
         // - if ignoreObstacles was true, we already returned above
         // - otherwise hit obstacle => despawn
         SpawnHitEffect(other);
+        Explode(GetImpactPoint(), other);   // 撞牆、撞地面也會爆炸
         Despawn();
+    }
+
+    // ═══════════════════════ 爆炸 ═══════════════════════
+
+    /// <summary>命中點：優先用 Predict 記下來的（跟命中特效同一個位置）。</summary>
+    private Vector3 GetImpactPoint()
+    {
+        Vector3 pos = _hasPendingHitPoint ? _pendingHitPoint : transform.position;
+        if (_hasPendingHitPoint) pos += _pendingHitNormal * hitEffectSurfaceOffset;   // 從牆面往外一點，球心不要埋在牆裡
+        return pos;
+    }
+
+    /// <summary>
+    /// 在 position 爆炸：生成特效，並對半徑內的敵人造成均一的爆炸傷害。
+    /// 傷害 = 總傷害（暴擊前、距離衰減前）× 各屬性的轉換倍率。
+    /// hitCollider 只用來讓特效跟著被打中的會動物體（船、敵人）。
+    /// </summary>
+    private void Explode(Vector3 position, Collider hitCollider)
+    {
+        SpawnExplosionEffect(position, hitCollider);
+
+        if (explosionRadius <= 0f) return;
+
+        float total = physicalDamage + explosionDamage + energyDamage + coldDamage;
+        if (total <= 0f) return;
+
+        DamageInfo dmg = new DamageInfo(
+            total * physicalExplosionDamageConversionRate,
+            total * explosionDamageConversionRate,
+            total * energyExplosionDamageConversionRate,
+            total * coldExplosionDamageConversionRate,
+            total * explosionACSConversion
+        );
+
+        // 全部都是 0 就不用掃了
+        if (dmg.physical <= 0f && dmg.explosion <= 0f && dmg.energy <= 0f && dmg.cold <= 0f && dmg.impact <= 0f)
+            return;
+
+        int mask = enemyLayer.value & ~ignoreLayer.value;
+        if (mask == 0) return;
+
+        // Collide：玩家的肢體碰撞箱（Hurtbox）是 trigger（敵人的爆炸彈要打得到玩家）
+        int count = Physics.OverlapSphereNonAlloc(
+            position, explosionRadius, _overlapBuffer, mask, QueryTriggerInteraction.Collide);
+
+        _explosionSeen.Clear();
+
+        for (int i = 0; i < count; i++)
+        {
+            Collider col = _overlapBuffer[i];
+            if (col == null) continue;
+
+            var target = col.GetComponentInParent<IDamageable>();
+            if (target == null) continue;
+
+            var comp = target as Component;
+            if (comp == null) continue;
+
+            // 同一個目標多個碰撞箱只算一次
+            if (!_explosionSeen.Add(comp.GetInstanceID())) continue;
+
+            // 不炸開槍者自己
+            if (attacker != null && comp.transform.IsChildOf(attacker.transform)) continue;
+
+            target.TakeDamage(dmg, attacker);
+        }
+    }
+
+    private void SpawnExplosionEffect(Vector3 position, Collider hitCollider)
+    {
+        if (explosionPrefab == null) return;
+
+        // 跟命中特效一樣：打在會動的物體（船、敵人）上就掛成它的子物件，跟著走
+        Rigidbody hitRb = (hitCollider != null) ? hitCollider.attachedRigidbody : null;
+        Transform follow = (hitRb != null) ? hitRb.transform : null;
+
+        GameObject fx = PrefabPool.Spawn(explosionPrefab, position, Quaternion.identity, follow);
+        if (fx == null) return;
+
+        NormalizeEffectScale(fx.transform, explosionPrefab.transform.localScale);
+
+        // ExplosionEffect 開了「播完自動回收」就交給它，兩邊都排會互相干擾
+        var ee = fx.GetComponent<ExplosionEffect>();
+        if (ee != null && ee.DespawnWhenFinished) return;
+
+        PrefabPool.Despawn(fx, GetEffectDuration(fx));
     }
 
     // ═══════════════════════ 命中特效 ═══════════════════════

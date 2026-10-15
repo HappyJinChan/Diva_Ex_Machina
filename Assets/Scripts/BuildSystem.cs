@@ -107,9 +107,37 @@ public class BuildSystem : MonoBehaviour
 
     [SerializeField] NavMeshSurface ghostSurface;
     AsyncOperation _asyncBuild;
+
+    // ----------  初始設施  ----------
+    /// <summary>開場時直接完工的一座建築。</summary>
+    [System.Serializable]
+    public class StartingBuilding
+    {
+        public BuildBlueprint blueprint;
+        [Tooltip("要放在哪個網格（拖船上的 BuildingGrid）。")]
+        public BuildingGrid grid;
+        [Tooltip("那個 BuildingGrid 的第幾個 GridData（grids 陣列的索引）。")]
+        [Min(0)] public int gridIndex;
+        [Tooltip("錨點格子 (x, y)。跟玩家建造時滑鼠指到的那一格同一個意思。")]
+        public Vector2Int cell;
+        [Tooltip("旋轉，每一步順時針 90 度。")]
+        [Range(0, 3)] public int rotationStep;
+    }
+
+    [Header("Starting Buildings（開場直接完工，不扣資源）")]
+    [Tooltip("開場時依序放置。跟玩家建造走同一條路（佔格、ghost、BuildingRegistry），之後可以照常拆除、被打爆。\n" +
+             "放不下的項目（超出網格、跟前面的重疊）會跳過並在 Console 警告。")]
+    public StartingBuilding[] startingBuildings;
+    [Tooltip("在 Scene 視圖畫出初始設施的佔地（只在非播放模式）。綠 = 沒問題，紅 = 超出網格或彼此重疊。")]
+    public bool drawStartingBuildingsGizmo = true;
     private void Awake()
     {
         if (!cam) cam = Camera.main;
+    }
+
+    private void Start()
+    {
+        PlaceStartingBuildings();
     }
 
     private void OnEnable()
@@ -318,18 +346,30 @@ public class BuildSystem : MonoBehaviour
 
         if (!InventoryManager.Instance.DeductItem(bp.costs)) return;
 
-        Vector3 pos = GetFootprintCenterWorld(_hitGrid, _hitGridIndex, _hitCellX, _hitCellY, fp, rotationStep);
+        PlaceBuilding(bp, _hitGrid, _hitGridIndex, _hitCellX, _hitCellY, rotationStep);
+    }
 
-        Quaternion baseRot = placeAlignToGridRotation ? _hitGrid.transform.rotation : Quaternion.identity;
-        Quaternion rot = baseRot * Quaternion.Euler(0f, rotationStep * 90f, 0f);
+    /// <summary>
+    /// 真正放置一座建築：生成、佔格、上材質、複製 ghost、登記 BuildingRegistry。
+    /// 不檢查合法性、不扣資源 —— 呼叫前自己用 EvaluatePlacement 確認過。
+    /// 玩家建造和開場初始設施共用這裡，兩者的結果完全一樣。
+    /// </summary>
+    private GameObject PlaceBuilding(BuildBlueprint bp, BuildingGrid grid, int gridIndex, int cellX, int cellY, int rotStep)
+    {
+        var fp = bp.footprint;
 
-        Transform parent = placeParentToGrid ? _hitGrid.transform : null;
+        Vector3 pos = GetFootprintCenterWorld(grid, gridIndex, cellX, cellY, fp, rotStep);
+
+        Quaternion baseRot = placeAlignToGridRotation ? grid.transform.rotation : Quaternion.identity;
+        Quaternion rot = baseRot * Quaternion.Euler(0f, rotStep * 90f, 0f);
+
+        Transform parent = placeParentToGrid ? grid.transform : null;
 
         GameObject placed = Instantiate(bp.buildingPrefab, pos, rot, parent);
 
         // 佔用要在 Instantiate 之後：grid 記的是「哪幾格屬於這棟建築」，
-        // 需要先有建築本人才能登記。合法性在上面 EvaluatePlacement 已經確認過了。
-        ApplyFootprintOccupancyRotated(_hitGrid, _hitGridIndex, _hitCellX, _hitCellY, fp, rotationStep, placed);
+        // 需要先有建築本人才能登記。合法性由呼叫端的 EvaluatePlacement 確認。
+        ApplyFootprintOccupancyRotated(grid, gridIndex, cellX, cellY, fp, rotStep, placed);
 
         if (bp.buildingMaterial != null)
             ApplyMaterialToAllRenderers(placed, bp.buildingMaterial);
@@ -358,6 +398,49 @@ public class BuildSystem : MonoBehaviour
         // 敵人 AI 需要一份可列舉的建築清單，用來搜尋「路被封死時該拆哪一棟」。
         // 本尊 + 分身一起登記，之後寫拆除功能時兩邊才不會漏掉一邊。
         BuildingRegistry.Register(placed.transform, ghostTransform);
+
+        return placed;
+    }
+
+    /// <summary>開場時放置 startingBuildings。不扣資源；放不下的跳過並警告。</summary>
+    private void PlaceStartingBuildings()
+    {
+        if (startingBuildings == null) return;
+
+        for (int i = 0; i < startingBuildings.Length; i++)
+        {
+            var sb = startingBuildings[i];
+            if (sb == null) continue;
+
+            if (!ValidateStartingBuilding(sb, out string error))
+            {
+                Debug.LogWarning($"[BuildSystem] 初始設施第 {i} 項跳過：{error}", this);
+                continue;
+            }
+
+            bool canPlace = EvaluatePlacement(sb.grid, sb.gridIndex, sb.cell.x, sb.cell.y, sb.blueprint.footprint, sb.rotationStep, out bool outOfBounds);
+            if (!canPlace)
+            {
+                string why = outOfBounds ? "超出網格範圍" : "格子已被佔用（跟前面的項目重疊？）";
+                Debug.LogWarning($"[BuildSystem] 初始設施第 {i} 項（{sb.blueprint.name}，格子 {sb.cell}，旋轉 {sb.rotationStep}）跳過：{why}", this);
+                continue;
+            }
+
+            PlaceBuilding(sb.blueprint, sb.grid, sb.gridIndex, sb.cell.x, sb.cell.y, sb.rotationStep);
+        }
+    }
+
+    /// <summary>檢查欄位有沒有填好（藍圖、prefab、footprint、網格索引）。不檢查佔用。</summary>
+    private static bool ValidateStartingBuilding(StartingBuilding sb, out string error)
+    {
+        error = null;
+        if (sb.blueprint == null) { error = "沒有指定 Blueprint"; return false; }
+        if (!sb.blueprint.buildingPrefab) { error = $"{sb.blueprint.name} 沒有 buildingPrefab"; return false; }
+        var fp = sb.blueprint.footprint;
+        if (fp == null || fp.cells == null || fp.width <= 0 || fp.height <= 0) { error = $"{sb.blueprint.name} 的 footprint 是空的"; return false; }
+        if (sb.grid == null) { error = "沒有指定 Grid"; return false; }
+        if (sb.grid.grids == null || sb.gridIndex < 0 || sb.gridIndex >= sb.grid.grids.Length) { error = $"Grid Index {sb.gridIndex} 超出 {sb.grid.name}.grids 的範圍"; return false; }
+        return true;
     }
 
     private void UpdatePreview()
@@ -539,6 +622,9 @@ public class BuildSystem : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (drawStartingBuildingsGizmo && !Application.isPlaying)
+            DrawStartingBuildingsGizmo();
+
         if (!drawHitCellGizmo) return;
         if (!_hasHitCell || !_hitGrid) return;
 
@@ -550,6 +636,75 @@ public class BuildSystem : MonoBehaviour
 
         Color c = canPlace ? Color.green : Color.red;
         DrawFootprintOutlineRotated(_hitGrid, _hitGridIndex, _hitCellX, _hitCellY, fp, rotationStep, c);
+    }
+
+    /// <summary>
+    /// 編輯模式下畫初始設施的佔地。只看清單本身（出界、彼此重疊），
+    /// 不讀 grid 的佔用表 —— 那張表在編輯模式下不代表任何東西，讀它還可能順手改到序列化資料。
+    /// </summary>
+    private void DrawStartingBuildingsGizmo()
+    {
+        if (startingBuildings == null || startingBuildings.Length == 0) return;
+
+        // (grid, gridIndex, x, y) → 被幾個項目佔用
+        var counts = new System.Collections.Generic.Dictionary<(BuildingGrid, int, int, int), int>();
+        var cellsPer = new System.Collections.Generic.List<(int gx, int gy, bool inBounds)>[startingBuildings.Length];
+
+        for (int i = 0; i < startingBuildings.Length; i++)
+        {
+            var sb = startingBuildings[i];
+            if (sb == null || !ValidateStartingBuilding(sb, out _)) continue;
+
+            var fp = sb.blueprint.footprint;
+            var gd = sb.grid.grids[sb.gridIndex];
+            var list = new System.Collections.Generic.List<(int, int, bool)>();
+
+            for (int y = 0; y < fp.height; y++)
+            {
+                for (int x = 0; x < fp.width; x++)
+                {
+                    if (!fp.Get(x, y)) continue;
+                    RotateCell(x, y, fp.width, fp.height, sb.rotationStep, out int rx, out int ry);
+                    int gx = sb.cell.x + rx;
+                    int gy = sb.cell.y + ry;
+                    bool inBounds = gx >= 0 && gx < gd.gridSizeX && gy >= 0 && gy < gd.gridSizeY;
+                    list.Add((gx, gy, inBounds));
+                    if (inBounds)
+                    {
+                        var key = (sb.grid, sb.gridIndex, gx, gy);
+                        counts.TryGetValue(key, out int n);
+                        counts[key] = n + 1;
+                    }
+                }
+            }
+            cellsPer[i] = list;
+        }
+
+        for (int i = 0; i < startingBuildings.Length; i++)
+        {
+            var list = cellsPer[i];
+            if (list == null) continue;
+            var sb = startingBuildings[i];
+
+            bool bad = false;
+            foreach (var c in list)
+            {
+                if (!c.inBounds || counts[(sb.grid, sb.gridIndex, c.gx, c.gy)] > 1) { bad = true; break; }
+            }
+
+            Color col = bad ? Color.red : Color.green;
+            foreach (var c in list)
+            {
+                if (!c.inBounds) continue;   // 出界的格子畫不出來，整座標紅就好
+                Color cc = counts[(sb.grid, sb.gridIndex, c.gx, c.gy)] > 1 ? Color.red : col;
+                DrawSingleCellOutline(sb.grid, sb.gridIndex, c.gx, c.gy, cc);
+            }
+
+#if UNITY_EDITOR
+            Vector3 center = GetFootprintCenterWorld(sb.grid, sb.gridIndex, sb.cell.x, sb.cell.y, sb.blueprint.footprint, sb.rotationStep);
+            UnityEditor.Handles.Label(center + sb.grid.transform.up * 1f, $"[{i}] {sb.blueprint.name}");
+#endif
+        }
     }
 
     private void DrawFootprintOutlineRotated(BuildingGrid grid, int gridIndex, int anchorX, int anchorY, BoolMatrix fp, int rotStep, Color color)

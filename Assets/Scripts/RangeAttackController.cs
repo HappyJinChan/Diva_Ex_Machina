@@ -95,23 +95,37 @@ public class RangeAttackController : MonoBehaviour
         if (w == null) return false;
         if (w.kind == HandWeaponKind.Melee) return false;
 
+        // 冷卻：readyToShoot = 沒有正在進行的 Shoot()；nextShootTime = 冷卻結束的時間。
+        // 直接在這裡比時間，而不是等協程把 readyToShoot 設回 true ——
+        // 協程在 Update 之後才跑，冷卻結束的那一幀 Update 已經過了，會白白多等一幀。
+        bool ready = w.rangeRuntime.readyToShoot && Time.time >= w.rangeRuntime.nextShootTime;
+
         // 沒子彈就嘗試換彈（跟 HandleAttack 同邏輯）
-        if (w.rangeRuntime.readyToShoot && !w.rangeRuntime.reloading && w.rangeRuntime.bulletsLeft <= 0)
+        if (ready && !w.rangeRuntime.reloading && w.rangeRuntime.bulletsLeft <= 0)
             StartReload(w);
 
         // 可以射擊才真正開火
-        if (w.rangeRuntime.readyToShoot && !w.rangeRuntime.reloading && w.rangeRuntime.bulletsLeft > 0)
+        if (ready && !w.rangeRuntime.reloading && w.rangeRuntime.bulletsLeft > 0)
         {
+            // 冷卻是在兩幀之間結束的，這一幀才輪到開火 —— 晚了不到一幀。
+            // 把這一發當成「準時」在 nextShootTime 開火，下一發從那個時間往後排，
+            // 晚掉的時間就會在下一發補回來，平均射速等於面板數值，不受幀率影響。
+            // 晚超過一幀（停火、剛按下扳機）就從現在開始算，不會一次補好幾發。
+            float now = Time.time;
+            float late = now - w.rangeRuntime.nextShootTime;
+            float scheduledStart = (late > 0f && late <= Time.deltaTime) ? w.rangeRuntime.nextShootTime : now;
+
             w.rangeRuntime.bulletsLeft = Mathf.Max(0, w.rangeRuntime.bulletsLeft);
             w.rangeRuntime.readyToShoot = false;
-            StartCoroutine(Shoot(w, PlayerAiming.Instance.GetRay()));
+            StartCoroutine(Shoot(w, PlayerAiming.Instance.GetRay(), scheduledStart));
             return true;
         }
 
         return false;
     }
 
-    private IEnumerator Shoot(Weapon w, Ray ray)
+    /// <param name="scheduledStart">這次扣扳機「排定」的開火時間（見 TryStartShoot），冷卻從它往後排。</param>
+    private IEnumerator Shoot(Weapon w, Ray ray, float scheduledStart)
     {
         w.rangeRuntime.readyToShoot = false;
         int shotsToFire = Mathf.Min(w.range.roundPerTap, w.rangeRuntime.bulletsLeft);
@@ -143,12 +157,19 @@ public class RangeAttackController : MonoBehaviour
         bool isLeftShoulder = (w == attackManager.leftShoulderWeapon);
         bool isRightShoulder = (w == attackManager.rightShoulderWeapon);
 
+        // 這一輪「排定」的開火時間。點射的間隔和打完之後的冷卻都從它往後排，
+        // 不用 WaitForSeconds（它會把每一段等待都進位到整數幀，射速越快損失越多）。
+        float scheduled = scheduledStart;
+
         for (int i = 0; i < shotsToFire; i++)
         {
             // 肩武器：先觸發開火動畫，等 Attack_Fire 開始播放才生成這一輪的子彈。
             // 沒有目標時武器是收著的，這段等待也涵蓋「迅速轉向前方」的時間。
             if ((isLeftShoulder || isRightShoulder) && attackManager.playerAnimation != null)
+            {
                 yield return attackManager.playerAnimation.FireShoulderAndWait(isLeftShoulder);
+                scheduled = Mathf.Max(scheduled, Time.time);   // 等動畫是真的延遲，不補回來
+            }
 
             // 這一輪的後座偏移（圖上的紫點）。只在這一輪的第一顆彈丸骰一次，
             // 之後的彈丸沿用同一個旋轉 —— 霰彈槍整組彈丸一起被推開，再各自散開。
@@ -325,14 +346,17 @@ public class RangeAttackController : MonoBehaviour
             attackManager.PushAmmoUI();
 
             if (i < shotsToFire - 1)
-                yield return new WaitForSeconds(w.range.timeBetweenShots);
+            {
+                // 點射間隔：從上一發的排定時間往後排。至少等一幀（跟原本 WaitForSeconds 一樣，同一幀不會連發）。
+                scheduled += Mathf.Max(0f, w.range.timeBetweenShots);
+                do { yield return null; } while (Time.time < scheduled);
+            }
         }
 
-        if (w.rangeRuntime.allowInvoke)
-        {
-            w.rangeRuntime.allowInvoke = false;
-            StartCoroutine(ResetShotCooldown(w));
-        }
+        // 冷卻：從最後一發的排定時間往後排（冷卻在點射結束後才開始，跟原本一樣）。
+        // readyToShoot 立刻放開，實際能不能開火由 TryStartShoot 比對 nextShootTime。
+        w.rangeRuntime.nextShootTime = scheduled + Mathf.Max(0f, w.range.timeBetweenShooting);
+        w.rangeRuntime.readyToShoot = true;
     }
 
     /// <summary>
@@ -398,13 +422,6 @@ public class RangeAttackController : MonoBehaviour
         w.rangeRuntime.bulletsLeft = w.range.magazineSize;
         w.rangeRuntime.reloading = false;
         w.reloadNormalized = 0f;
-    }
-
-    private IEnumerator ResetShotCooldown(Weapon w)
-    {
-        yield return new WaitForSeconds(w.range.timeBetweenShooting);
-        w.rangeRuntime.readyToShoot = true;
-        w.rangeRuntime.allowInvoke = true;
     }
 
     // 在以 dir 為軸、半角 halfAngleDeg 的圓錐內均勻取一個方向。

@@ -356,6 +356,7 @@ MonoBehaviour:
     explosionDamage: 0
     energyDamage: 0
     coldDamage: 0
+    impact: 60
     bulletSpeed: 100
     bulletSpread: 0
     bulletPerRound: 1
@@ -427,7 +428,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31fb2d2174ffd2a4a80728d54f1f0d07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipPassenger
-  platformTag: Mobile Platform Hitbox
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  platformLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  maxDistance: 60
+  rayStartOffset: 0.5
+  drawDebugRay: 0
   detectByHierarchy: 1
 --- !u!1 &4492677885157587010
 GameObject:

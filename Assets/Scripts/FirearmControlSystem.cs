@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [System.Serializable]
 public class Firearm
@@ -22,6 +22,8 @@ public class Firearm
     public float explosionDamage; // explosion damage of the bullet
     public float energyDamage; // energy damage of the bullet
     public float coldDamage; // cold damage of the bullet
+    [Tooltip("衝擊值：命中時扣目標的 ACS，扣到 0 觸發失衡。跟傷害一樣吃子彈的距離衰減。")]
+    public float impact; // impact of the bullet (ACS damage)
 
     public float bulletSpeed; // speed of the bullet
     public float bulletSpread; // spread angle for inaccuracy
@@ -464,6 +466,7 @@ public class FirearmControlSystem : MonoBehaviour
             bulletComp.explosionDamage = fa.explosionDamage;
             bulletComp.energyDamage = fa.energyDamage;
             bulletComp.coldDamage = fa.coldDamage;
+            bulletComp.impact = fa.impact;
             Rigidbody rb = b.GetComponent<Rigidbody>();
             if (rb != null)
             {

@@ -341,6 +341,7 @@ public class AttackManager : MonoBehaviour
                 outWeapon.rangeRuntime.reloading = false;
                 outWeapon.rangeRuntime.readyToShoot = true;
                 outWeapon.rangeRuntime.allowInvoke = true;
+                outWeapon.rangeRuntime.nextShootTime = 0f;   // 換了武器：不沿用上一把的冷卻
                 outWeapon.reloadNormalized = 0f;
             }
             return;
@@ -499,6 +500,7 @@ public class AttackManager : MonoBehaviour
                 outWeapon.rangeRuntime.reloading = false;
                 outWeapon.rangeRuntime.readyToShoot = true;
                 outWeapon.rangeRuntime.allowInvoke = true;
+                outWeapon.rangeRuntime.nextShootTime = 0f;   // 換了武器：不沿用上一把的冷卻
                 outWeapon.reloadNormalized = 0f;
             }
             return;
