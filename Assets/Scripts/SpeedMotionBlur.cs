@@ -34,17 +34,42 @@ public class SpeedMotionBlur : MonoBehaviour
              "突進很短，只跟突進的話模糊會一閃就沒了。")]
     [SerializeField] private bool holdThroughMeleeHover = false;
 
+    [Header("Assault Boost Vignette")]
+    [Tooltip("突擊推進時加深 Vignette（畫面四周變暗，視線集中在前方）。\n" +
+             "Volume Profile 裡要有 Vignette，而且 Intensity 有勾選覆寫。平常的強度沿用 Profile 上的值。")]
+    [SerializeField] private bool assaultBoostVignette = true;
+
+    [Tooltip("突擊推進時的 Vignette 強度。")]
+    [Range(0f, 1f)][SerializeField] private float assaultBoostVignetteIntensity = 0.5f;
+
+    [Tooltip("進入的時間常數（秒）。越小越快變暗。")]
+    [Min(0f)][SerializeField] private float vignetteInTime = 0.1f;
+
+    [Tooltip("退出的時間常數（秒）。")]
+    [Min(0f)][SerializeField] private float vignetteOutTime = 0.35f;
+
     private MotionBlur _mb;
+    private Vignette _vignette;
+    private float _baseVignetteIntensity;
 
     void Start()
     {
+        // volume.profile 會複製一份執行期用的 Profile，改它不會動到資產本身
         if (volume != null && volume.profile != null)
+        {
             volume.profile.TryGet(out _mb);
+            if (volume.profile.TryGet(out _vignette))
+                _baseVignetteIntensity = _vignette.intensity.value;   // 平常的強度（例如 0.1）
+        }
     }
 
     void LateUpdate()
     {
-        if (_mb == null || playerMovement == null) return;
+        if (playerMovement == null) return;
+
+        UpdateVignette();
+
+        if (_mb == null) return;
 
         float target = 0f;
         bool active = false;
@@ -69,6 +94,21 @@ public class SpeedMotionBlur : MonoBehaviour
         // 進場快、退場慢，尾巴比較好看
         float lerp = active ? blurInLerp : blurOutLerp;
         _mb.intensity.value = Mathf.Lerp(_mb.intensity.value, target, lerp * Time.deltaTime);
+    }
+
+    private void UpdateVignette()
+    {
+        if (_vignette == null || !assaultBoostVignette) return;
+
+        bool ab = playerMovement.IsAssaultBoosting;
+        float target = ab ? assaultBoostVignetteIntensity : _baseVignetteIntensity;
+        float tau = ab ? vignetteInTime : vignetteOutTime;
+
+        // 幀率無關的指數逼近
+        float v = _vignette.intensity.value;
+        v = (tau <= 0.0001f) ? target : Mathf.Lerp(v, target, 1f - Mathf.Exp(-Time.deltaTime / tau));
+        if (Mathf.Abs(v - target) < 0.001f) v = target;
+        _vignette.intensity.value = v;
     }
 
     private bool IsMeleeBlurActive()

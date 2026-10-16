@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b27a7dfbdae4cf4ea38d16c428d4e4a, type: 3}
   m_Name: Cannon Barrel 2
   m_EditorClassIdentifier: Assembly-CSharp::ShoulderWeaponPart
-  itemName: Cannon Barrel
+  itemName: Cannon Barrel 2
   type: 9
   icon: {fileID: 0}
   maxStack: 0
   dropPrefab: {fileID: 0}
-  shoulderWeaponPartPrefab: {fileID: 919132149155446097, guid: 13b4a21a013619747a1dc8a865b62214, type: 3}
+  shoulderWeaponPartPrefab: {fileID: 1803562443445327293, guid: 5a32f48228a19694da27b0f6b8017d4d, type: 3}
   partType: 7
   buffs:
   - attribute: 33
@@ -25,6 +25,18 @@ MonoBehaviour:
     value: 20
   - attribute: 11
     mode: 1
-    value: -3
+    value: -5
+  - attribute: 0
+    mode: 1
+    value: -0.9
+  - attribute: 13
+    mode: 1
+    value: 2
+  - attribute: 14
+    mode: 1
+    value: 9
+  - attribute: 15
+    mode: 1
+    value: 0.5
   randomBuffs: []
   meshRenderer: {fileID: -7511558181221131132, guid: 13b4a21a013619747a1dc8a865b62214, type: 3}

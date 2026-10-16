@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// 敵人的瞄準點。
@@ -15,6 +16,33 @@ public class AimPoint : MonoBehaviour
 {
     [Tooltip("Scene 視窗中標示用的球體大小（只影響編輯器顯示）。")]
     [SerializeField] private float gizmoRadius = 0.3f;
+
+    // ── 給 AI / 砲塔共用的查詢 ─────────────────────────────────────────
+    //
+    // 砲塔（FirearmControlSystem / TurretRadar）原本直接瞄 target.position ——
+    // 敵人的 pivot 在腳底，所以會打腿。改成跟玩家一樣瞄 AimPoint。
+
+    private static readonly Dictionary<Transform, AimPoint> _cache = new Dictionary<Transform, AimPoint>();
+    private const int CacheLimit = 512;
+
+    /// <summary>
+    /// 目標的瞄準位置：有 AimPoint 就用它，沒有就退回 transform 原點（跟 PlayerAiming 一樣）。
+    /// 結果依 target 快取，不會每幀 GetComponentInChildren。
+    /// </summary>
+    public static Vector3 PositionOf(Transform target)
+    {
+        if (target == null) return Vector3.zero;
+
+        if (!_cache.TryGetValue(target, out AimPoint ap))
+        {
+            // 敵人如果是 Destroy 而不是回收，快取會越長越大；超過上限就清掉重建
+            if (_cache.Count >= CacheLimit) _cache.Clear();
+            ap = target.GetComponentInChildren<AimPoint>();
+            _cache[target] = ap;   // 找不到也記下 null
+        }
+
+        return ap != null ? ap.transform.position : target.position;
+    }
 
     private void OnDrawGizmos()
     {

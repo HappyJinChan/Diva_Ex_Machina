@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class TurretRadar : MonoBehaviour
@@ -20,7 +20,38 @@ public class TurretRadar : MonoBehaviour
     public bool preferUniqueTargets = true;
     public bool ignoreDeadObjects = true;
 
+    [Header("Line of Sight")]
+    [Tooltip("開啟時，被牆擋住的敵人不會被選為目標。")]
+    [SerializeField] private bool requireLineOfSight = true;
+
+    [Tooltip("會擋住視線的層。敵人層不要勾，否則敵人會互相擋住。\n" +
+             "砲塔自己的 collider 會自動忽略，不用特別排除。\n" +
+             "留空（Nothing）會在執行時自動用 Default、Ground、Mobile Platform、Defence Fortifications、Obstacle（跟玩家輔助瞄準一樣）。")]
+    [SerializeField] private LayerMask lineOfSightBlockers;
+
+    [Tooltip("目前的目標躲到牆後之後，還會繼續朝它開火幾秒才放棄（秒）。")]
+    [SerializeField, Min(0f)] private float lostSightGraceTime = 1f;
+
     private float _scanTimer;
+
+    // 每門砲：目前目標最後一次「看得到」的時間（給 lostSightGraceTime 用）
+    private float[] _lastSeenTime;
+
+    // 掃描用的暫存（避免每次掃描都配置記憶體）
+    private readonly List<Candidate> _candidates = new List<Candidate>();
+    private readonly RaycastHit[] _losHits = new RaycastHit[8];
+
+    private struct Candidate
+    {
+        public GameObject go;
+        public float distSqr;
+    }
+
+    private void Awake()
+    {
+        if (lineOfSightBlockers.value == 0)
+            lineOfSightBlockers = LayerMask.GetMask("Default", "Ground", "Mobile Platform", "Defence Fortifications", "Obstacle");
+    }
 
     void Update()
     {
@@ -51,9 +82,13 @@ public class TurretRadar : MonoBehaviour
             enemies = new List<GameObject>(GameObject.FindGameObjectsWithTag("Enemy"));
         }
 
+        int n = firearmControl.firearms.Length;
+        if (_lastSeenTime == null || _lastSeenTime.Length != n)
+            _lastSeenTime = new float[n];
+
         var used = preferUniqueTargets ? new HashSet<int>() : null;
 
-        for (int i = 0; i < firearmControl.firearms.Length; i++)
+        for (int i = 0; i < n; i++)
         {
             var fa = firearmControl.firearms[i];
             if (fa == null)
@@ -68,72 +103,133 @@ public class TurretRadar : MonoBehaviour
             }
 
             float halfAngle = GetAssignHalfAngle(fa);
+            Transform previous = fa.target;
 
-            Transform bestT = null;
-            Rigidbody bestRb = null;
-            float bestDistSqr = float.PositiveInfinity;
+            // 先選沒被其他砲占用的；都沒有才允許跟別門砲打同一個
+            GameObject best = PickClosestVisible(i, fa, aimFrom, enemies, halfAngle, used);
+            if (best == null && preferUniqueTargets)
+                best = PickClosestVisible(i, fa, aimFrom, enemies, halfAngle, null);
 
-            for (int e = 0; e < enemies.Count; e++)
-            {
-                var go = enemies[e];
-                if (go == null) continue;
-                if (ignoreDeadObjects && !go.activeInHierarchy) continue;
+            Transform bestT = best != null ? best.transform : null;
 
-                int id = go.GetInstanceID();
-                if (preferUniqueTargets && used != null && used.Contains(id))
-                    continue;
-
-                Vector3 to = go.transform.position - transform.position;
-                to.y = 0f;
-                float distSqr = to.sqrMagnitude;
-
-                if (distSqr > radarRange * radarRange)
-                    continue;
-
-                if (!IsWithinYawHalfAngle(aimFrom, go.transform.position, halfAngle))
-                    continue;
-
-                if (distSqr < bestDistSqr)
-                {
-                    bestDistSqr = distSqr;
-                    bestT = go.transform;
-                    bestRb = go.GetComponent<Rigidbody>();
-                }
-            }
-
-            if (bestT == null && preferUniqueTargets)
-            {
-                for (int e = 0; e < enemies.Count; e++)
-                {
-                    var go = enemies[e];
-                    if (go == null) continue;
-                    if (ignoreDeadObjects && !go.activeInHierarchy) continue;
-
-                    Vector3 to = go.transform.position - transform.position;
-                    to.y = 0f;
-                    float distSqr = to.sqrMagnitude;
-
-                    if (distSqr > radarRange * radarRange)
-                        continue;
-
-                    if (!IsWithinYawHalfAngle(aimFrom, go.transform.position, halfAngle))
-                        continue;
-
-                    if (distSqr < bestDistSqr)
-                    {
-                        bestDistSqr = distSqr;
-                        bestT = go.transform;
-                        bestRb = go.GetComponent<Rigidbody>();
-                    }
-                }
-            }
+            // 換了新目標：選中的當下一定看得到，從現在開始計時
+            if (bestT != null && bestT != previous)
+                _lastSeenTime[i] = Time.time;
 
             fa.target = bestT;
-            fa.targetRigidbody = bestRb;
+            fa.targetRigidbody = best != null ? best.GetComponent<Rigidbody>() : null;
 
             if (preferUniqueTargets && used != null && bestT != null)
-                used.Add(bestT.gameObject.GetInstanceID());
+                used.Add(best.GetInstanceID());
         }
+    }
+
+    /// <summary>
+    /// 在雷達範圍、轉向角度內，找最近的「看得到」的敵人。
+    /// 先依距離排序，從近到遠打視線射線，打到第一個看得到的就停（遠處的敵人不用打射線）。
+    /// </summary>
+    private GameObject PickClosestVisible(int idx, Firearm fa, Transform aimFrom, List<GameObject> enemies,
+                                          float halfAngle, HashSet<int> exclude)
+    {
+        _candidates.Clear();
+        float rangeSqr = radarRange * radarRange;
+
+        for (int e = 0; e < enemies.Count; e++)
+        {
+            var go = enemies[e];
+            if (go == null) continue;
+            if (ignoreDeadObjects && !go.activeInHierarchy) continue;
+            if (exclude != null && exclude.Contains(go.GetInstanceID())) continue;
+
+            Vector3 to = go.transform.position - transform.position;
+            to.y = 0f;
+            float distSqr = to.sqrMagnitude;
+
+            if (distSqr > rangeSqr)
+                continue;
+
+            if (!IsWithinYawHalfAngle(aimFrom, go.transform.position, halfAngle))
+                continue;
+
+            _candidates.Add(new Candidate { go = go, distSqr = distSqr });
+        }
+
+        if (_candidates.Count == 0) return null;
+        _candidates.Sort((a, b) => a.distSqr.CompareTo(b.distSqr));
+
+        for (int c = 0; c < _candidates.Count; c++)
+        {
+            GameObject go = _candidates[c].go;
+            if (IsVisibleOrInGrace(idx, fa, go.transform))
+                return go;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 看得到 → true。
+    /// 看不到，但它是這門砲目前的目標、而且躲起來還不到 lostSightGraceTime → 也算 true（繼續打一下）。
+    /// </summary>
+    private bool IsVisibleOrInGrace(int idx, Firearm fa, Transform target)
+    {
+        if (!requireLineOfSight) return true;
+
+        bool visible = HasLineOfSight(fa, target);
+        bool isCurrent = target == fa.target;
+
+        if (visible)
+        {
+            if (isCurrent) _lastSeenTime[idx] = Time.time;
+            return true;
+        }
+
+        return isCurrent && Time.time - _lastSeenTime[idx] <= lostSightGraceTime;
+    }
+
+    /// <summary>
+    /// 從砲口中心看向目標的 AimPoint（跟砲塔實際瞄的同一點），中間有沒有被 lineOfSightBlockers 擋住。
+    /// 砲塔自己的 collider（基座、砲管）忽略；打到目標自己也算看得到。
+    /// </summary>
+    private bool HasLineOfSight(Firearm fa, Transform target)
+    {
+        Vector3 from;
+        if (fa.muzzleCenterPoint != null) from = fa.muzzleCenterPoint.position;
+        else if (fa.barrel != null) from = fa.barrel.transform.position;
+        else if (fa.turret != null) from = fa.turret.transform.position;
+        else from = transform.position;
+
+        Vector3 to = AimPoint.PositionOf(target);
+        Vector3 dir = to - from;
+        float dist = dir.magnitude;
+        if (dist < 0.01f) return true;
+        dir /= dist;
+
+        int count = Physics.RaycastNonAlloc(from, dir, _losHits, dist, lineOfSightBlockers, QueryTriggerInteraction.Ignore);
+        if (count == 0) return true;
+
+        // RaycastNonAlloc 不保證順序 → 找「最近的、不是自己的」那一個
+        float nearest = float.PositiveInfinity;
+        Collider nearestCol = null;
+        for (int h = 0; h < count; h++)
+        {
+            Collider col = _losHits[h].collider;
+            if (col == null || IsOwnCollider(col)) continue;
+            if (_losHits[h].distance < nearest)
+            {
+                nearest = _losHits[h].distance;
+                nearestCol = col;
+            }
+        }
+
+        if (nearestCol == null) return true;                  // 只打到自己
+        return nearestCol.transform.IsChildOf(target);        // 第一個擋到的是目標自己 → 看得到
+    }
+
+    private bool IsOwnCollider(Collider col)
+    {
+        Transform t = col.transform;
+        if (t.IsChildOf(transform)) return true;
+        return firearmControl != null && t.IsChildOf(firearmControl.transform);
     }
 
     private static Transform GetYawReference(Firearm fa)

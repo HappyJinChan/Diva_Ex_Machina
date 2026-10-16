@@ -9,7 +9,9 @@ public class PlayerAiming : MonoBehaviour
     public static PlayerAiming Instance { get; private set; }
 
     [Header("Crosshair")]
-    [SerializeField] private Image AimAreaImage;
+    // 鎖定圈。用 Graphic 而不是 Image：Image 或 LockRingGraphic（程式畫的圓環，粗細不隨大小改變）都能拖進來。
+    // 這裡只用到它的 RectTransform（大小 = 鎖定範圍）。
+    [SerializeField] private Graphic AimAreaImage;
     [SerializeField] private Image crosshairImage;
 
     [Header("Camera")]

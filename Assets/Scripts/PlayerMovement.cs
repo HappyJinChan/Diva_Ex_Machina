@@ -2300,8 +2300,11 @@ public class PlayerMovement : MonoBehaviour
 
         Quaternion delta = current * Quaternion.Inverse(_mobilePlatformLastRot);
 
-        // 讓玩家的位置繞著平台 pivot 旋轉
-        Vector3 pivot = _mobilePlatformTf.position;
+        // 讓玩家的位置繞著平台旋轉。
+        // 旋轉中心 = 船 Rigidbody 的「物理位置」（原點）。實測（ShipDriftProbe）：船是繞原點轉的，
+        // 不是繞質心 —— 用質心當中心時，漂移速度 = 轉速 × 質心偏移（約 40 m），每秒好幾公尺。
+        // 也不用 transform.position：船有插值，那是畫面上落後的位置，跟 rb.rotation（物理姿態）對不上。
+        Vector3 pivot = _mobilePlatformRb.position;
         Vector3 p = playerRigidbody.position;
         Vector3 newP = pivot + (delta * (p - pivot));
         playerRigidbody.MovePosition(newP);

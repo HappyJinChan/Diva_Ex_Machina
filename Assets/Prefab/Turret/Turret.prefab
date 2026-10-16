@@ -381,10 +381,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TurretRadar
   firearmControl: {fileID: 3902974196550821903}
-  radarRange: 100
+  radarRange: 300
   scanInterval: 0.1
   defaultAssignHalfAngleDeg: 180
-  fireConeDeg: 6
+  fireConeDeg: 30
   preferUniqueTargets: 1
   ignoreDeadObjects: 1
 --- !u!114 &3608191395778547943

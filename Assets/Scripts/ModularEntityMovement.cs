@@ -42,6 +42,7 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
     public virtual void ManagedFixedUpdate(float dt)
     {
         GroundCheck();
+        CarryWithPlatformRotation();   // 船轉向時，跟著船一起轉（位置 + 模型朝向）
 
         // 失衡開始的那一步：水平速度（相對平台）先砍到 staggerSpeedRetain，之後用 decelerationSpeed 減速到 0。
         // 正在被撞飛時不砍，讓它照物理飛完。
@@ -369,6 +370,56 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
 
         Rigidbody platformRb = p.PlatformRigidbody;
         return (platformRb != null) ? platformRb.linearVelocity : Vector3.zero;   // Unity 6
+    }
+
+    // ── Mobile Platform carry (rotation) ──────────────────────────────────
+    //
+    // 平台速度（linearVelocity）只處理「船往前開」，不處理「船轉向」。
+    // 船轉向時甲板上每一點的移動方向都不同，只疊 linearVelocity 的話，
+    // 實體會相對甲板往外滑。這裡每步把實體的位置繞船轉同樣的角度。
+    // 跟 PlayerMovement.CarryWithPlatformRotation 同一套做法。
+
+    private Rigidbody _rotCarryShip;          // 上一步所在的船；換船 / 下船時重新記錄
+    private Quaternion _rotCarryLastRot;
+
+    private void CarryWithPlatformRotation()
+    {
+        ShipPassenger p = Passenger;
+        Rigidbody ship = (p != null && p.isOnShip) ? p.PlatformRigidbody : null;
+
+        if (ship == null || entityRigidbody == null)
+        {
+            _rotCarryShip = null;
+            return;
+        }
+
+        Quaternion current = ship.rotation;
+
+        // 剛上船（或換了一艘船）：這一步只記錄姿態，下一步才開始補償
+        if (ship != _rotCarryShip)
+        {
+            _rotCarryShip = ship;
+            _rotCarryLastRot = current;
+            return;
+        }
+
+        Quaternion delta = current * Quaternion.Inverse(_rotCarryLastRot);
+        _rotCarryLastRot = current;
+
+        // 旋轉中心 = 船 Rigidbody 的物理位置（原點）。
+        // 不用質心（船是繞原點轉的，用質心會漂，偏移約 40 m）；
+        // 也不用 transform.position（船有插值，那是畫面上落後的位置）。
+        Vector3 pivot = ship.position;
+        Vector3 pos = entityRigidbody.position;
+        entityRigidbody.MovePosition(pivot + delta * (pos - pivot));
+
+        // 模型朝向也吃同一個 yaw，不然船轉了、敵人還面對原本的世界方向
+        if (entityMesh == null) return;
+        delta.ToAngleAxis(out float angle, out Vector3 axis);
+        if (axis.sqrMagnitude < 0.000001f) return;
+        float yaw = Vector3.Dot(axis.normalized, Vector3.up) * angle;
+        if (Mathf.Abs(yaw) > 0.0001f)
+            entityMesh.Rotate(0f, yaw, 0f, Space.World);
     }
 
     public virtual void RotateMesh(float direction, float maxDegrees = -1f)

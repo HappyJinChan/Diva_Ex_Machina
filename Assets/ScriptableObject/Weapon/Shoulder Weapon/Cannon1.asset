@@ -33,13 +33,13 @@ MonoBehaviour:
     value: 1
   - attribute: 11
     mode: 0
-    value: 0.1
+    value: 0.6
   - attribute: 12
     mode: 0
     value: 0
   - attribute: 13
     mode: 0
-    value: 0.1
+    value: 0.5
   - attribute: 14
     mode: 0
     value: 5

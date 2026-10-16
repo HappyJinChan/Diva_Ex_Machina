@@ -222,10 +222,12 @@ public class FirearmControlSystem : MonoBehaviour
 
         Vector3 origin = (fa.muzzleCenterPoint != null) ? fa.muzzleCenterPoint.position : barrelT.position;
 
-        Vector3 aimPoint = target.position;
+        // 瞄 AimPoint（身體中心），不是 target.position（pivot 在腳底 → 打腿）
+        Vector3 targetPos = AimPoint.PositionOf(target);
+        Vector3 aimPoint = targetPos;
         if (fa.bulletSpeed > 0.01f)
         {
-            if (MathToolKit.InterceptionPoint(target.position, origin, targetVel, fa.bulletSpeed, out var c))
+            if (MathToolKit.InterceptionPoint(targetPos, origin, targetVel, fa.bulletSpeed, out var c))
                 aimPoint = c;
         }
 
