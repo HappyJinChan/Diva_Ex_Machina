@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b27a7dfbdae4cf4ea38d16c428d4e4a, type: 3}
   m_Name: Cannon Barrel 1
   m_EditorClassIdentifier: Assembly-CSharp::ShoulderWeaponPart
+  itemId: 483cfe5245bc5f94caaf7b38b7c5ae56
   itemName: Cannon Barrel
   type: 9
   icon: {fileID: 0}

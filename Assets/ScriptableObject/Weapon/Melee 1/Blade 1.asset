@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8e82061701b4714c887065bd6d806f9, type: 3}
   m_Name: Blade 1
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
+  itemId: 3d036887bfa85fe4da536a5fe7750699
   itemName: Blade 1
   type: 10
   icon: {fileID: 0}

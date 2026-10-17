@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76655638c1f9059499a47cfb94789d2d, type: 3}
   m_Name: Handle 2
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponPart
+  itemId: bad90f2018ea44a4a8fed8aeb1faf48c
   itemName: Handle 1
   type: 9
   icon: {fileID: 0}

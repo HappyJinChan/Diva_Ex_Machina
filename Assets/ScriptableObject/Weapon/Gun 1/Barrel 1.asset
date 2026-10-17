@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e5af43e8791caa418ac62aba760a20c, type: 3}
   m_Name: Barrel 1
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeaponPart
+  itemId: 49697b054fbc64d46ab6d24665fb1b15
   itemName: SMG Barrel
   type: 9
   icon: {fileID: 21300000, guid: e0cf10aa6bb44564eb94f956e5831e25, type: 3}

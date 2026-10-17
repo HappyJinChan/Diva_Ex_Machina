@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c34413907d99d344e8a49d38726c949a, type: 3}
   m_Name: LegArmor2
   m_EditorClassIdentifier: Assembly-CSharp::LegArmor
+  itemId: 0bb6dfb9fa98d3d40a140ccefd26ae12
   itemName: Emerald Storm_LG
   type: 6
   icon: {fileID: 21300000, guid: b90771b2b8a19b2489af3ecdcb22b37e, type: 3}

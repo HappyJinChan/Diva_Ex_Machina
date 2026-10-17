@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21d44a2a71285894287aa056e23edd0e, type: 3}
   m_Name: Ultra Mass Alloy
   m_EditorClassIdentifier: Assembly-CSharp::ItemObject
+  itemId: 83bc55f6729eb1c4eab6b82ce9a1cfd6
   itemName: Ultra Mass Alloy
   type: 12
   icon: {fileID: 0}

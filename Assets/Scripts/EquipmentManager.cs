@@ -1,18 +1,58 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
+/// <summary>
+/// 裝備格的身分。取代「equipmentSlots 第幾格」的整數索引。
+/// 數值明確寫死：enum 存檔是存數字，之後插新值不能改到舊的。
+/// </summary>
+public enum EquipmentSlotId
+{
+    None = 0,
+    Head = 1,
+    Chest = 2,
+    LeftHandArmor = 3,
+    RightHandArmor = 4,
+    Waist = 5,
+    Legs = 6,
+    Thruster = 7,
+    LeftHandWeapon = 8,
+    RightHandWeapon = 9,
+    LeftShoulderWeapon = 10,
+    RightShoulderWeapon = 11,
+}
+
 [System.Serializable]
 public class EquipmentSlot
 {
+    [Tooltip("這一格的身分。PlayerStats、槍口火光、三套裝備都用它認格子，不再看順序。")]
+    public EquipmentSlotId id;
+
     public GameObject equipedItem;
+
+    // ── 執行時的場景參照（不存檔）──
+    // 原本放在 RangeWeaponInstance / MeleeWeaponInstance / ShoulderWeaponInstance 上，
+    // 但它們屬於「穿在這一格的那把武器模型」，不是物品資料。裝備時由 EquipmentManager 填入，卸下時清空。
+    [System.NonSerialized] public Transform muzzlePoint;
+    [System.NonSerialized] public MeleeHitbox hitbox;
+
+    [Tooltip("武器掛點（角色骨架上的 Transform）。留空時沿用 UI 格子上 WeaponTransform 傳進來的掛點。")]
+    public Transform mountPoint;
 
     [SerializeField] public List<ItemType> equipmentTypes = new List<ItemType>();
 
     [SerializeField, HideInInspector] public ItemType equipmentType;
 
-    public ItemInstance item;
+    // 目前穿在這一格的物品：背包裡那件本身（執行時的參照，不存檔）。
+    // 不序列化是刻意的：
+    //   - 一般欄位的 [Serializable] class 反序列化後永遠不是 null，空格子會變成一件「沒有內容的物品」；
+    //   - Play Mode 中改 EquipmentManager 的 Inspector 時，Unity 寫回會把它換成新物件，跟背包那件斷開。
+    // 要存檔就存 item.uid（見 ItemUid），讀檔時用 InventoryManager.FindByUid 找回來。
+    [System.NonSerialized] public ItemInstance item;
+
+    /// <summary>這一格物品的 uid；空格子回傳 null。</summary>
+    public string ItemUid => item?.uid;
 
     public bool Accepts(ItemType t)
     {
@@ -33,6 +73,66 @@ public class EquipmentSlot
 #endif
 }
 
+/// <summary>
+/// 一套裝備的「資料」：格子 id → 物品 uid。不含模型、掛點等場景狀態。
+/// 用的時候到背包裡用 uid 找那件（InventoryManager.FindByUid）：
+///   - 背包裡改了顏色 / 零件，每一套裡的那件都會一起變；
+///   - 那件已經不在背包裡（例如被合成用掉），Get 會回傳 null；
+///   - 存檔只要存這張 uid 表。
+/// </summary>
+public class EquipmentSet
+{
+    private readonly Dictionary<EquipmentSlotId, string> uids = new();
+
+    /// <summary>這一格存的 uid；沒有就回傳 null。</summary>
+    public string GetUid(EquipmentSlotId id)
+        => uids.TryGetValue(id, out var uid) ? uid : null;
+
+    /// <summary>這一格存的物品（到背包裡找）。沒存、或那件已經不在背包裡，回傳 null。</summary>
+    public ItemInstance Get(EquipmentSlotId id)
+    {
+        string uid = GetUid(id);
+        if (string.IsNullOrEmpty(uid) || InventoryManager.Instance == null) return null;
+        return InventoryManager.Instance.FindByUid(uid);
+    }
+
+    /// <summary>item 為 null 代表這格不放東西。</summary>
+    public void Set(EquipmentSlotId id, ItemInstance item)
+    {
+        if (id == EquipmentSlotId.None) return;
+        if (item == null)
+        {
+            uids.Remove(id);
+            return;
+        }
+        if (string.IsNullOrEmpty(item.uid))
+        {
+            Debug.LogWarning($"EquipmentSet: '{item.item?.itemName}' 沒有 uid（不是經由 InventoryManager.AddToInventory 加入的？），{id} 這格不記");
+            uids.Remove(id);
+            return;
+        }
+        uids[id] = item.uid;
+    }
+
+    public void Clear() => uids.Clear();
+
+    /// <summary>直接設定某格的 uid（讀檔用）。uid 為空代表這格不放東西。</summary>
+    public void SetUid(EquipmentSlotId id, string uid)
+    {
+        if (id == EquipmentSlotId.None) return;
+        if (string.IsNullOrEmpty(uid)) uids.Remove(id);
+        else uids[id] = uid;
+    }
+
+    public bool IsEmpty => uids.Count == 0;
+
+    public bool Contains(ItemInstance item)
+        => item != null && !string.IsNullOrEmpty(item.uid) && uids.ContainsValue(item.uid);
+
+    /// <summary>整張 uid 表（存檔用）。</summary>
+    public IReadOnlyDictionary<EquipmentSlotId, string> Uids => uids;
+}
+
 public class EquipmentManager : MonoBehaviour
 {
     [Header("Runtime Mix -> UTS3 Baking")]
@@ -46,6 +146,12 @@ public class EquipmentManager : MonoBehaviour
     [SerializeField] private Transform rightMuzzleFlashHolder;  // e.g. Player/FXHolders/R_MuzzleFlashHolder
 
     public static EquipmentManager Instance { get; private set; }
+
+    /// <summary>
+    /// 某一格的裝備變了（裝上或卸下）。參數是 equipmentSlots 的 index。
+    /// UI 監聽這個事件更新圖示；不經過 UI 的換裝（SwitchSet、換裝射出）也會觸發。
+    /// </summary>
+    public event Action<int> OnSlotChanged;
     public Transform equipmentPage;
     [SerializeField] public List<EquipmentSlot> equipmentSlots = new();
 
@@ -72,7 +178,283 @@ public class EquipmentManager : MonoBehaviour
         }
         // Otherwise, set this instance as the Singleton
         Instance = this;
+
+        WarnInvalidSlotIds();
     }
+
+    // ===== 用 id 找格子 =====
+
+    /// <summary>回傳該 id 在 equipmentSlots 的索引；找不到回傳 -1。</summary>
+    public int IndexOf(EquipmentSlotId id)
+    {
+        if (id == EquipmentSlotId.None) return -1;
+        for (int i = 0; i < equipmentSlots.Count; i++)
+            if (equipmentSlots[i] != null && equipmentSlots[i].id == id) return i;
+        return -1;
+    }
+
+    public EquipmentSlot GetSlot(EquipmentSlotId id)
+    {
+        int i = IndexOf(id);
+        return i >= 0 ? equipmentSlots[i] : null;
+    }
+
+    public EquipmentSlotId IdOf(int slotIndex)
+        => (slotIndex >= 0 && slotIndex < equipmentSlots.Count && equipmentSlots[slotIndex] != null)
+            ? equipmentSlots[slotIndex].id
+            : EquipmentSlotId.None;
+
+    public bool Equip(EquipmentSlotId id, ItemInstance item)
+    {
+        int i = IndexOf(id);
+        if (i < 0)
+        {
+            Debug.LogWarning($"Equip: 找不到 id 為 {id} 的裝備格");
+            return false;
+        }
+        return Equip(i, item);
+    }
+
+    public void Unequip(EquipmentSlotId id)
+    {
+        int i = IndexOf(id);
+        if (i < 0)
+        {
+            Debug.LogWarning($"Unequip: 找不到 id 為 {id} 的裝備格");
+            return;
+        }
+        Unequip(i);
+    }
+
+    // ===== 三套裝備 =====
+    //
+    // equipmentSlots 永遠只有一份，代表「身上實際穿著的」。
+    // 三套只存資料；SwitchSet 時把目標那套逐格 Equip / Unequip 上身。
+    // 「正在編輯第幾套」= 「正在穿第幾套」：UI 切分頁呼叫 SwitchSet，
+    // 之後用原本的背包 UI 換裝，換完的結果就是那一套的內容。
+    //
+    // 只在執行時存在（不序列化）：關掉遊戲就沒了，之後要接 SaveManager。
+    // 不用 [SerializeReference] 是刻意的 —— Inspector 寫回時會把參照換成新物件，
+    // 跟背包裡那件就斷開了。
+
+    public const int SetCount = 3;
+
+    private readonly EquipmentSet[] equipmentSets = { new EquipmentSet(), new EquipmentSet(), new EquipmentSet() };
+
+    /// <summary>目前穿在身上的是第幾套（0 ~ SetCount-1）。</summary>
+    public int ActiveSetIndex { get; private set; } = 0;
+
+    /// <summary>切換套裝完成後觸發，參數是新的 ActiveSetIndex。</summary>
+    public event Action<int> OnActiveSetChanged;
+
+    private static bool IsValidSetIndex(int setIndex) => setIndex >= 0 && setIndex < SetCount;
+
+    /// <summary>讀取某一套某一格存的裝備（UI 預覽用）。沒有就回傳 null。</summary>
+    public ItemInstance GetSetItem(int setIndex, EquipmentSlotId id)
+        => IsValidSetIndex(setIndex) ? equipmentSets[setIndex].Get(id) : null;
+
+    /// <summary>某件裝備有沒有被放進任何一套（例如背包 UI 要標示）。</summary>
+    public bool IsItemInAnySet(ItemInstance item)
+    {
+        for (int k = 0; k < SetCount; k++)
+            if (equipmentSets[k].Contains(item)) return true;
+        return false;
+    }
+
+    // ===== 同一件裝備只能屬於一套 =====
+    //
+    // 設定上：一套穿在 Bradamant 身上，另外兩套在貝努鳥號上待射出，同一件不可能同時在兩個地方。
+    // 目前這套的真實內容是「身上穿的」（equipmentSlots），記在 equipmentSets[ActiveSetIndex] 的可能是舊的，
+    // 所以「屬於別套」只看其他兩套。
+
+    /// <summary>這件裝備放在哪一套「別的」套裝裡（不含目前這套）；沒有回傳 -1。</summary>
+    public int GetOtherSetIndexOf(ItemInstance item)
+    {
+        if (item == null) return -1;
+        for (int k = 0; k < SetCount; k++)
+        {
+            if (k == ActiveSetIndex) continue;
+            if (equipmentSets[k].Contains(item)) return k;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// 清掉重複：同一個 uid 出現在多套時，只留在一套。優先留在 keepSetIndex，其次留在編號小的那套。
+    /// 讀到舊存檔（還沒有這條規則時存的）時用。回傳清掉幾格。
+    /// </summary>
+    public int RemoveDuplicatesAcrossSets(int keepSetIndex)
+    {
+        var owner = new Dictionary<string, int>();
+        int removed = 0;
+
+        // 先登記要保留的那套，再依編號登記其他套
+        var order = new List<int>();
+        if (IsValidSetIndex(keepSetIndex)) order.Add(keepSetIndex);
+        for (int k = 0; k < SetCount; k++) if (k != keepSetIndex) order.Add(k);
+
+        foreach (int k in order)
+        {
+            var set = equipmentSets[k];
+            var toRemove = new List<EquipmentSlotId>();
+            foreach (var kv in set.Uids)
+            {
+                if (string.IsNullOrEmpty(kv.Value)) continue;
+                if (owner.TryGetValue(kv.Value, out int first))
+                {
+                    Debug.LogWarning($"EquipmentManager: 同一件裝備同時在第 {first + 1} 套和第 {k + 1} 套，已從第 {k + 1} 套的 {kv.Key} 移除", this);
+                    toRemove.Add(kv.Key);
+                }
+                else owner[kv.Value] = k;
+            }
+            foreach (var id in toRemove) set.SetUid(id, null);
+            removed += toRemove.Count;
+        }
+        return removed;
+    }
+
+    /// <summary>把身上目前穿的記進指定那一套（覆蓋）。id 是 None 的格子不記。</summary>
+    public void SaveCurrentToSet(int setIndex)
+    {
+        if (!IsValidSetIndex(setIndex))
+        {
+            Debug.LogWarning($"SaveCurrentToSet: invalid set index {setIndex}");
+            return;
+        }
+
+        var set = equipmentSets[setIndex];
+        set.Clear();
+        for (int i = 0; i < equipmentSlots.Count; i++)
+        {
+            var slot = equipmentSlots[i];
+            if (slot == null || slot.id == EquipmentSlotId.None) continue;
+            if (slot.item != null && slot.item.item != null)
+                set.Set(slot.id, slot.item);
+        }
+    }
+
+    /// <summary>
+    /// 切換到指定那一套：先把身上的記回目前這套，再穿上目標那套。
+    /// 目標那套沒存的格子會卸下。回傳 false 代表有格子裝失敗（那幾格會是空的）。
+    /// </summary>
+    public bool SwitchSet(int setIndex)
+    {
+        if (!IsValidSetIndex(setIndex))
+        {
+            Debug.LogWarning($"SwitchSet: invalid set index {setIndex}");
+            return false;
+        }
+        if (setIndex == ActiveSetIndex) return true;
+
+        SaveCurrentToSet(ActiveSetIndex);
+        bool ok = ApplySetToSlots(setIndex);
+
+        ActiveSetIndex = setIndex;
+        OnActiveSetChanged?.Invoke(ActiveSetIndex);
+        return ok;
+    }
+
+    // ===== 讀檔用 =====
+
+    /// <summary>某一套的整張 uid 表（存檔用）。</summary>
+    public IReadOnlyDictionary<EquipmentSlotId, string> GetSetUids(int setIndex)
+        => IsValidSetIndex(setIndex) ? equipmentSets[setIndex].Uids : null;
+
+    /// <summary>覆蓋某一套的內容（讀檔用）。不會動到身上穿的。</summary>
+    public void SetSetUids(int setIndex, IEnumerable<KeyValuePair<EquipmentSlotId, string>> entries)
+    {
+        if (!IsValidSetIndex(setIndex)) return;
+        var set = equipmentSets[setIndex];
+        set.Clear();
+        if (entries == null) return;
+        foreach (var kv in entries) set.SetUid(kv.Key, kv.Value);
+    }
+
+    /// <summary>卸下身上所有裝備。</summary>
+    public void UnequipAll()
+    {
+        for (int i = 0; i < equipmentSlots.Count; i++)
+        {
+            var slot = equipmentSlots[i];
+            if (slot != null && (slot.item != null || slot.equipedItem != null)) Unequip(i);
+        }
+    }
+
+    /// <summary>
+    /// 直接穿上指定那一套，並設為目前這套（讀檔用）。
+    /// 跟 SwitchSet 不同：不會先把身上的記回目前這套，同一套也會重新套用。
+    /// </summary>
+    public bool ApplyActiveSet(int setIndex)
+    {
+        if (!IsValidSetIndex(setIndex))
+        {
+            Debug.LogWarning($"ApplyActiveSet: invalid set index {setIndex}");
+            return false;
+        }
+        bool ok = ApplySetToSlots(setIndex);
+        ActiveSetIndex = setIndex;
+        OnActiveSetChanged?.Invoke(ActiveSetIndex);
+        return ok;
+    }
+
+    // 逐格讓身上的裝備變成 set 的內容。已經穿著同一件的格子不重裝（省掉生成模型 / 烘焙材質）。
+    private bool ApplySetToSlots(int setIndex)
+    {
+        var set = equipmentSets[setIndex];
+        bool allOk = true;
+
+        for (int i = 0; i < equipmentSlots.Count; i++)
+        {
+            var slot = equipmentSlots[i];
+            if (slot == null) continue;
+            if (slot.id == EquipmentSlotId.None)
+            {
+                Debug.LogWarning($"SwitchSet: slot[{i}] 沒有 id，跳過");
+                continue;
+            }
+
+            var desired = set.Get(slot.id);
+
+            if (desired == null && !string.IsNullOrEmpty(set.GetUid(slot.id)))
+                Debug.LogWarning($"SwitchSet: 第 {setIndex + 1} 套的 {slot.id} 記的物品已經不在背包裡（可能被合成用掉），這格改為空", this);
+
+            if (desired == null)
+            {
+                if (slot.item != null || slot.equipedItem != null) Unequip(i);
+                continue;
+            }
+
+            if (desired == slot.item && slot.equipedItem != null) continue;
+
+            if (!EquipUnchecked(i, desired))
+            {
+                // 失敗的格子不能留著上一套的裝備，不然身上會混著兩套
+                Debug.LogWarning($"SwitchSet: 第 {setIndex + 1} 套的 {slot.id}（'{desired.item.itemName}'）裝不上，這格改為空", this);
+                if (slot.item != null || slot.equipedItem != null) Unequip(i);
+                allOk = false;
+            }
+        }
+        return allOk;
+    }
+
+    // 沒設 id 或 id 重複的格子：PlayerStats、槍口火光、三套裝備會認不到或認錯
+    private void WarnInvalidSlotIds()
+    {
+        if (equipmentSlots == null) return;
+        var seen = new HashSet<EquipmentSlotId>();
+        for (int i = 0; i < equipmentSlots.Count; i++)
+        {
+            var id = equipmentSlots[i]?.id ?? EquipmentSlotId.None;
+            if (id == EquipmentSlotId.None)
+            {
+                Debug.LogWarning($"EquipmentManager: slot[{i}] 沒有設定 id", this);
+                continue;
+            }
+            if (!seen.Add(id))
+                Debug.LogWarning($"EquipmentManager: id {id} 重複（slot[{i}]），IndexOf 只會找到第一格", this);
+        }
+    }
+
 
     private void OnEnable()
     {
@@ -160,6 +542,62 @@ public class EquipmentManager : MonoBehaviour
     private static string FormatFloat(float v)
         => v.ToString("0.##");
 
+    // ===== 統一入口 =====
+
+    /// <summary>
+    /// 把 item 裝到指定格子。武器、護甲都走這裡；腿部顯示/隱藏也在這裡處理。
+    /// uiMountPoint：UI 路徑傳入的武器掛點備用值，EquipmentSlot.mountPoint 有填時以格子為準。
+    /// </summary>
+    public bool Equip(int slotIndex, ItemInstance item, Transform uiMountPoint = null)
+    {
+        if (item == null || item.item == null) return false;
+
+        // 同一件裝備只能屬於一套：已經放在別套的，不能穿進目前這套
+        int otherSet = GetOtherSetIndexOf(item);
+        if (otherSet >= 0)
+        {
+            Debug.LogWarning($"Equip: '{item.item.itemName}' 已經在第 {otherSet + 1} 套裡，同一件裝備只能屬於一套");
+            return false;
+        }
+
+        return EquipUnchecked(slotIndex, item, uiMountPoint);
+    }
+
+    // 實際裝備，不檢查「是否屬於別套」。SwitchSet 穿上目標那套時用（那時目標那套還不是目前這套）。
+    private bool EquipUnchecked(int slotIndex, ItemInstance item, Transform uiMountPoint = null)
+    {
+        if (item == null || item.item == null) return false;
+
+        if (slotIndex < 0 || slotIndex >= equipmentSlots.Count)
+        {
+            Debug.LogWarning($"Equip: invalid slot index {slotIndex}");
+            return false;
+        }
+
+        if (item is RangeWeaponInstance || item is MeleeWeaponInstance || item is ShoulderWeaponInstance)
+            return TryEquipWeaponFromInventory(item, uiMountPoint, slotIndex);
+
+        if (!equipmentSlots[slotIndex].Accepts(item.item.type))
+        {
+            Debug.LogWarning($"Equip: slot[{slotIndex}] 不接受 {item.item.type}");
+            return false;
+        }
+
+        return EquipArmorToSlot(slotIndex, item);
+    }
+
+    /// <summary>卸下指定格子。腿部恢復顯示也在這裡處理。</summary>
+    public void Unequip(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= equipmentSlots.Count)
+        {
+            Debug.LogWarning($"Unequip: invalid slot index {slotIndex}");
+            return;
+        }
+        CleanEquipmentSlot(slotIndex);
+    }
+
+    // 舊入口：裝到「第一個接受該類型的格子」。UI 已改走 Equip(選中的格子)，目前沒有呼叫端。
     public bool TryEquipFromInventory(ItemInstance item)
     {
         if (item == null || item.item == null) return false;
@@ -170,95 +608,126 @@ public class EquipmentManager : MonoBehaviour
 
             if (!slot.Accepts(item.item.type)) continue;
 
-            // ²M±¼ÂÂ¹ê¨Ò
-            if (slot.equipedItem) Destroy(slot.equipedItem);
-
-            Debug.Log($"TryEquipFromInventory: found matching slot {i} for item {item.item.itemName}");
-            // ¸Ë¥Ò¡G¥Í¦¨¨Ã¸j°©
-            if (item.item is Armor armor && armor.skinnedMeshRenderer)
-            {
-                Debug.Log($"TryEquipFromInventory: equipping armor {armor.itemName} to slot {i}");
-                slot.equipedItem = BoneCombiner.Instance.InstantiateMesh(armor.skinnedMeshRenderer);
-                Debug.Log($"TryEquipFromInventory: BoneCombiner instantiated mesh for {armor.itemName}");
-                if (!slot.equipedItem)
-                {
-                    Debug.LogWarning("TryEquipFromInventory: BoneCombiner failed to instantiate mesh");
-                    return false; // ¹ê¨Ò¤Æ¥¢±Ñ®É¤£­n·í§@¦¨¥\
-                }
-                Debug.Log($"TryEquipFromInventory: equipped armor instance created for {armor.itemName}");
-                slot.item = item;
-
-                // ­Y¦³¦s¦â±m¡A³o¸Ì®M¦^¥h¡]¥i¿ï¡^
-                if (item is ArmorInstance ai && slot.equipedItem)
-                {
-                    var smr = slot.equipedItem.GetComponent<SkinnedMeshRenderer>();
-                    if (smr)
-                    {
-                        var mat = smr.material; // ¨C¥ó¸Ë³Æ¿W¥ß§÷½è
-                        if (!string.IsNullOrEmpty(ai.shaderName))
-                        {
-                            // ½d¨Ò¡G¨Ì shaderName ®M¦^ÃC¦â
-                            if (ai.shaderName.Contains("Mix 3") && ai.colors.Count >= 3)
-                            {
-                                mat.SetColor("_BaseColor", ai.colors[0]);
-                                mat.SetColor("_Layer1Color", ai.colors[1]);
-                                mat.SetColor("_Layer2Color", ai.colors[2]);
-                            }
-                            else if (ai.shaderName.Contains("Mix 4") && ai.colors.Count >= 4)
-                            {
-                                mat.SetColor("_BaseColor", ai.colors[0]);
-                                mat.SetColor("_Layer1Color", ai.colors[1]);
-                                mat.SetColor("_Layer2Color", ai.colors[2]);
-                                mat.SetColor("_Layer3Color", ai.colors[3]);
-                            }
-                            else if (ai.shaderName.Contains("Mix 5") && ai.colors.Count >= 5)
-                            {
-                                mat.SetColor("_BaseColor", ai.colors[0]);
-                                for (int k = 1; k < 5; k++) mat.SetColor($"_Layer{k}Color", ai.colors[k]);
-                            }
-                        }
-                    }
-                }
-                Debug.Log($"TryEquipFromInventory: armor {armor.itemName} equipped to slot {i}");
-
-                // Armor is instantiated directly from a SkinnedMeshRenderer reference,
-                // so add the baking controller to the runtime armor object here.
-                // This happens after ArmorInstance.colors have been restored.
-                var armorRenderer = slot.equipedItem.GetComponent<SkinnedMeshRenderer>();
-                if (armorRenderer == null)
-                    armorRenderer = slot.equipedItem.GetComponentInChildren<SkinnedMeshRenderer>(true);
-
-                if (armorRenderer != null && armor.uts3MaterialTemplate != null)
-                {
-                    var toonController =
-                        armorRenderer.GetComponent<LayeredToonMaterialController>();
-
-                    if (toonController == null)
-                        toonController =
-                            armorRenderer.gameObject.AddComponent<LayeredToonMaterialController>();
-
-                    toonController.Configure(
-                        armorRenderer,
-                        armor.uts3MaterialTemplate,
-                        mixAlbedoBakeShader
-                    );
-                }
-                else if (armorRenderer != null && armor.uts3MaterialTemplate == null)
-                {
-                    Debug.LogWarning(
-                        $"Armor '{armor.itemName}' has no UTS3 Material Template. " +
-                        "It will continue using its Mix material."
-                    );
-                }
-
-                PlayerStats.Instance?.RecalculateFromEquipment();
-                RefreshEquipmentStatBlock();
-                return true;
-            }
-            return false;
+            return EquipArmorToSlot(i, item);
         }
         return false;
     }
+
+    // 護甲實際裝備。原本是 TryEquipFromInventory 迴圈內的本體；
+    // 改成先檢查、生成新模型，成功才拆舊的。結尾處理腿部隱藏。
+    private bool EquipArmorToSlot(int i, ItemInstance item)
+    {
+        var slot = equipmentSlots[i];
+
+        // 先確認新護甲生成得出來，才拆掉舊的。失敗時 slot 維持原狀，
+        // 不會出現「模型沒了、數值還算舊護甲、腿還隱藏著」的情況。
+        if (!(item.item is Armor armor && armor.skinnedMeshRenderer))
+        {
+            Debug.LogWarning($"EquipArmorToSlot: '{item.item.itemName}' 不是有 SkinnedMeshRenderer 的 Armor，slot[{i}] 維持原狀");
+            return false;
+        }
+        if (BoneCombiner.Instance == null)
+        {
+            Debug.LogWarning($"EquipArmorToSlot: 找不到 BoneCombiner，slot[{i}] 維持原狀");
+            return false;
+        }
+
+        Debug.Log($"TryEquipFromInventory: found matching slot {i} for item {item.item.itemName}");
+        Debug.Log($"TryEquipFromInventory: equipping armor {armor.itemName} to slot {i}");
+        var newMesh = BoneCombiner.Instance.InstantiateMesh(armor.skinnedMeshRenderer);
+        Debug.Log($"TryEquipFromInventory: BoneCombiner instantiated mesh for {armor.itemName}");
+        if (!newMesh)
+        {
+            Debug.LogWarning("TryEquipFromInventory: BoneCombiner failed to instantiate mesh");
+            return false; // slot 維持原狀
+        }
+
+        // ²M±¼ÂÂ¹ê¨Ò
+        if (slot.equipedItem) Destroy(slot.equipedItem);
+
+        slot.equipedItem = newMesh;
+        Debug.Log($"TryEquipFromInventory: equipped armor instance created for {armor.itemName}");
+        slot.item = item;
+
+        // ­Y¦³¦s¦â±m¡A³o¸Ì®M¦^¥h¡]¥i¿ï¡^
+        if (item is ArmorInstance ai && slot.equipedItem)
+        {
+            var smr = slot.equipedItem.GetComponent<SkinnedMeshRenderer>();
+            if (smr)
+            {
+                var mat = smr.material; // ¨C¥ó¸Ë³Æ¿W¥ß§÷½è
+                if (!string.IsNullOrEmpty(ai.shaderName))
+                {
+                    // ½d¨Ò¡G¨Ì shaderName ®M¦^ÃC¦â
+                    if (ai.shaderName.Contains("Mix 3") && ai.colors.Count >= 3)
+                    {
+                        mat.SetColor("_BaseColor", ai.colors[0]);
+                        mat.SetColor("_Layer1Color", ai.colors[1]);
+                        mat.SetColor("_Layer2Color", ai.colors[2]);
+                    }
+                    else if (ai.shaderName.Contains("Mix 4") && ai.colors.Count >= 4)
+                    {
+                        mat.SetColor("_BaseColor", ai.colors[0]);
+                        mat.SetColor("_Layer1Color", ai.colors[1]);
+                        mat.SetColor("_Layer2Color", ai.colors[2]);
+                        mat.SetColor("_Layer3Color", ai.colors[3]);
+                    }
+                    else if (ai.shaderName.Contains("Mix 5") && ai.colors.Count >= 5)
+                    {
+                        mat.SetColor("_BaseColor", ai.colors[0]);
+                        for (int k = 1; k < 5; k++) mat.SetColor($"_Layer{k}Color", ai.colors[k]);
+                    }
+                }
+            }
+        }
+        Debug.Log($"TryEquipFromInventory: armor {armor.itemName} equipped to slot {i}");
+
+        // Armor is instantiated directly from a SkinnedMeshRenderer reference,
+        // so add the baking controller to the runtime armor object here.
+        // This happens after ArmorInstance.colors have been restored.
+        var armorRenderer = slot.equipedItem.GetComponent<SkinnedMeshRenderer>();
+        if (armorRenderer == null)
+            armorRenderer = slot.equipedItem.GetComponentInChildren<SkinnedMeshRenderer>(true);
+
+        if (armorRenderer != null && armor.uts3MaterialTemplate != null)
+        {
+            var toonController =
+                armorRenderer.GetComponent<LayeredToonMaterialController>();
+
+            if (toonController == null)
+                toonController =
+                    armorRenderer.gameObject.AddComponent<LayeredToonMaterialController>();
+
+            toonController.Configure(
+                armorRenderer,
+                armor.uts3MaterialTemplate,
+                mixAlbedoBakeShader
+            );
+        }
+        else if (armorRenderer != null && armor.uts3MaterialTemplate == null)
+        {
+            Debug.LogWarning(
+                $"Armor '{armor.itemName}' has no UTS3 Material Template. " +
+                "It will continue using its Mix material."
+            );
+        }
+
+        // 腿甲蓋住原本的腿（原本寫在 InventoryManager.OnClickInventoryItem）
+        if (item.item.type == ItemType.LegsArmor)
+            BoneCombiner.Instance?.HideLegs();
+
+        PlayerStats.Instance?.RecalculateFromEquipment();
+        RefreshEquipmentStatBlock();
+        OnSlotChanged?.Invoke(i);
+        return true;
+    }
+
+    /// <summary>
+    /// 不經過 UI 的入口：掛點只從 EquipmentSlot.mountPoint 取。
+    /// SwitchSet、換裝射出都走這裡。
+    /// </summary>
+    public bool TryEquipWeaponFromInventory(ItemInstance item, int slotIndex)
+        => TryEquipWeaponFromInventory(item, null, slotIndex);
 
     public bool TryEquipWeaponFromInventory(ItemInstance item, Transform mountPoint, int slotIndex)
     {
@@ -275,23 +744,43 @@ public class EquipmentManager : MonoBehaviour
         if (!slot.Accepts(item.item.type))
         {
             Debug.LogWarning(
-                $"TryEquipWeaponFromInventory: slot[{slotIndex}].equipmentType = {slot.equipmentType}, item.type = {item.item.type}"
+                $"TryEquipWeaponFromInventory: slot[{slotIndex}] accepts [{string.Join(", ", slot.equipmentTypes)}], item.type = {item.item.type}"
             );
+            return false;
+        }
+
+        // 掛點以 EquipmentSlot 為主；沒填時才用呼叫端（UI）傳進來的。
+        // 兩邊都有但不一樣，通常代表 UI 按鈕順序和 equipmentSlots 沒對齊。
+        if (slot.mountPoint != null)
+        {
+            if (mountPoint != null && mountPoint != slot.mountPoint)
+            {
+                Debug.LogWarning(
+                    $"TryEquipWeaponFromInventory: slot[{slotIndex}] 的 mountPoint '{slot.mountPoint.name}' " +
+                    $"與 UI 傳入的 '{mountPoint.name}' 不同，以 EquipmentSlot 為準。" +
+                    "請檢查 UI 按鈕順序與 equipmentSlots 是否對齊。", slot.mountPoint);
+            }
+            mountPoint = slot.mountPoint;
+        }
+
+        // 必須在拆掉舊裝備之前檢查，不然會拆了卻裝不上
+        if (mountPoint == null)
+        {
+            Debug.LogWarning($"TryEquipWeaponFromInventory: slot[{slotIndex}] 沒有掛點（EquipmentSlot.mountPoint 與 UI 都沒提供）");
             return false;
         }
 
         if (slot.equipedItem)
         {
-            if (PlayerStats.Instance != null)
-            {
-                if (slotIndex == PlayerStats.Instance.leftWeaponSlotIndex)
-                    DetachMuzzleFlashToHolder(leftMuzzleFlash, leftMuzzleFlashHolder);
-                else if (slotIndex == PlayerStats.Instance.rightWeaponSlotIndex)
-                    DetachMuzzleFlashToHolder(rightMuzzleFlash, rightMuzzleFlashHolder);
-            }
+            if (slot.id == EquipmentSlotId.LeftHandWeapon)
+                DetachMuzzleFlashToHolder(leftMuzzleFlash, leftMuzzleFlashHolder);
+            else if (slot.id == EquipmentSlotId.RightHandWeapon)
+                DetachMuzzleFlashToHolder(rightMuzzleFlash, rightMuzzleFlashHolder);
 
             Destroy(slot.equipedItem);
         }
+        slot.muzzlePoint = null;
+        slot.hitbox = null;
 
         if (item is RangeWeaponInstance rwi && rwi.item is RangeWeapon rw)
         {
@@ -301,7 +790,7 @@ public class EquipmentManager : MonoBehaviour
             slot.item = item;
             if (FindChildRecursive(slot.equipedItem.transform, "MuzzlePoint") != null)
             {
-                rwi.muzzlePoint = FindChildRecursive(slot.equipedItem.transform, "MuzzlePoint");
+                slot.muzzlePoint = FindChildRecursive(slot.equipedItem.transform, "MuzzlePoint");
             }
 
             // 1-1) §â RangeWeaponInstance ¤W¦sªºÃC¦â®M¦^¥h
@@ -357,7 +846,7 @@ public class EquipmentManager : MonoBehaviour
                         part.transform.localScale = Vector3.one;
                         if (FindChildRecursive(part.transform, "MuzzlePoint") != null)
                         {
-                            rwi.muzzlePoint = FindChildRecursive(part.transform, "MuzzlePoint");
+                            slot.muzzlePoint = FindChildRecursive(part.transform, "MuzzlePoint");
                         }
 
                         if (attach.colors != null && attach.colors.Count > 0 && !string.IsNullOrEmpty(attach.shaderName))
@@ -391,8 +880,10 @@ public class EquipmentManager : MonoBehaviour
                 }
             }
 
-            bool isLeftHand = (slotIndex == PlayerStats.Instance.leftWeaponSlotIndex);
-            ParentMuzzleFlashToMuzzle(isLeftHand ? leftMuzzleFlash : rightMuzzleFlash, rwi.muzzlePoint);
+            bool isLeftHand = (slot.id == EquipmentSlotId.LeftHandWeapon);
+            ParentMuzzleFlashToMuzzle(isLeftHand ? leftMuzzleFlash : rightMuzzleFlash, slot.muzzlePoint);
+            if (slot.muzzlePoint == null)
+                Debug.LogWarning($"Equip: '{rw.itemName}' 的模型和零件上都找不到 'MuzzlePoint'，這把槍不會開火", slot.equipedItem);
 
             // Saved Mix colors and all weapon parts are now restored.
             // Bake them and switch their visible materials to untouched UTS3 clones.
@@ -400,6 +891,7 @@ public class EquipmentManager : MonoBehaviour
 
             PlayerStats.Instance?.RecalculateFromEquipment();
             RefreshEquipmentStatBlock();
+            OnSlotChanged?.Invoke(slotIndex);
             Debug.Log($"Equipped weapon '{rw.itemName}' to slot index {slotIndex}");
             return true;
         }
@@ -553,8 +1045,8 @@ public class EquipmentManager : MonoBehaviour
             // 註冊 hitbox。必須在零件掛完之後 —— hitbox 有可能長在零件上。
             // 也必須在 RecalculateFromEquipment 之前，因為那會觸發
             // OnHandWeaponDataChanged → AttackManager.ApplyHand 讀取這個欄位。
-            mwi.hitbox = slot.equipedItem.GetComponentInChildren<MeleeHitbox>(true);
-            if (mwi.hitbox == null)
+            slot.hitbox = slot.equipedItem.GetComponentInChildren<MeleeHitbox>(true);
+            if (slot.hitbox == null)
             {
                 Debug.LogWarning($"Equip (Melee): '{mw.itemName}' 上找不到 MeleeHitbox，" +
                                  $"這把武器揮空氣。檢查刀刃上有沒有掛該組件。", slot.equipedItem);
@@ -562,6 +1054,7 @@ public class EquipmentManager : MonoBehaviour
 
             PlayerStats.Instance?.RecalculateFromEquipment();
             RefreshEquipmentStatBlock();
+            OnSlotChanged?.Invoke(slotIndex);
             Debug.Log($"Equipped weapon '{mw.itemName}' to slot index {slotIndex}");
             return true;
         }
@@ -573,7 +1066,7 @@ public class EquipmentManager : MonoBehaviour
             slot.item = item;
             if (FindChildRecursive(slot.equipedItem.transform, "MuzzlePoint") != null)
             {
-                swi.muzzlePoint = FindChildRecursive(slot.equipedItem.transform, "MuzzlePoint");
+                slot.muzzlePoint = FindChildRecursive(slot.equipedItem.transform, "MuzzlePoint");
             }
 
 
@@ -628,7 +1121,7 @@ public class EquipmentManager : MonoBehaviour
                         part.transform.localScale = Vector3.one;
                         if (FindChildRecursive(part.transform, "MuzzlePoint") != null)
                         {
-                            swi.muzzlePoint = FindChildRecursive(part.transform, "MuzzlePoint");
+                            slot.muzzlePoint = FindChildRecursive(part.transform, "MuzzlePoint");
                         }
 
                         if (attach.colors != null && attach.colors.Count > 0 && !string.IsNullOrEmpty(attach.shaderName))
@@ -662,11 +1155,15 @@ public class EquipmentManager : MonoBehaviour
                 }
             }
 
+            if (slot.muzzlePoint == null)
+                Debug.LogWarning($"Equip: '{sw.itemName}' 的模型和零件上都找不到 'MuzzlePoint'，這把肩武器不會開火", slot.equipedItem);
+
             // Saved Mix colors and all shoulder-weapon parts are now restored.
             LayeredToonMaterialController.InitializeAll(slot.equipedItem);
 
             PlayerStats.Instance?.RecalculateFromEquipment();
             RefreshEquipmentStatBlock();
+            OnSlotChanged?.Invoke(slotIndex);
             Debug.Log($"Equipped weapon '{sw.itemName}' to slot index {slotIndex}");
             return true;
         }
@@ -680,23 +1177,27 @@ public class EquipmentManager : MonoBehaviour
     {
         EquipmentSlot slot = equipmentSlots[equipmentSlotsIndex];
 
+        // 卸下腿甲 → 原本的腿恢復顯示（原本寫在 InventoryManager.Unequip）
+        if (slot.item?.item != null && slot.item.item.type == ItemType.LegsArmor)
+            BoneCombiner.Instance?.ShowLegs();
+
         if (slot.equipedItem)
         {
-            if (PlayerStats.Instance != null)
-            {
-                if (equipmentSlotsIndex == PlayerStats.Instance.leftWeaponSlotIndex)
-                    DetachMuzzleFlashToHolder(leftMuzzleFlash, leftMuzzleFlashHolder);
-                else if (equipmentSlotsIndex == PlayerStats.Instance.rightWeaponSlotIndex)
-                    DetachMuzzleFlashToHolder(rightMuzzleFlash, rightMuzzleFlashHolder);
-            }
+            if (slot.id == EquipmentSlotId.LeftHandWeapon)
+                DetachMuzzleFlashToHolder(leftMuzzleFlash, leftMuzzleFlashHolder);
+            else if (slot.id == EquipmentSlotId.RightHandWeapon)
+                DetachMuzzleFlashToHolder(rightMuzzleFlash, rightMuzzleFlashHolder);
 
             Destroy(slot.equipedItem);
         }
 
         slot.equipedItem = null;
         slot.item = null;
+        slot.muzzlePoint = null;
+        slot.hitbox = null;
         PlayerStats.Instance?.RecalculateFromEquipment();
         RefreshEquipmentStatBlock();
+        OnSlotChanged?.Invoke(equipmentSlotsIndex);
     }
 
     // 近戰武器的握把對位。必須在所有零件掛完之後呼叫。

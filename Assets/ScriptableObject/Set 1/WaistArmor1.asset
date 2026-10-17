@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 713e8101e72f9564bb08c5fb592812d6, type: 3}
   m_Name: WaistArmor1
   m_EditorClassIdentifier: Assembly-CSharp::Armor
+  itemId: 1ef9ea807ca10fb4ea54ac983db22253
   itemName: Crimson Rose_WA
   type: 5
   icon: {fileID: 21300000, guid: 0a07198ab0fcc5841b89a99262e111cc, type: 3}

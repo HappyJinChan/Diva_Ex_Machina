@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 713e8101e72f9564bb08c5fb592812d6, type: 3}
   m_Name: RHandArmor1
   m_EditorClassIdentifier: Assembly-CSharp::Armor
+  itemId: 421e560e64e49a646a7ce41630dfdb15
   itemName: Crimson Rose_RH
   type: 4
   icon: {fileID: 21300000, guid: 1e39e4e407be8744ba11b29debfed7a3, type: 3}

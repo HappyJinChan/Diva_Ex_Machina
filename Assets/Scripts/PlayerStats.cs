@@ -132,6 +132,10 @@ public class WeaponStats
     // 目前這隻手穿的手甲（LeftHandArmor / RightHandArmor）
     public ArmorInstance handArmor;
 
+    // 這隻手武器模型上的槍口 / 近戰 hitbox（場景物件，從 EquipmentSlot 帶過來，不存檔）
+    [System.NonSerialized] public Transform muzzlePoint;
+    [System.NonSerialized] public MeleeHitbox meleeHitbox;
+
     // 這隻手「總共」吃到的 Buff（武器本體 + 武器零件 + 手甲）
     public List<EquipmentBuff> buffs = new List<EquipmentBuff>();
 
@@ -144,6 +148,8 @@ public class WeaponStats
         rangeweapon = null;
         meleeWeapon = null;
         handArmor = null;
+        muzzlePoint = null;
+        meleeHitbox = null;
         buffs.Clear();
     }
 
@@ -173,6 +179,9 @@ public class ShoulderWeaponStats
     // 目前這隻手拿的遠程武器（如果沒有就 null）
     public ShoulderWeaponInstance shoulderweapon;
 
+    // 肩武器模型上的槍口（場景物件，從 EquipmentSlot 帶過來，不存檔）
+    [System.NonSerialized] public Transform muzzlePoint;
+
     // 總共吃到的 Buff
     public List<EquipmentBuff> buffs = new List<EquipmentBuff>();
 
@@ -183,6 +192,7 @@ public class ShoulderWeaponStats
     {
         weaponKind = ShoulderWeaponKind.None;
         shoulderweapon = null;
+        muzzlePoint = null;
         buffs.Clear();
     }
 
@@ -429,13 +439,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
     public ShoulderWeaponStats rightShoulder = new ShoulderWeaponStats();
 
 
-    [Header("equipmentSlots 中左右手武器槽的 index")]
-    // 請在 Inspector 裡對應到 EquipmentManager.equipmentSlots 的順序
-    public int leftWeaponSlotIndex = -1;
-    public int rightWeaponSlotIndex = -1;
-    [Header("equipmentSlots 中左右肩膀武器槽的 index")]
-    public int leftShoulderWeaponSlotIndex = -1;
-    public int rightShoulderWeaponSlotIndex = -1;
+    // 武器格用 EquipmentSlot.id（EquipmentSlotId）認，不再用整數索引。
 
     // =============================
     // Equipment Stat Block (UI) API
@@ -727,7 +731,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
                     hasThruster = true;
                 }
 
-                if (slot.equipmentType == ItemType.LegsArmor && armorInst.item is LegArmor leg && leg.visualChange != null)
+                if (armorInst.item.type == ItemType.LegsArmor && armorInst.item is LegArmor leg && leg.visualChange != null)
                 {
                     CurrentLegVisual.heightOffset = leg.visualChange.heightOffset;
                     CurrentLegVisual.animationType = leg.visualChange.animationType;
@@ -736,12 +740,12 @@ public class PlayerStats : MonoBehaviour, IDamageable
                 // 依裝備種類分流 buffs
                 if (armorInst.buffs != null)
                 {
-                    if (slot.equipmentType == ItemType.LeftHandArmor)
+                    if (armorInst.item.type == ItemType.LeftHandArmor)
                     {
                         leftHand.handArmor = armorInst;
                         SplitArmorBuffsToGlobalAndWeapon(armorInst.buffs, globalBuffs, leftHandArmorWeaponBuffs);
                     }
-                    else if (slot.equipmentType == ItemType.RightHandArmor)
+                    else if (armorInst.item.type == ItemType.RightHandArmor)
                     {
                         rightHand.handArmor = armorInst;
                         SplitArmorBuffsToGlobalAndWeapon(armorInst.buffs, globalBuffs, rightHandArmorWeaponBuffs);
@@ -754,55 +758,61 @@ public class PlayerStats : MonoBehaviour, IDamageable
                     }
                 }
             }
-            else if (i == leftWeaponSlotIndex)
+            else if (slot.id == EquipmentSlotId.LeftHandWeapon)
             {
                 if (inst is RangeWeaponInstance rangeWeaponInst)
                 {
                     leftHand.weaponKind = HandWeaponKind.Range;
                     leftHand.rangeweapon = rangeWeaponInst;
                     leftHand.meleeWeapon = null;
+                    leftHand.muzzlePoint = slot.muzzlePoint;
                     AddWeaponAndAttachmentBuffs(leftHand, rangeWeaponInst);
                 }
                 else if (inst is MeleeWeaponInstance meleeWeaponInst)
                 {
                     leftHand.weaponKind = HandWeaponKind.Melee;
                     leftHand.meleeWeapon = meleeWeaponInst;
+                    leftHand.meleeHitbox = slot.hitbox;
                     leftHand.rangeweapon = null; // 保持與 AttackManager 相容：近戰時讓 ranged weapon 為 null
                     AddWeaponAndAttachmentBuffs(leftHand, meleeWeaponInst);
                 }
             }
-            else if (i == rightWeaponSlotIndex)
+            else if (slot.id == EquipmentSlotId.RightHandWeapon)
             {
                 if (inst is RangeWeaponInstance rangeWeaponInst2)
                 {
                     rightHand.weaponKind = HandWeaponKind.Range;
                     rightHand.rangeweapon = rangeWeaponInst2;
                     rightHand.meleeWeapon = null;
+                    rightHand.muzzlePoint = slot.muzzlePoint;
                     AddWeaponAndAttachmentBuffs(rightHand, rangeWeaponInst2);
                 }
                 else if (inst is MeleeWeaponInstance meleeWeaponInst2)
                 {
                     rightHand.weaponKind = HandWeaponKind.Melee;
                     rightHand.meleeWeapon = meleeWeaponInst2;
+                    rightHand.meleeHitbox = slot.hitbox;
                     rightHand.rangeweapon = null; // 保持與 AttackManager 相容：近戰時讓 ranged weapon 為 null
                     AddWeaponAndAttachmentBuffs(rightHand, meleeWeaponInst2);
                 }
             }
-            else if (i == leftShoulderWeaponSlotIndex)
+            else if (slot.id == EquipmentSlotId.LeftShoulderWeapon)
             {
                 if (inst is ShoulderWeaponInstance shoulderWeaponInst)
                 {
                     leftShoulder.weaponKind = ShoulderWeaponKind.Range;
                     leftShoulder.shoulderweapon = shoulderWeaponInst;
+                    leftShoulder.muzzlePoint = slot.muzzlePoint;
                     AddShoulderWeaponAndAttachmentBuffs(leftShoulder, shoulderWeaponInst);
                 }
             }
-            else if (i == rightShoulderWeaponSlotIndex)
+            else if (slot.id == EquipmentSlotId.RightShoulderWeapon)
             {
                 if (inst is ShoulderWeaponInstance shoulderWeaponInst)
                 {
                     rightShoulder.weaponKind = ShoulderWeaponKind.Range;
                     rightShoulder.shoulderweapon = shoulderWeaponInst;
+                    rightShoulder.muzzlePoint = slot.muzzlePoint;
                     AddShoulderWeaponAndAttachmentBuffs(rightShoulder, shoulderWeaponInst);
                 }
             }

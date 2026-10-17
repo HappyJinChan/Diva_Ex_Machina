@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 713e8101e72f9564bb08c5fb592812d6, type: 3}
   m_Name: ChestArmor2
   m_EditorClassIdentifier: Assembly-CSharp::Armor
+  itemId: d7e74c8926ce34f44ac3eb804e57908f
   itemName: Emerald Storm_BD
   type: 2
   icon: {fileID: 21300000, guid: 16fa6aed85df82446855904c10ca4682, type: 3}

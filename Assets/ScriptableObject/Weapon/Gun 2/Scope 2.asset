@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e5af43e8791caa418ac62aba760a20c, type: 3}
   m_Name: Scope 2
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeaponPart
+  itemId: 7781dd1d8d82a084baa661b6dbac35a7
   itemName: Telescopic Scope
   type: 9
   icon: {fileID: 21300000, guid: 7d48db157db7600469a809d1ca19bf87, type: 3}

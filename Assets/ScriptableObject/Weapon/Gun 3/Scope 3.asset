@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e5af43e8791caa418ac62aba760a20c, type: 3}
   m_Name: Scope 3
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeaponPart
+  itemId: bbff21b9c0cca404d8cf42d3f9153145
   itemName: Reflex Sight
   type: 9
   icon: {fileID: 21300000, guid: 7d48db157db7600469a809d1ca19bf87, type: 3}

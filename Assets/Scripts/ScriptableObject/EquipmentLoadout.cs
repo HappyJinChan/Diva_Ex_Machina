@@ -25,7 +25,10 @@ public class EquipmentLoadout : ScriptableObject
     [System.Serializable]
     public class Entry
     {
-        [Tooltip("對應 EquipmentManager.equipmentSlots 的索引。")]
+        [Tooltip("這格的身分。套用時以這個為準（格子順序改了也不會裝錯）。")]
+        public EquipmentSlotId slotId;
+
+        [Tooltip("存檔當下在 EquipmentManager.equipmentSlots 的索引。slotId 是 None 的舊資料才會用到。")]
         public int slotIndex;
 
         [Tooltip("這格存的裝備（深拷貝）。")]
@@ -53,6 +56,15 @@ public class EquipmentLoadout : ScriptableObject
         return null;
     }
 
+    /// <summary>取得某個 id 的格子存的裝備；沒有就回傳 null。</summary>
+    public ItemInstance GetItem(EquipmentSlotId slotId)
+    {
+        if (slotId == EquipmentSlotId.None) return null;
+        for (int i = 0; i < entries.Count; i++)
+            if (entries[i].slotId == slotId) return entries[i].item;
+        return null;
+    }
+
     public void Clear() => entries.Clear();
 
     /// <summary>
@@ -75,7 +87,7 @@ public class EquipmentLoadout : ScriptableObject
             ItemInstance src = slots[i]?.item;
             if (src == null || src.item == null) continue;
 
-            entries.Add(new Entry { slotIndex = i, item = Clone(src) });
+            entries.Add(new Entry { slotId = slots[i].id, slotIndex = i, item = Clone(src) });
         }
 
         MarkDirty();
@@ -102,7 +114,6 @@ public class EquipmentLoadout : ScriptableObject
                     newWeaponName = r.newWeaponName,
                     buffs = CopyList(r.buffs),
                     attachment = ClonePartList(r.attachment),
-                    muzzlePoint = null,                 // 場景物件，裝備時重新找
                     colors = CopyList(r.colors),
                     shaderName = r.shaderName,
                 };
@@ -115,7 +126,6 @@ public class EquipmentLoadout : ScriptableObject
                     newWeaponName = m.newWeaponName,
                     buffs = CopyList(m.buffs),
                     attachment = ClonePartList(m.attachment),
-                    hitbox = null,                      // 場景物件，裝備時重新找
                     colors = CopyList(m.colors),
                     shaderName = m.shaderName,
                 };
@@ -128,7 +138,6 @@ public class EquipmentLoadout : ScriptableObject
                     newWeaponName = s.newWeaponName,
                     buffs = CopyList(s.buffs),
                     attachment = ClonePartList(s.attachment),
-                    muzzlePoint = null,
                     colors = CopyList(s.colors),
                     shaderName = s.shaderName,
                 };

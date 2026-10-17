@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 713e8101e72f9564bb08c5fb592812d6, type: 3}
   m_Name: WaistArmor2
   m_EditorClassIdentifier: Assembly-CSharp::Armor
+  itemId: ab7fc768e1380994abd0bbe0fd8e56b8
   itemName: Emerald Storm_WA
   type: 5
   icon: {fileID: 21300000, guid: 086cbe7fdae9b9c46881036fc4563661, type: 3}

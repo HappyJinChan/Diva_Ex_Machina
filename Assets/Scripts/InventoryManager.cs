@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -9,6 +9,9 @@ using UnityEngine.UI;
 [System.Serializable]
 public class ItemInstance
 {
+    [Tooltip("唯一 id。加入背包時自動產生，之後不變。裝備格、三套裝備、存檔都用它認物品。")]
+    public string uid;
+
     public ItemObject item;
     public int amount;
 }
@@ -19,7 +22,6 @@ public class RangeWeaponInstance : ItemInstance
     public string newWeaponName;                 // 用來存鍛造後的新名稱
     public List<EquipmentBuff> buffs = new List<EquipmentBuff>();
     public List<PartInstance> attachment;
-    public Transform muzzlePoint;
 
     // 用來存不同 shader 的顏色
     [SerializeField] public List<Color> colors = new List<Color>();
@@ -34,7 +36,6 @@ public class MeleeWeaponInstance : ItemInstance
     public string newWeaponName;                 // 用來存鍛造後的新名稱
     public List<EquipmentBuff> buffs = new List<EquipmentBuff>();
     public List<PartInstance> attachment;
-    public MeleeHitbox hitbox;   // 裝備時由 EquipmentManager 填入
     // 用來存不同 shader 的顏色
     [SerializeField] public List<Color> colors = new List<Color>();
 
@@ -48,7 +49,6 @@ public class ShoulderWeaponInstance : ItemInstance
     public string newWeaponName;                 // 用來存鍛造後的新名稱
     public List<EquipmentBuff> buffs = new List<EquipmentBuff>();
     public List<PartInstance> attachment;
-    public Transform muzzlePoint;
 
     // 用來存不同 shader 的顏色
     [SerializeField] public List<Color> colors = new List<Color>();
@@ -132,6 +132,133 @@ public class InventoryManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // 場景裡預先放好的物品可能沒有 uid，或在 Inspector 複製元素時帶了重複的 uid
+        int fixedCount = EnsureUniqueUids();
+        if (fixedCount > 0)
+            Debug.Log($"InventoryManager: 補上 / 重新產生了 {fixedCount} 件物品的 uid", this);
+    }
+
+    // ===== 物品 uid =====
+
+    private static string NewUid() => Guid.NewGuid().ToString("N");
+
+    /// <summary>所有放進背包的物品都經過這裡：沒有 uid 的先補上。</summary>
+    private void AddToInventory(ItemInstance inst)
+    {
+        if (inst == null) return;
+        if (string.IsNullOrEmpty(inst.uid)) inst.uid = NewUid();
+        inventory.Add(inst);
+    }
+
+    /// <summary>
+    /// 整個背包換成 items（讀檔用）。物品原本的 uid 會保留。
+    /// 呼叫前要先卸下身上的裝備（EquipmentManager.UnequipAll），不然身上穿的會是已經不在背包裡的舊物件。
+    /// </summary>
+    public void ReplaceInventory(List<ItemInstance> items)
+    {
+        inventory.Clear();
+        if (items != null)
+            foreach (var inst in items) AddToInventory(inst);
+
+        int fixedCount = EnsureUniqueUids();
+        if (fixedCount > 0)
+            Debug.LogWarning($"ReplaceInventory: {fixedCount} 件物品的 uid 缺少或重複，已重新產生", this);
+
+        ClearInventoryButton(); // 右側清單的按鈕還指著舊物件
+    }
+
+    /// <summary>用 uid 找背包裡的物品；找不到回傳 null。</summary>
+    public ItemInstance FindByUid(string uid)
+    {
+        if (string.IsNullOrEmpty(uid)) return null;
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            var inst = inventory[i];
+            if (inst != null && inst.uid == uid) return inst;
+        }
+        return null;
+    }
+
+    // 沒有 uid 或 uid 重複的物品重新產生。回傳處理了幾件。
+    private int EnsureUniqueUids()
+    {
+        if (inventory == null) return 0;
+        var seen = new HashSet<string>();
+        int fixedCount = 0;
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            var inst = inventory[i];
+            if (inst == null) continue;
+            if (string.IsNullOrEmpty(inst.uid) || seen.Contains(inst.uid))
+            {
+                inst.uid = NewUid();
+                fixedCount++;
+            }
+            seen.Add(inst.uid);
+        }
+        return fixedCount;
+    }
+
+#if UNITY_EDITOR
+    // 編輯模式下就補好，存場景時 uid 會一起存進去
+    private void OnValidate()
+    {
+        if (Application.isPlaying) return;
+        if (EnsureUniqueUids() > 0)
+            UnityEditor.EditorUtility.SetDirty(this);
+    }
+#endif
+
+    // 在 Start 訂閱（所有 Awake 之後，EquipmentManager.Instance 一定已設好），
+    // OnDestroy 才退訂：UI 頁面關著的時候換裝（例如換裝射出），圖示一樣會更新。
+    private void Start()
+    {
+        if (EquipmentManager.Instance != null)
+        {
+            EquipmentManager.Instance.OnSlotChanged += HandleEquipmentSlotChanged;
+            EquipmentManager.Instance.OnActiveSetChanged += HandleActiveSetChanged;
+        }
+        else
+            Debug.LogWarning("InventoryManager: 找不到 EquipmentManager，裝備格圖示不會自動更新");
+    }
+
+    private void OnDestroy()
+    {
+        if (EquipmentManager.Instance != null)
+        {
+            EquipmentManager.Instance.OnSlotChanged -= HandleEquipmentSlotChanged;
+            EquipmentManager.Instance.OnActiveSetChanged -= HandleActiveSetChanged;
+        }
+    }
+
+    // 切換套裝後，右側清單的「已裝備」鎖定和上色頁都還是上一套的狀態，重開一次目前的頁面
+    private void HandleActiveSetChanged(int setIndex)
+    {
+        if (GetSelectedSlotIndex() < 0)
+        {
+            ClearInventoryButton();
+            return;
+        }
+
+        if (IsColorMode) OpenColorPage();
+        else OpenInventoryPage();
+    }
+
+    // 裝備格的圖示 / 卸下按鈕，一律由 EquipmentManager.OnSlotChanged 驅動
+    private void HandleEquipmentSlotChanged(int slotIndex)
+    {
+        var slots = EquipmentManager.Instance != null ? EquipmentManager.Instance.equipmentSlots : null;
+        if (slots == null || slotIndex < 0 || slotIndex >= slots.Count) return;
+
+        var slot = slots[slotIndex];
+        bool hasEquipment = slot.equipedItem != null;
+
+        SetEquipmentSlotIcon(slotIndex, hasEquipment ? slot.item?.item?.icon : null);
+
+        // 卸下按鈕只顯示在目前選中的格子（和 OpenPartsInventory 的規則一致）
+        if (slotIndex == GetSelectedSlotIndex())
+            SetRemoveButtonForSlot(slotIndex, hasEquipment);
     }
 
     #region Public entry for Equipment Slot Toggles (IMPORTANT)
@@ -223,7 +350,7 @@ public class InventoryManager : MonoBehaviour
             if (pickedBuff != null)
                 inst.buffs.Add(pickedBuff.buff);
 
-            inventory.Add(inst);
+            AddToInventory(inst);
             return;
         }
 
@@ -245,7 +372,6 @@ public class InventoryManager : MonoBehaviour
                 item = item,
                 amount = 1,
                 attachment = attachmentPoints,
-                muzzlePoint = rw.weaponPrefab != null ? rw.weaponPrefab.transform.Find("MuzzlePoint") : null,
             };
 
             // 讀顏色（修正：Mix5 也要把 BaseColor 放進來）
@@ -282,7 +408,7 @@ public class InventoryManager : MonoBehaviour
             if (pickedBuff != null)
                 inst.buffs.Add(pickedBuff.buff);
 
-            inventory.Add(inst);
+            AddToInventory(inst);
             return;
         }
 
@@ -328,7 +454,7 @@ public class InventoryManager : MonoBehaviour
             if (pickedBuff != null)
                 inst.buffs.Add(pickedBuff.buff);
 
-            inventory.Add(inst);
+            AddToInventory(inst);
             return;
         }
 
@@ -386,7 +512,7 @@ public class InventoryManager : MonoBehaviour
             if (pickedBuff != null)
                 inst.buffs.Add(pickedBuff.buff);
 
-            inventory.Add(inst);
+            AddToInventory(inst);
             return;
         }
         if (item is MeleeWeaponPart mwp)
@@ -433,7 +559,7 @@ public class InventoryManager : MonoBehaviour
             if (pickedBuff != null)
                 inst.buffs.Add(pickedBuff.buff);
 
-            inventory.Add(inst);
+            AddToInventory(inst);
             return;
         }
         if (item is MeleeWeaponCoating mwc)
@@ -487,7 +613,7 @@ public class InventoryManager : MonoBehaviour
             if (pickedBuff != null)
                 inst.buffs.Add(pickedBuff.buff);
 
-            inventory.Add(inst);
+            AddToInventory(inst);
             return;
         }
         if (item is ShoulderWeapon sw)
@@ -508,7 +634,6 @@ public class InventoryManager : MonoBehaviour
                 item = item,
                 amount = 1,
                 attachment = attachmentPoints,
-                muzzlePoint = sw.weaponPrefab != null ? sw.weaponPrefab.transform.Find("MuzzlePoint") : null,
             };
 
             // 讀顏色（修正：Mix5 也要把 BaseColor 放進來）
@@ -545,7 +670,7 @@ public class InventoryManager : MonoBehaviour
             if (pickedBuff != null)
                 inst.buffs.Add(pickedBuff.buff);
 
-            inventory.Add(inst);
+            AddToInventory(inst);
             return;
         }
 
@@ -591,7 +716,7 @@ public class InventoryManager : MonoBehaviour
             if (pickedBuff != null)
                 inst.buffs.Add(pickedBuff.buff);
 
-            inventory.Add(inst);
+            AddToInventory(inst);
             return;
         }
 
@@ -615,7 +740,7 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
-        inventory.Add(new ItemInstance { item = item, amount = 1 });
+        AddToInventory(new ItemInstance { item = item, amount = 1 });
     }
 
     public void RemoveItemFromInventory(ItemInstance itemInstance)
@@ -640,7 +765,6 @@ public class InventoryManager : MonoBehaviour
             newWeaponName = baseWeaponInstance.newWeaponName,
             buffs = new List<EquipmentBuff>(baseWeaponInstance.buffs),
             attachment = new List<PartInstance>(),
-            muzzlePoint = baseWeaponInstance.muzzlePoint,
             shaderName = baseWeaponInstance.shaderName,
             colors = baseWeaponInstance.colors != null ? new List<Color>(baseWeaponInstance.colors) : new List<Color>()
         };
@@ -651,7 +775,7 @@ public class InventoryManager : MonoBehaviour
                 if (part != null) newInst.attachment.Add(part);
         }
 
-        inventory.Add(newInst);
+        AddToInventory(newInst);
     }
 
     public void AddCraftedMeleeWeaponToInventory(MeleeWeaponInstance baseWeaponInstance, List<PartInstance> meleeWeaponParts)
@@ -679,7 +803,7 @@ public class InventoryManager : MonoBehaviour
                 if (part != null) newInst.attachment.Add(part);
         }
 
-        inventory.Add(newInst);
+        AddToInventory(newInst);
     }
 
     public void AddCraftedShoulderWeaponToInventory(ShoulderWeaponInstance baseWeaponInstance, List<PartInstance> rangeWeaponParts)
@@ -697,7 +821,6 @@ public class InventoryManager : MonoBehaviour
             newWeaponName = baseWeaponInstance.newWeaponName,
             buffs = new List<EquipmentBuff>(baseWeaponInstance.buffs),
             attachment = new List<PartInstance>(),
-            muzzlePoint = baseWeaponInstance.muzzlePoint,
             shaderName = baseWeaponInstance.shaderName,
             colors = baseWeaponInstance.colors != null ? new List<Color>(baseWeaponInstance.colors) : new List<Color>()
         };
@@ -708,7 +831,7 @@ public class InventoryManager : MonoBehaviour
                 if (part != null) newInst.attachment.Add(part);
         }
 
-        inventory.Add(newInst);
+        AddToInventory(newInst);
     }
 
     #endregion
@@ -944,16 +1067,13 @@ public class InventoryManager : MonoBehaviour
 
             Transform mountPoint = weaponTransform.weaponTransform;
 
-            if (!EquipmentManager.Instance.TryEquipWeaponFromInventory(item, mountPoint, slotIndex))
+            if (!EquipmentManager.Instance.Equip(slotIndex, item, mountPoint))
             {
                 btn.isOn = false;
                 return;
             }
 
-            // UI 更新
-            SetEquipmentSlotIcon(slotIndex, item.item.icon);
-            SetRemoveButtonForSlot(slotIndex, true);
-
+            // 裝備格圖示 / 卸下按鈕由 OnSlotChanged 更新
             RefreshItemListLockStates(btn);
 
             // 鎖住當前已裝備的按鈕
@@ -980,16 +1100,13 @@ public class InventoryManager : MonoBehaviour
             }
             Transform mountPoint = weaponTransform.weaponTransform;
 
-            if (!EquipmentManager.Instance.TryEquipWeaponFromInventory(item, mountPoint, slotIndex))
+            if (!EquipmentManager.Instance.Equip(slotIndex, item, mountPoint))
             {
                 btn.isOn = false;
                 return;
             }
 
-            // UI 更新
-            SetEquipmentSlotIcon(slotIndex, item.item.icon);
-            SetRemoveButtonForSlot(slotIndex, true);
-
+            // 裝備格圖示 / 卸下按鈕由 OnSlotChanged 更新
             RefreshItemListLockStates(btn);
 
             // 鎖住當前已裝備的按鈕
@@ -1017,41 +1134,36 @@ public class InventoryManager : MonoBehaviour
 
             Transform mountPoint = weaponTransform.weaponTransform;
 
-            if (!EquipmentManager.Instance.TryEquipWeaponFromInventory(item, mountPoint, slotIndex))
+            if (!EquipmentManager.Instance.Equip(slotIndex, item, mountPoint))
             {
                 btn.isOn = false;
                 return;
             }
 
-            // UI 更新
-            SetEquipmentSlotIcon(slotIndex, item.item.icon);
-            SetRemoveButtonForSlot(slotIndex, true);
-
+            // 裝備格圖示 / 卸下按鈕由 OnSlotChanged 更新
             RefreshItemListLockStates(btn);
 
             // 鎖住當前已裝備的按鈕
             btn.interactable = false;
             return;
         }
-        // Armor / other equip
-        if (!EquipmentManager.Instance.TryEquipFromInventory(item))
+        // Armor / other equip：裝到目前選中的格子，和下面 UI 圖示用同一個 index
+        int idx = GetSelectedSlotIndex();
+        if (idx < 0)
+        {
+            Debug.LogWarning("OnClickInventoryItem (armor): no equipment slot selected");
+            btn.isOn = false;
+            return;
+        }
+
+        if (!EquipmentManager.Instance.Equip(idx, item))
         {
             btn.isOn = false;
             return;
         }
 
-        if (item.item.type == ItemType.LegsArmor)
-        {
-            BoneCombiner.Instance.HideLegs();
-        }
-        // UI 更新
-
-        int idx = GetSelectedSlotIndex();
-        if (idx >= 0)
-        {
-            SetEquipmentSlotIcon(idx, item.item.icon);
-            SetRemoveButtonForSlot(idx, true);
-        }
+        // 腿部隱藏已搬進 EquipmentManager（EquipArmorToSlot）
+        // 裝備格圖示 / 卸下按鈕由 OnSlotChanged 更新
 
         RefreshItemListLockStates(btn);
         btn.interactable = false;
@@ -1078,6 +1190,7 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
+    // 不能選的物品：已經穿在身上（目前這套），或已經放在別套裡（同一件裝備只能屬於一套）
     private bool IsItemEquippedAnywhere(ItemInstance item)
     {
         if (item == null) return false;
@@ -1086,7 +1199,7 @@ public class InventoryManager : MonoBehaviour
             if (slot != null && slot.item == item)
                 return true;
         }
-        return false;
+        return EquipmentManager.Instance.GetOtherSetIndexOf(item) >= 0;
     }
 
     #endregion
@@ -1100,18 +1213,9 @@ public class InventoryManager : MonoBehaviour
 
         SFXManager.Instance.PlayFeedback("ClickFeedback");
 
-        var equippedType = EquipmentManager.Instance.equipmentSlots[index].item?.item != null
-            ? EquipmentManager.Instance.equipmentSlots[index].item.item.type
-            : (ItemType?)null;
-
-        if (equippedType == ItemType.LegsArmor)
-        {
-            BoneCombiner.Instance.ShowLegs();
-        }
-        EquipmentManager.Instance.CleanEquipmentSlot(index);
-
-        SetRemoveButtonForSlot(index, false);
-        SetEquipmentSlotIcon(index, null);
+        // 腿部恢復顯示已搬進 EquipmentManager（CleanEquipmentSlot）
+        EquipmentManager.Instance.Unequip(index);
+        // 裝備格圖示 / 卸下按鈕由 OnSlotChanged 更新
 
         // 依模式刷新
         if (IsColorMode) OpenColorPage();
@@ -1484,6 +1588,48 @@ public class InventoryManager : MonoBehaviour
     #endregion
 
     #region Utilities
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// 一次性搬遷：把 UI 格子上 WeaponTransform 的掛點，依「第 i 個按鈕 → equipmentSlots[i]」
+    /// 寫進 EquipmentSlot.mountPoint。對應方式和執行時 GetSelectedSlotIndex 完全相同，
+    /// 所以搬完之後行為不變。已經有值的格子不覆蓋。
+    /// </summary>
+    [ContextMenu("Copy Weapon Mount Points To EquipmentSlots")]
+    private void CopyWeaponMountPointsToEquipmentSlots()
+    {
+        var em = FindFirstObjectByType<EquipmentManager>(FindObjectsInactive.Include);
+        if (em == null || inventoryButtonParent == null)
+        {
+            Debug.LogWarning("CopyWeaponMountPoints: 找不到 EquipmentManager 或 inventoryButtonParent");
+            return;
+        }
+
+        UnityEditor.Undo.RecordObject(em, "Copy Weapon Mount Points");
+        int count = Mathf.Min(inventoryButtonParent.childCount, em.equipmentSlots.Count);
+        for (int i = 0; i < count; i++)
+        {
+            var wt = inventoryButtonParent.GetChild(i).GetComponentInChildren<WeaponTransform>(true);
+            if (wt == null || wt.weaponTransform == null) continue;
+
+            var slot = em.equipmentSlots[i];
+            if (slot.mountPoint != null)
+            {
+                if (slot.mountPoint != wt.weaponTransform)
+                    Debug.LogWarning($"CopyWeaponMountPoints: slot[{i}] 已有 '{slot.mountPoint.name}'，與 UI 的 '{wt.weaponTransform.name}' 不同，未覆蓋", em);
+                continue;
+            }
+
+            slot.mountPoint = wt.weaponTransform;
+            Debug.Log($"CopyWeaponMountPoints: slot[{i}] ← '{wt.weaponTransform.name}'（按鈕 '{inventoryButtonParent.GetChild(i).name}'）", em);
+        }
+
+        if (inventoryButtonParent.childCount != em.equipmentSlots.Count)
+            Debug.LogWarning($"CopyWeaponMountPoints: UI 按鈕數 {inventoryButtonParent.childCount} ≠ equipmentSlots 數 {em.equipmentSlots.Count}", em);
+
+        UnityEditor.EditorUtility.SetDirty(em);
+    }
+#endif
 
     public int GetSelectedSlotIndex()
     {

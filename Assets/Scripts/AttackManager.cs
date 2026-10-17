@@ -305,7 +305,7 @@ public class AttackManager : MonoBehaviour
             // 1) 子彈 prefab / muzzle
             var rw = hand.rangeweapon.item as RangeWeapon;
             outWeapon.bullet = (rw != null) ? rw.bullet : null;
-            outWeapon.muzzle = hand.rangeweapon.muzzlePoint;
+            outWeapon.muzzle = hand.muzzlePoint;
 
             // 2) 把該手「總 Buff」轉成射擊數值
             outWeapon.damage.physicalDamage = hand.GetAttribute(Attributes.PhysicalDamage);
@@ -381,7 +381,7 @@ public class AttackManager : MonoBehaviour
             // 4) 近戰數值
             var ps = PlayerStats.Instance;
             outWeapon.melee.slashVfx = mw.swordSlash;
-            outWeapon.melee.hitbox = hand.meleeWeapon.hitbox;
+            outWeapon.melee.hitbox = hand.meleeHitbox;
             if (ps != null)
             {
                 outWeapon.melee.meleeOutput = ps.GetMeleeOutputForHand(isLeftHand);
@@ -464,7 +464,7 @@ public class AttackManager : MonoBehaviour
             // 1) 子彈 prefab / muzzle
             var rw = shoulder.shoulderweapon.item as ShoulderWeapon;
             outWeapon.bullet = (rw != null) ? rw.bullet : null;
-            outWeapon.muzzle = shoulder.shoulderweapon.muzzlePoint;
+            outWeapon.muzzle = shoulder.muzzlePoint;
 
             // 2) 把該手「總 Buff」轉成射擊數值
             outWeapon.damage.physicalDamage = shoulder.GetAttribute(Attributes.PhysicalDamage);

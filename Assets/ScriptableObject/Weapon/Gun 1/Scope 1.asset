@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e5af43e8791caa418ac62aba760a20c, type: 3}
   m_Name: Scope 1
   m_EditorClassIdentifier: Assembly-CSharp::RangeWeaponPart
+  itemId: 0a8e363679580834594652639f479b35
   itemName: Iron Sight
   type: 9
   icon: {fileID: 21300000, guid: a2993ee848f5b4c4b8643fca0f535424, type: 3}

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 public enum ItemType { 
     Weapon, 
     HeadArmor,
@@ -38,6 +38,9 @@ public class AttachmentPoint
 [CreateAssetMenu(fileName = "New Item", menuName = "Inventory/Item")]
 public class ItemObject : ScriptableObject
 {
+    [Tooltip("存檔用的 id（= 這個 asset 的 GUID）。由 ItemDatabase 的 ⋮ → Rebuild 自動填入，不要手改。")]
+    public string itemId;
+
     public string itemName;
     public ItemType type;
     public Sprite icon;

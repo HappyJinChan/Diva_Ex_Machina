@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6af54504d4a2b864bb9fa59e0f1118a9, type: 3}
   m_Name: Ice Coating
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponCoating
+  itemId: f3ab4f05ca3465640a9cfeedfa8c7d92
   itemName: Ice Coating
   type: 9
   icon: {fileID: 0}

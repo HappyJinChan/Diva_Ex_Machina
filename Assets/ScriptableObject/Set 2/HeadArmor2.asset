@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 713e8101e72f9564bb08c5fb592812d6, type: 3}
   m_Name: HeadArmor2
   m_EditorClassIdentifier: Assembly-CSharp::Armor
+  itemId: da96a69db75e8fa4fb7ee3129e64c311
   itemName: Emerald Storm_HD
   type: 1
   icon: {fileID: 21300000, guid: 804ff736075de6a45b1bf5f00e9702d6, type: 3}

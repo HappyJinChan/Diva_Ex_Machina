@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6af54504d4a2b864bb9fa59e0f1118a9, type: 3}
   m_Name: Fire Coating
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponCoating
+  itemId: 8ec60b5891127d2429fa3a34a4e65e8a
   itemName: Fire Coating
   type: 9
   icon: {fileID: 0}

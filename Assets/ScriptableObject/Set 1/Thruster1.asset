@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cb2ccaa3cfced442924f5777d0ac8ab, type: 3}
   m_Name: Thruster1
   m_EditorClassIdentifier: Assembly-CSharp::Thruster
+  itemId: be6b341a14672014abb4ccc16ed3c199
   itemName: Crimson Rose_TH
   type: 7
   icon: {fileID: 21300000, guid: 7013c0a2d0ba170488648b978c2ee91e, type: 3}

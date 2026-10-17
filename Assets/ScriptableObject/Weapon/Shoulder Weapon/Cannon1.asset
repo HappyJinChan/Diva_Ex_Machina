@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d006ac22a940f849a367cb652dedcf9, type: 3}
   m_Name: Cannon1
   m_EditorClassIdentifier: Assembly-CSharp::ShoulderWeapon
+  itemId: 7ec71bf30baf5044b93470b58cf449bc
   itemName: Cannon
   type: 13
   icon: {fileID: 0}

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cb2ccaa3cfced442924f5777d0ac8ab, type: 3}
   m_Name: Thruster2
   m_EditorClassIdentifier: Assembly-CSharp::Thruster
+  itemId: 06ababf3dbe53e944ab0d2f892af4fd3
   itemName: Emerald Storm_TH
   type: 7
   icon: {fileID: 21300000, guid: c3cf66f9fd97d8a4498ce3038c545f13, type: 3}

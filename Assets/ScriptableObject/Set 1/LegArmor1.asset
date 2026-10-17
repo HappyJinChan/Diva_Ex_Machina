@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c34413907d99d344e8a49d38726c949a, type: 3}
   m_Name: LegArmor1
   m_EditorClassIdentifier: Assembly-CSharp::LegArmor
+  itemId: c10a4cca8935c1a43ae5004efa22d457
   itemName: Crimson Rose_LG
   type: 6
   icon: {fileID: 21300000, guid: 5848c258a259a2f40bd98d3498b23f94, type: 3}
