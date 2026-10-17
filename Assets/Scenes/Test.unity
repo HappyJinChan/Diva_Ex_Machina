@@ -64752,8 +64752,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.7499999, y: 1.4999998, z: 0.12500009}
-  m_Center: {x: 0, y: -3.2499995, z: 0.31257293}
+  m_Size: {x: 175, y: 12.5, z: 149.99997}
+  m_Center: {x: 0, y: 31.25, z: 325.00003}
 --- !u!1 &1292901637
 GameObject:
   m_ObjectHideFlags: 0
@@ -128322,11 +128322,11 @@ MonoBehaviour:
   - turret: {fileID: 317673444}
     barrel: {fileID: 1855083079}
     firingMode: 0
-    turretRotationSpeed: 60
-    barrelElevationSpeed: 60
-    turretRotationLimit: 180
+    turretRotationSpeed: 3
+    barrelElevationSpeed: 3
+    turretRotationLimit: 360
     barrelElevationLimitUp: 90
-    barrelElevationLimitDown: -30
+    barrelElevationLimitDown: -60
     muzzles:
     - {fileID: 563808845}
     muzzleCenterPoint: {fileID: 563808845}
@@ -128345,8 +128345,8 @@ MonoBehaviour:
     reloadTime: 0
     reloadTimer: 0
     magazineSize: 0
-    target: {fileID: 0}
-    targetRigidbody: {fileID: 0}
+    target: {fileID: 976553828}
+    targetRigidbody: {fileID: 976553833}
 --- !u!1 &2074158430
 GameObject:
   m_ObjectHideFlags: 0
