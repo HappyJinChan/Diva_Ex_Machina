@@ -12,6 +12,8 @@ public class Firearm
     public float barrelElevationSpeed;
     public float turretRotationLimit; // if angle is 360, no limit
     public float barrelElevationLimitUp;
+    [Tooltip("炮管最多能往水平以下壓幾度（例如 10 → 最低 -10°）。\n" +
+             "填負數 = 最低仰角在水平以上：例如 -60 → 炮管最低只到 60°（高射砲用）。")]
     public float barrelElevationLimitDown;
 
     public Transform[] muzzles; // array of muzzle transforms for firing projectiles
@@ -115,7 +117,13 @@ public class FirearmControlSystem : MonoBehaviour
             _rt[i].turretInitialLocalRot = fa.turret.transform.localRotation;
             _rt[i].barrelInitialLocalRot = fa.barrel.transform.localRotation;
             _rt[i].yawDeltaDeg = 0f;
-            _rt[i].pitchDeg = 0f;
+
+            // 開場就把炮管放進允許範圍（高射砲最低 60° 時，一開始就是抬起來的）
+            GetPitchRange(fa, out float minPitch, out float maxPitch);
+            _rt[i].pitchDeg = Mathf.Clamp(0f, minPitch, maxPitch);
+            fa.barrel.transform.localRotation =
+                Quaternion.AngleAxis(-_rt[i].pitchDeg, Vector3.right) * _rt[i].barrelInitialLocalRot;
+
             _rt[i].inited = true;
 
             _ammo[i] = Mathf.Max(0, fa.magazineSize);
@@ -277,6 +285,15 @@ public class FirearmControlSystem : MonoBehaviour
         turretT.localRotation = Quaternion.AngleAxis(_rt[idx].yawDeltaDeg, Vector3.up) * _rt[idx].turretInitialLocalRot;
     }
 
+    // 炮管仰角範圍（度，正 = 往上）。
+    // 最低仰角 = -barrelElevationLimitDown：正數 = 可往下壓；負數 = 最低仰角在水平以上（高射砲）。
+    // 以前用 Mathf.Max(0, limitDown) 把負數吃掉，最低永遠只能到水平。
+    private static void GetPitchRange(Firearm fa, out float minPitch, out float maxPitch)
+    {
+        maxPitch = Mathf.Max(0f, fa.barrelElevationLimitUp);
+        minPitch = Mathf.Min(-fa.barrelElevationLimitDown, maxPitch); // 最低不能高過最高
+    }
+
     private void UpdateBarrelPitch(int idx, Firearm fa, Transform turretT, Transform barrelT, Vector3 aimPoint)
     {
         Vector3 toAimWorld = aimPoint - barrelT.position;
@@ -286,10 +303,8 @@ public class FirearmControlSystem : MonoBehaviour
 
         float desiredPitchUpDeg = Mathf.Atan2(dirTurret.y, Mathf.Max(0.0001f, dirTurret.z)) * Mathf.Rad2Deg;
 
-        float upLimit = Mathf.Max(0f, fa.barrelElevationLimitUp);
-        float downLimit = Mathf.Max(0f, fa.barrelElevationLimitDown);
-
-        desiredPitchUpDeg = Mathf.Clamp(desiredPitchUpDeg, -downLimit, upLimit);
+        GetPitchRange(fa, out float minPitch, out float maxPitch);
+        desiredPitchUpDeg = Mathf.Clamp(desiredPitchUpDeg, minPitch, maxPitch);
 
         float maxStep = Mathf.Max(0f, fa.barrelElevationSpeed) * Time.deltaTime;
         _rt[idx].pitchDeg = Mathf.MoveTowards(_rt[idx].pitchDeg, desiredPitchUpDeg, maxStep);
