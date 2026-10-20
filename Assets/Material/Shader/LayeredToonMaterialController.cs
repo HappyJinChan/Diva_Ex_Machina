@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -243,6 +243,40 @@ public class LayeredToonMaterialController : MonoBehaviour
             return 3;
 
         return 1;
+    }
+
+    // ── 上色介面的高亮（ColorPicker 用）─────────────────────
+    // 只改烘焙用的材質參數再重烘一次；顏色資料（Mix 材質）完全不動，所以不會被存進去。
+
+    private static readonly int HighlightLayerId = Shader.PropertyToID("_HighlightLayer");
+    private static readonly int HighlightAmountId = Shader.PropertyToID("_HighlightAmount");
+    private static readonly int HighlightLightId = Shader.PropertyToID("_HighlightLight");
+    private static readonly int HighlightDarkId = Shader.PropertyToID("_HighlightDark");
+
+    /// <summary>
+    /// 高亮某一層（0 = Base，1～4 = Layer1～4）。amount 0～1。
+    /// 底下亮的地方往 dark 拉、暗的地方往 light 拉。
+    /// </summary>
+    public void SetHighlight(int layerIndex, float amount, Color light, Color dark)
+    {
+        EnsureInitialized();
+        if (!initialized || bakerMaterial == null) return;
+
+        bakerMaterial.SetFloat(HighlightLayerId, layerIndex);
+        bakerMaterial.SetFloat(HighlightAmountId, Mathf.Clamp01(amount));
+        bakerMaterial.SetColor(HighlightLightId, light);
+        bakerMaterial.SetColor(HighlightDarkId, dark);
+        Rebake();
+    }
+
+    /// <summary>取消高亮，用正常的顏色重烘。</summary>
+    public void ClearHighlight()
+    {
+        if (!initialized || bakerMaterial == null) return;
+
+        bakerMaterial.SetFloat(HighlightLayerId, -1f);
+        bakerMaterial.SetFloat(HighlightAmountId, 0f);
+        Rebake();
     }
 
     private void EnsureSourceCaptured()

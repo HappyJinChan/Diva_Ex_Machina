@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -45,8 +46,30 @@ public class ColorPicker : MonoBehaviour
     private bool draggingColorArea = false;
     private float currentHue = 0f; // 0..1
 
+    [Header("Layer Highlight（點 1 / 2 / 3 時，那一層閃一下）")]
+    [SerializeField] private bool highlightOnSelect = true;
+
+    [Tooltip("整段閃光的時間（秒）。")]
+    [SerializeField, Min(0.05f)] private float highlightDuration = 0.6f;
+
+    [Tooltip("閃幾下。")]
+    [SerializeField, Min(1)] private int highlightBlinks = 2;
+
+    [Tooltip("最亮時的強度（0～1）。")]
+    [SerializeField, Range(0f, 1f)] private float highlightStrength = 0.85f;
+
+    [Tooltip("那一層原本比較暗的地方，往這個顏色閃。")]
+    [SerializeField] private Color highlightLight = Color.white;
+
+    [Tooltip("那一層原本比較亮的地方，往這個顏色閃。")]
+    [SerializeField] private Color highlightDark = new Color(0.05f, 0.05f, 0.05f, 1f);
+
     private bool HasEffectTarget => targetEffectColorController != null;
     private LayeredToonMaterialController targetLayeredToonController;
+
+    private Coroutine _highlightRoutine;
+    private LayeredToonMaterialController _highlightTarget;   // 正在閃的那一件（換選別件時也要能清掉它）
+    private bool _suppressHighlight;                         // 自動選第一層時不閃
 
     private void Awake()
     {
@@ -181,6 +204,7 @@ public class ColorPicker : MonoBehaviour
                         }
 
                         CursorToColor(c);
+                        StartLayerHighlight(capturedTexIndex);
                     }
                     else
                     {
@@ -217,6 +241,8 @@ public class ColorPicker : MonoBehaviour
     // For VFX: it will discover EffectColorController automatically.
     public void AddTargetMaterialsToList()
     {
+        StopLayerHighlight();   // 換目標前，先把上一件的高亮清掉
+
         if (targetMaterials == null) targetMaterials = new List<Material>();
         targetMaterials.Clear();
         targetLayeredToonController = null;
@@ -435,6 +461,9 @@ public class ColorPicker : MonoBehaviour
         var mat = targetMaterials[materialIndex];
         if (mat == null) return;
 
+        // 開始調色就停止閃光：玩家要看到真實的顏色
+        if (_highlightTarget != null) StopLayerHighlight();
+
         string propName = textureIndex == 0 ? "_BaseColor" : $"_Layer{textureIndex}Color";
         if (mat.HasProperty(propName))
             mat.SetColor(propName, color);
@@ -599,7 +628,63 @@ public class ColorPicker : MonoBehaviour
         if (colorDetailButtonParent.childCount <= 0) return;
 
         var firstToggle = colorDetailButtonParent.GetChild(0).GetComponent<Toggle>();
-        if (firstToggle != null) firstToggle.isOn = true;
+        if (firstToggle == null) return;
+
+        // 打開一件裝備時自動選第一層，不算玩家選的 → 不閃
+        _suppressHighlight = true;
+        try { firstToggle.isOn = true; }
+        finally { _suppressHighlight = false; }
+    }
+
+    // ═══════════════════════ 選中那一層閃一下 ═══════════════════════
+
+    private void OnDisable()
+    {
+        // 介面關掉時（協程會被 Unity 停掉）把高亮清掉，不要留在模型上
+        StopLayerHighlight();
+    }
+
+    private void StartLayerHighlight(int layerIndex)
+    {
+        StopLayerHighlight();
+
+        if (!highlightOnSelect || _suppressHighlight || !isActiveAndEnabled) return;
+        if (targetLayeredToonController == null) return;   // 特效、沒有烘焙的材質：不支援
+
+        _highlightTarget = targetLayeredToonController;
+        _highlightRoutine = StartCoroutine(LayerHighlightRoutine(_highlightTarget, layerIndex));
+    }
+
+    private IEnumerator LayerHighlightRoutine(LayeredToonMaterialController target, int layerIndex)
+    {
+        float t = 0f;
+        while (t < highlightDuration)
+        {
+            if (target == null) break;   // 那件裝備被換掉了
+
+            // |sin| 在整段時間裡起伏 highlightBlinks 次：0 → 1 → 0 → 1 → 0
+            float phase = t / highlightDuration * highlightBlinks * Mathf.PI;
+            target.SetHighlight(layerIndex, Mathf.Abs(Mathf.Sin(phase)) * highlightStrength,
+                                highlightLight, highlightDark);
+
+            yield return null;
+            t += Time.unscaledDeltaTime;   // 介面開著時遊戲可能暫停，用不受 timeScale 影響的時間
+        }
+
+        _highlightRoutine = null;
+        StopLayerHighlight();
+    }
+
+    private void StopLayerHighlight()
+    {
+        if (_highlightRoutine != null)
+        {
+            StopCoroutine(_highlightRoutine);
+            _highlightRoutine = null;
+        }
+
+        if (_highlightTarget != null) _highlightTarget.ClearHighlight();
+        _highlightTarget = null;
     }
 
     private void SetToggleSelectedVisual(Toggle t, bool isSelected)

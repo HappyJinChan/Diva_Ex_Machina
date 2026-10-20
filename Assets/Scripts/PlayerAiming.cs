@@ -937,6 +937,19 @@ public class PlayerAiming : MonoBehaviour
     public Ray GetRay() => ray;
 
     /// <summary>
+    /// 目前鎖定圈裡的目標（lockOn 中）。沒有鎖定、或目標已失效時回傳 false。
+    /// 給要追著目標打的系統用（例如 SupplyManager 的迫擊砲炮擊）。
+    /// </summary>
+    public bool TryGetLockedTarget(out Transform target)
+    {
+        target = null;
+        if (!lockOn || _lockedTarget == null || !_lockedTarget.gameObject.activeInHierarchy)
+            return false;
+        target = _lockedTarget;
+        return true;
+    }
+
+    /// <summary>
     /// 目前鎖定目標的瞄準位置（有 AimPoint 用它，沒有就是 transform 原點）。
     /// 沒有鎖定（或目標已失效）時回傳 false。給開火時計算落點用。
     /// </summary>

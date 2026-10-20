@@ -308,6 +308,7 @@ MonoBehaviour:
   overlayShader: {fileID: 4800000, guid: 4015c7514db91f74ebe092e401033253, type: 3}
   flashColor: {r: 2, g: 2, b: 2, a: 1}
   exclude: []
+  dynamicRenderers: 0
 --- !u!114 &6135811235841911541
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -742,7 +743,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8320133424690548567}
   - component: {fileID: 3850140726379914661}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Attack Warning Feedback
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1883,12 +1884,24 @@ PrefabInstance:
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1131870223878671727, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131870223878671727, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1556856876796310369, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 2889101205171950397, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: lengthInSec
       value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4621724177285320686, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 6059849926885147391, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: moveWithTransform
@@ -1901,6 +1914,18 @@ PrefabInstance:
     - target: {fileID: 7011655065883924470, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: m_Name
       value: Claw Effect
+      objectReference: {fileID: 0}
+    - target: {fileID: 7011655065883924470, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7845942586756037504, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8128951746499904256, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 8202284320435248138, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: moveWithTransform
@@ -1966,6 +1991,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9177897173438376116, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2005,9 +2034,21 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 1131870223878671727, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 1556856876796310369, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 2889101205171950397, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: lengthInSec
       value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4621724177285320686, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 6059849926885147391, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: moveWithTransform
@@ -2020,6 +2061,18 @@ PrefabInstance:
     - target: {fileID: 7011655065883924470, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: m_Name
       value: Claw Effect
+      objectReference: {fileID: 0}
+    - target: {fileID: 7011655065883924470, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7845942586756037504, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8128951746499904256, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 8128951746499904256, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: m_IsActive
@@ -2088,6 +2141,10 @@ PrefabInstance:
     - target: {fileID: 8692708990652600834, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
       propertyPath: m_ConstrainProportionsScale
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177897173438376116, guid: 80e885927bc4d8c48b00e79640b85106, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3033,6 +3090,26 @@ PrefabInstance:
     - target: {fileID: 2593469270043220966, guid: d003f25ae60216448887c6a70a334cc9, type: 3}
       propertyPath: m_Name
       value: AttackWarning
+      objectReference: {fileID: 0}
+    - target: {fileID: 2593469270043220966, guid: d003f25ae60216448887c6a70a334cc9, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 6232786492552388383, guid: d003f25ae60216448887c6a70a334cc9, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 6740428048895479975, guid: d003f25ae60216448887c6a70a334cc9, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7298261373495628482, guid: d003f25ae60216448887c6a70a334cc9, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8788196790295621514, guid: d003f25ae60216448887c6a70a334cc9, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

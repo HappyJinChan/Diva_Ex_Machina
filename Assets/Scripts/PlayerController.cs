@@ -37,6 +37,10 @@ public class PlayerController : MonoBehaviour
         if (UIManager.Instance != null && UIManager.Instance.currentCameraSet != 0)
             return true;
 
+        // 2) 換裝硬直（支援艙命中後的短暫停頓）
+        if (playerMovement != null && playerMovement.IsMovementFrozen)
+            return true;
+
         return false;
     }
 

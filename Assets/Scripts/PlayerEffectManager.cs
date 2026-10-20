@@ -31,6 +31,10 @@ public class PlayerEffectManager : MonoBehaviour
     public MMF_Player dustFeedback;          // 地面塵土
     public MMF_Player dustFeedback_OnShip;   // 船上塵土
 
+    [Tooltip("被支援艙命中（換裝）時的全身閃光。用 MMF_Property 動畫 EntityHitFlash.FlashAmount（0 → 1 → 0），\n" +
+             "跟敵人的 Hit Flash Feedback 同一種做法。Bradamant 根物件上要有 EntityHitFlash（勾 Dynamic Renderers）。")]
+    public MMF_Player supplyHitFlashFeedback;
+
     [Header("Particles（上下船時切換模擬空間）")]
     [SerializeField] private ParticleSystem[] leftMuzzle;
     [SerializeField] private ParticleSystem[] rightMuzzle;
@@ -106,6 +110,15 @@ public class PlayerEffectManager : MonoBehaviour
     public void PlayRightMuzzleFeedback()
     {
         rightAttackFeedback?.PlayFeedbacks(transform.position);
+    }
+
+    // ═══════════════════════ 換裝 ═══════════════════════
+
+    /// <summary>被支援艙命中時的全身閃光。由 SupplyBurst 在換上新套裝之後呼叫（新裝甲才會一起閃）。</summary>
+    public void PlaySupplyHitFlash()
+    {
+        if (supplyHitFlashFeedback != null)
+            supplyHitFlashFeedback.PlayFeedbacks(transform.position);
     }
 
     // ═══════════════════════ 近戰 ═══════════════════════

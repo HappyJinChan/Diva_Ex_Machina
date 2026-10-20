@@ -252,6 +252,32 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField, Range(0f, 180f)] private float aimRigForwardAngle = 60f;
     private float _aimRigAimBlend = 1f; // 1 = 看準星，0 = 看正前方
 
+    // ── 換裝硬直（支援艙命中時）────────────────────────────
+    // 期間速度固定為「開始時速度 × speedRatio」（相對船，含垂直），所有移動（一般移動、飛行、Dash、
+    // 突擊推進、近戰突進…）都不跑。PlayerController 期間也不接受操作（見 IsGameplayInputBlocked）。
+    private float _movementFrozenUntil = -1f;
+    private Vector3 _frozenVelocityRel;   // 硬直期間維持的速度（相對船）
+
+    /// <summary>移動暫停中（換裝硬直）。</summary>
+    public bool IsMovementFrozen => Time.time < _movementFrozenUntil;
+
+    /// <summary>
+    /// 暫停移動 seconds 秒。期間速度固定為「呼叫當下的速度 × speedRatio」（0 = 完全停住，0.1 = 原速的 10%），
+    /// 方向不變、等速滑行（不受重力影響）。重複呼叫取較晚的結束時間，速度以最後一次呼叫為準。
+    /// </summary>
+    public void FreezeMovement(float seconds, float speedRatio = 0f)
+    {
+        Vector3 platformVel = GetMobilePlatformVelocity();
+        _frozenVelocityRel = (playerRigidbody.linearVelocity - platformVel) * Mathf.Max(0f, speedRatio);
+
+        EndAssaultBoost();
+        StopMeleeDash("FreezeMovement");
+        dashRequestUntil = 0f;
+
+        _movementFrozenUntil = Mathf.Max(_movementFrozenUntil, Time.time + Mathf.Max(0f, seconds));
+        playerRigidbody.linearVelocity = platformVel + _frozenVelocityRel;   // 在船上 = 相對船的速度
+    }
+
     [Header("Dust Effect")]
     [SerializeField] private float dustIntervalSlow = 0.4f;   // 慢速：間隔長 = 稀
     [SerializeField] private float dustIntervalFast = 0.08f;  // 全速：間隔短 = 密
@@ -276,6 +302,14 @@ public class PlayerMovement : MonoBehaviour
         GroundCheck();          // 同一條射線同時更新 grounded 和 ShipPassenger
         SyncMobilePlatform();   // 讀剛更新的船上狀態
         CarryWithPlatformRotation(Time.fixedDeltaTime);
+
+        // 換裝硬直：每一步都把速度壓回硬直速度（相對船），重力累積的下墜也清掉 → 空中也不會掉
+        if (IsMovementFrozen)
+        {
+            playerRigidbody.linearVelocity = GetMobilePlatformVelocity() + _frozenVelocityRel;
+            return;
+        }
+
         if (_assaultBoosting)
         {
             // 突擊推進接管水平與垂直速度；一般移動與飛行暫停。踢擊中改跑踢擊。

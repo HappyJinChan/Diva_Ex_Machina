@@ -42,9 +42,27 @@ public class ExplosionEffect : MonoBehaviour, IPooled
     [SerializeField] private bool despawnWhenFinished = false;
 
     private float _lightTimer = -1f;
+    private float _baseLightRange = -1f;   // prefab 原本的燈光範圍（ScaleLightRange 放大後，回池子時還原）
+    private Vector3 _baseLocalScale;        // prefab 原本的縮放（被放大後，回池子時還原）
 
     /// <summary>這個特效會不會自己回收。生成它的程式用來判斷要不要自己排程回收。</summary>
     public bool DespawnWhenFinished => despawnWhenFinished;
+
+    private void Awake()
+    {
+        if (flashLight != null) _baseLightRange = flashLight.range;
+        _baseLocalScale = transform.localScale;
+    }
+
+    /// <summary>
+    /// 燈光範圍 = 原本 × k。燈光不吃 Transform 縮放，特效整體被放大 / 縮小時另外呼叫這個。
+    /// 回池子時還原（連同 Transform 縮放），所以不會影響下一個拿到這個實例的人（例如子彈的爆炸）。
+    /// </summary>
+    public void ScaleLightRange(float k)
+    {
+        if (flashLight != null && _baseLightRange > 0f)
+            flashLight.range = _baseLightRange * Mathf.Max(0f, k);
+    }
 
     private void OnEnable()
     {
@@ -78,7 +96,12 @@ public class ExplosionEffect : MonoBehaviour, IPooled
     public void OnDespawned()
     {
         _lightTimer = -1f;
-        if (flashLight != null) flashLight.enabled = false;
+        if (flashLight != null)
+        {
+            flashLight.enabled = false;
+            if (_baseLightRange > 0f) flashLight.range = _baseLightRange;
+        }
+        transform.localScale = _baseLocalScale;
     }
 
     private void Update()

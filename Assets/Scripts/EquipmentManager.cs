@@ -254,6 +254,13 @@ public class EquipmentManager : MonoBehaviour
         => IsValidSetIndex(setIndex) ? equipmentSets[setIndex].Get(id) : null;
 
     /// <summary>某件裝備有沒有被放進任何一套（例如背包 UI 要標示）。</summary>
+    /// <summary>
+    /// 這一套有沒有存任何裝備。注意：目前穿著的那套，真實內容是身上穿的（記錄可能是舊的），
+    /// 這裡只看記錄 —— 用在「別的套」才準。
+    /// </summary>
+    public bool IsSetEmpty(int setIndex)
+        => !IsValidSetIndex(setIndex) || equipmentSets[setIndex].IsEmpty;
+
     public bool IsItemInAnySet(ItemInstance item)
     {
         for (int k = 0; k < SetCount; k++)

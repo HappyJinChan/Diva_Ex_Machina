@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5444f71bbfbeda468285f68e3cb1330, type: 3}
+  m_Name: Mortar
+  m_EditorClassIdentifier: Assembly-CSharp::BuildBlueprint
+  footprint:
+    width: 1
+    height: 1
+    cells: 01
+  buildingPrefab: {fileID: 3232447967679395786, guid: 723a1baec416e694e9179ebe0982b99f, type: 3}
+  pendingPrefab: {fileID: 3232447967679395786, guid: 1c83553470dab9e40809f54d90195efa, type: 3}
+  pendingMaterial: {fileID: 2100000, guid: f49a0f73144f5da4f888afca2f121877, type: 2}
+  unavailableMaterial: {fileID: 2100000, guid: 1dc657abc81635f49a03e7616d61e1fe, type: 2}
+  buildingMaterial: {fileID: 0}
+  costs: []

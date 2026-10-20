@@ -1884,6 +1884,7 @@ MonoBehaviour:
     m_Bits: 4224
   grounded: 0
   readyToJump: 0
+  staggerSpeedRetain: 0.1
   shipPassenger: {fileID: 0}
   hoverRaycastDistance: 100
   bankPivot: {fileID: 6630231325721831971}

@@ -244,6 +244,42 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Set1"",
+                    ""type"": ""Button"",
+                    ""id"": ""31c4c48b-5cce-40ea-bc96-36ad571985f0"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Set2"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a016777-14f6-421a-a468-eb87e0401c73"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Set3"",
+                    ""type"": ""Button"",
+                    ""id"": ""b6c28c0b-da58-4d96-8b10-ca95121650ee"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Mortar"",
+                    ""type"": ""Button"",
+                    ""id"": ""fe06dbb4-45c1-489b-b3cc-1ef45c637ce5"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -717,6 +753,50 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Assault Boost"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""884a13a7-3e0a-407f-b74b-6a942f695a0a"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Set1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c5fc8b8b-16c0-458b-a361-be40ebeac71e"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Set2"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d954d47e-674a-47ff-a5eb-0709f0015428"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Set3"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""64a8b5ea-47d0-44d2-89c5-71b89d8f070f"",
+                    ""path"": ""<Keyboard>/g"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Mortar"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1321,6 +1401,10 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         m_Player_RightShoulderAttack = m_Player.FindAction("RightShoulderAttack", throwIfNotFound: true);
         m_Player_AutoAim = m_Player.FindAction("AutoAim", throwIfNotFound: true);
         m_Player_AssaultBoost = m_Player.FindAction("Assault Boost", throwIfNotFound: true);
+        m_Player_Set1 = m_Player.FindAction("Set1", throwIfNotFound: true);
+        m_Player_Set2 = m_Player.FindAction("Set2", throwIfNotFound: true);
+        m_Player_Set3 = m_Player.FindAction("Set3", throwIfNotFound: true);
+        m_Player_Mortar = m_Player.FindAction("Mortar", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1431,6 +1515,10 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_RightShoulderAttack;
     private readonly InputAction m_Player_AutoAim;
     private readonly InputAction m_Player_AssaultBoost;
+    private readonly InputAction m_Player_Set1;
+    private readonly InputAction m_Player_Set2;
+    private readonly InputAction m_Player_Set3;
+    private readonly InputAction m_Player_Mortar;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1511,6 +1599,22 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @AssaultBoost => m_Wrapper.m_Player_AssaultBoost;
         /// <summary>
+        /// Provides access to the underlying input action "Player/Set1".
+        /// </summary>
+        public InputAction @Set1 => m_Wrapper.m_Player_Set1;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Set2".
+        /// </summary>
+        public InputAction @Set2 => m_Wrapper.m_Player_Set2;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Set3".
+        /// </summary>
+        public InputAction @Set3 => m_Wrapper.m_Player_Set3;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Mortar".
+        /// </summary>
+        public InputAction @Mortar => m_Wrapper.m_Player_Mortar;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_Player; }
@@ -1587,6 +1691,18 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
             @AssaultBoost.started += instance.OnAssaultBoost;
             @AssaultBoost.performed += instance.OnAssaultBoost;
             @AssaultBoost.canceled += instance.OnAssaultBoost;
+            @Set1.started += instance.OnSet1;
+            @Set1.performed += instance.OnSet1;
+            @Set1.canceled += instance.OnSet1;
+            @Set2.started += instance.OnSet2;
+            @Set2.performed += instance.OnSet2;
+            @Set2.canceled += instance.OnSet2;
+            @Set3.started += instance.OnSet3;
+            @Set3.performed += instance.OnSet3;
+            @Set3.canceled += instance.OnSet3;
+            @Mortar.started += instance.OnMortar;
+            @Mortar.performed += instance.OnMortar;
+            @Mortar.canceled += instance.OnMortar;
         }
 
         /// <summary>
@@ -1649,6 +1765,18 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
             @AssaultBoost.started -= instance.OnAssaultBoost;
             @AssaultBoost.performed -= instance.OnAssaultBoost;
             @AssaultBoost.canceled -= instance.OnAssaultBoost;
+            @Set1.started -= instance.OnSet1;
+            @Set1.performed -= instance.OnSet1;
+            @Set1.canceled -= instance.OnSet1;
+            @Set2.started -= instance.OnSet2;
+            @Set2.performed -= instance.OnSet2;
+            @Set2.canceled -= instance.OnSet2;
+            @Set3.started -= instance.OnSet3;
+            @Set3.performed -= instance.OnSet3;
+            @Set3.canceled -= instance.OnSet3;
+            @Mortar.started -= instance.OnMortar;
+            @Mortar.performed -= instance.OnMortar;
+            @Mortar.canceled -= instance.OnMortar;
         }
 
         /// <summary>
@@ -2068,6 +2196,34 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnAssaultBoost(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Set1" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSet1(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Set2" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSet2(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Set3" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSet3(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Mortar" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMortar(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

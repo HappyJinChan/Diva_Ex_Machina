@@ -25,8 +25,8 @@ public class TurretController : MonoBehaviour
     private enum AimMode { Point, Target, Direction, Rest }
     private AimMode _aimMode = AimMode.Point;
 
-    private Transform _trackTarget;
-    private Rigidbody _trackTargetRb;
+    protected Transform _trackTarget;      // protected：給繼承的砲塔（例如 BallisticTurretController）用
+    protected Rigidbody _trackTargetRb;
     private float _trackExpireTime;
     private Vector3 _aimDirection;
 
@@ -48,15 +48,16 @@ public class TurretController : MonoBehaviour
     public float yawSpeed;//degrees per second
 
     [Header("Pitch Limit")]
-    [SerializeField] private float minPitch = -10f;
-    [SerializeField] private float maxPitch = 30f;
+    // 注意正負號：pitch 負數 = 往上（Pitch() 裡 targetPitch = -Atan2）。-10 / 30 = 最多往上 10°、往下 30°。
+    [SerializeField] protected float minPitch = -10f;
+    [SerializeField] protected float maxPitch = 30f;
 
     [Header("Yaw Limit")]
     [SerializeField] private float yawLimit = 30f;   // 以中心為基準 ±yawLimit 度；180 = 無限制
     [SerializeField] private float yawCenter = 0f;   // 中心朝向（相對父物件的 local yaw，通常 0 = 正前方）
 
     [Header("Aim Raycast")]
-    [SerializeField] private Transform muzzle;              // 射線起點（hierarchy 裡的 muzzle）
+    [SerializeField] protected Transform muzzle;            // 射線起點（hierarchy 裡的 muzzle）
     [SerializeField] private float aimRayDistance = 500f;
     [SerializeField] private LayerMask aimRayMask = ~0;     // 預設打到所有 layer
     [SerializeField] private bool drawAimGizmo = true;
@@ -73,6 +74,7 @@ public class TurretController : MonoBehaviour
     public float energyDamage; // energy damage of the bullet
     public float coldDamage; // cold damage of the bullet
 
+    [Tooltip("子彈速度。\nBallisticTurretController（拋物線砲塔）裡當作「最低初速」：算出的初速低於它時會改用更陡的仰角。0 = 不限制。")]
     public float bulletSpeed; // speed of the bullet
     public float bulletSpread; // spread angle for inaccuracy
     public float bulletPerRound = 1; // number of bullets fired per Round
@@ -199,15 +201,20 @@ public class TurretController : MonoBehaviour
                 targetLocation = RestAimPoint;
                 break;
 
-            // AimMode.Point：固定點，不用重算
+            case AimMode.Point:
+                UpdatePointAim();   // 一般砲塔：固定點，不用重算（繼承的砲塔可以每幀重算，例如拋物線）
+                break;
         }
     }
+
+    /// <summary>固定點模式每幀呼叫。預設什麼都不做；BallisticTurretController 用來每幀重算拋物線。</summary>
+    protected virtual void UpdatePointAim() { }
 
     /// <summary>
     /// 以目標當下的位置與速度、自己的彈速算攔截點。
     /// 算法跟原本 Brain 裡的完全相同，只是從「每次思考算一次」變成「每幀算一次」。
     /// </summary>
-    private void UpdateTrackedAim()
+    protected virtual void UpdateTrackedAim()
     {
         // 瞄 collider 中心而不是 pivot（砲塔 / 建築的 pivot 在地面，會打到基座）
         Vector3 aimPoint = GetAimPoint(_trackTarget);
@@ -300,7 +307,7 @@ public class TurretController : MonoBehaviour
     }
 
     // spawn 單顆子彈：套用散布、設定傷害/層/速度，用 Rigidbody 推進（配合 Bullet.cs）
-    private void SpawnBullet()
+    protected virtual void SpawnBullet()
     {
         // 基準方向：槍管前方；bulletSpread 為錐形散布角度
         Quaternion spreadRot = Quaternion.Euler(

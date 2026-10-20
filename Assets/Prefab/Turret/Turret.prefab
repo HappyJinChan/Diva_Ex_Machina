@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1112750493171489954}
   m_Layer: 13
   m_Name: Muzzle
-  m_TagString: Untagged
+  m_TagString: Defence Fortifications
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -46,7 +46,7 @@ GameObject:
   - component: {fileID: 8081228155411353677}
   m_Layer: 13
   m_Name: Base
-  m_TagString: Untagged
+  m_TagString: Defence Fortifications
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -177,7 +177,7 @@ GameObject:
   - component: {fileID: 8587880687151885943}
   m_Layer: 13
   m_Name: Minigun
-  m_TagString: Untagged
+  m_TagString: Defence Fortifications
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -265,7 +265,7 @@ GameObject:
   - component: {fileID: 4380226113798706522}
   m_Layer: 13
   m_Name: Nav Nesh Obstacle
-  m_TagString: Untagged
+  m_TagString: Defence Fortifications
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -302,7 +302,7 @@ GameObject:
   - component: {fileID: 3652946989640725271}
   m_Layer: 13
   m_Name: Turret
-  m_TagString: Untagged
+  m_TagString: Defence Fortifications
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -387,6 +387,11 @@ MonoBehaviour:
   fireConeDeg: 30
   preferUniqueTargets: 1
   ignoreDeadObjects: 1
+  requireLineOfSight: 1
+  lineOfSightBlockers:
+    serializedVersion: 2
+    m_Bits: 0
+  lostSightGraceTime: 1
 --- !u!114 &3608191395778547943
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -450,7 +455,7 @@ GameObject:
   - component: {fileID: 8151670429088115550}
   m_Layer: 13
   m_Name: Obstacle 2
-  m_TagString: Untagged
+  m_TagString: Defence Fortifications
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -498,7 +503,7 @@ GameObject:
   - component: {fileID: 2073710626063740016}
   m_Layer: 13
   m_Name: Obstacle 1
-  m_TagString: Untagged
+  m_TagString: Defence Fortifications
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

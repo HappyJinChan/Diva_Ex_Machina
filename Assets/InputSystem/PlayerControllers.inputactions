@@ -158,6 +158,42 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Set1",
+                    "type": "Button",
+                    "id": "31c4c48b-5cce-40ea-bc96-36ad571985f0",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Set2",
+                    "type": "Button",
+                    "id": "1a016777-14f6-421a-a468-eb87e0401c73",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Set3",
+                    "type": "Button",
+                    "id": "b6c28c0b-da58-4d96-8b10-ca95121650ee",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Mortar",
+                    "type": "Button",
+                    "id": "fe06dbb4-45c1-489b-b3cc-1ef45c637ce5",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -631,6 +667,50 @@
                     "processors": "",
                     "groups": "",
                     "action": "Assault Boost",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "884a13a7-3e0a-407f-b74b-6a942f695a0a",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Set1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c5fc8b8b-16c0-458b-a361-be40ebeac71e",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Set2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d954d47e-674a-47ff-a5eb-0709f0015428",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Set3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "64a8b5ea-47d0-44d2-89c5-71b89d8f070f",
+                    "path": "<Keyboard>/g",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Mortar",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
