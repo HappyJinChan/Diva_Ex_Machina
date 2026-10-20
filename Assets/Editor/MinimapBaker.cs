@@ -20,6 +20,9 @@ using UnityEngine;
 /// </summary>
 public class MinimapBaker : EditorWindow
 {
+    [SerializeField] private Transform sourceRoot;
+    [SerializeField] private bool includeInactive = true;
+
     [SerializeField] private float metersPerPixel = 4f;
     [SerializeField] private int maxTextureSize = 8192;
 
@@ -60,6 +63,15 @@ public class MinimapBaker : EditorWindow
     {
         _scroll = EditorGUILayout.BeginScrollView(_scroll);
 
+        EditorGUILayout.LabelField("Source", EditorStyles.boldLabel);
+        sourceRoot = (Transform)EditorGUILayout.ObjectField(
+            new GUIContent("Root", "只烘這個物件底下的 Terrain。留空 = 整個場景。"),
+            sourceRoot, typeof(Transform), true);
+        includeInactive = EditorGUILayout.Toggle(
+            new GUIContent("Include Inactive", "包含停用中的 Terrain。TerrainStreamer 會把遠處的地塊關掉，用 Root 篩選時建議保持勾選。"),
+            includeInactive);
+
+        EditorGUILayout.Space();
         EditorGUILayout.LabelField("Resolution", EditorStyles.boldLabel);
         metersPerPixel = EditorGUILayout.FloatField(new GUIContent("Meters Per Pixel", "每個像素幾公尺。越小越精細、貼圖越大。"), Mathf.Max(0.25f, metersPerPixel));
         maxTextureSize = EditorGUILayout.IntPopup("Max Texture Size", maxTextureSize,
@@ -85,7 +97,9 @@ public class MinimapBaker : EditorWindow
 
         EditorGUILayout.Space();
         Terrain[] terrains = FindTerrains();
-        EditorGUILayout.HelpBox($"場景裡找到 {terrains.Length} 塊 Terrain（含停用中的）。", MessageType.Info);
+        string scope = sourceRoot != null ? $"「{sourceRoot.name}」底下" : "場景裡";
+        string inactive = includeInactive ? "含停用中的" : "只算啟用中的";
+        EditorGUILayout.HelpBox($"{scope}找到 {terrains.Length} 塊 Terrain（{inactive}）。", MessageType.Info);
 
         using (new EditorGUI.DisabledScope(terrains.Length == 0))
         {
@@ -96,8 +110,14 @@ public class MinimapBaker : EditorWindow
         EditorGUILayout.EndScrollView();
     }
 
-    private static Terrain[] FindTerrains() =>
-        Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+    private Terrain[] FindTerrains()
+    {
+        if (sourceRoot != null)
+            return sourceRoot.GetComponentsInChildren<Terrain>(includeInactive);
+        return Object.FindObjectsByType<Terrain>(
+            includeInactive ? FindObjectsInactive.Include : FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None);
+    }
 
     // ═══════════════════════ 烘焙 ═══════════════════════
 
