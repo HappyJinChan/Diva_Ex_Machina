@@ -43,6 +43,7 @@ public class MortarBrain : MonoBehaviour
     private bool _pendingFire;
     private float _pendingSince;
     private float _nextThinkTime;
+    private float _scatterOverride = -1f;   // < 0 = 用砲彈自己的散布半徑
 
     public BallisticTurretController Turret => turret;
 
@@ -103,10 +104,17 @@ public class MortarBrain : MonoBehaviour
     {
         _hasAim = true;
         _aimTarget = target;
+        _scatterOverride = -1f;   // 每次重新指定目標都恢復預設；範圍炮擊會在 SetAim 之後再設
         _aimSpot = target != null ? AimSpot.Static(TurretController.GetAimPoint(target))
                  : spot ?? AimSpot.Static(transform.position);
         ApplyAim();
     }
+
+    /// <summary>
+    /// 接下來射出的砲彈改用這個散布半徑（公尺），例如範圍炮擊的圓圈半徑。小於 0 = 用砲彈自己的。
+    /// 要在 SetAim 之後呼叫（SetAim 會把它重設）。
+    /// </summary>
+    public void SetScatterOverride(float radius) => _scatterOverride = radius;
 
     /// <summary>預瞄一個固定的世界座標點。</summary>
     public void SetAim(Transform target, Vector3 point) => SetAim(target, AimSpot.Static(point));
@@ -200,6 +208,7 @@ public class MortarBrain : MonoBehaviour
         if (go == null || !go.TryGetComponent(out MortarShell shell)) return;
 
         shell.attacker = attacker;
+        if (_scatterOverride >= 0f) shell.SetScatterRadius(_scatterOverride);
         // 甲板上的點：砲彈也跟著船追（目標本身不追 —— 砲塔一律用點模式，砲彈拿不到目標）
         if (_aimSpot != null && _aimSpot.IsMoving)
             shell.FollowSpot(_aimSpot);

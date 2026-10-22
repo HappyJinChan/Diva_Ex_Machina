@@ -950,6 +950,71 @@ public class PlayerAiming : MonoBehaviour
     }
 
     /// <summary>
+    /// 給迫擊砲多目標鎖定用：跟武器一樣在 Lock On Distance（玩家到敵人）以內、鎖定圈內，
+    /// 另外還要在 rangeOrigin 的 rangeMax 以內（迫擊砲射程，從船算）、不在 exclude 裡；
+    /// 符合的敵人中離畫面中央最近的那一個。其他條件跟輔助瞄準相同（在鏡頭前方、Renderer 可見、沒被擋住）。
+    /// 找不到回傳 null。不會改變武器的鎖定狀態。
+    /// </summary>
+    public Transform FindLockCandidate(Vector3 rangeOrigin, float rangeMax, ICollection<Transform> exclude)
+    {
+        Camera cam = mainCam;   // HasLineOfSight 也用 mainCam
+        if (cam == null || playerOrientation == null || GameManager.Instance == null)
+            return null;
+
+        List<GameObject> enemies = GameManager.Instance.GetEnemies();
+        if (enemies == null || enemies.Count == 0)
+            return null;
+
+        Vector3 origin = playerOrientation.transform.position;
+        float maxDistSqr = lockOnDistance * lockOnDistance;
+        float rangeSqr = rangeMax * rangeMax;
+        float radius = GetLockAreaPixelRadius();
+        float circleSqr = (radius + 0.01f) * (radius + 0.01f);
+        Vector2 center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+
+        Transform best = null;
+        float bestSqr = float.PositiveInfinity;
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            GameObject enemy = enemies[i];
+            if (!enemy || !enemy.activeInHierarchy) continue;
+
+            Transform t = enemy.transform;
+            if (exclude != null && exclude.Contains(t)) continue;
+            if ((t.position - origin).sqrMagnitude > maxDistSqr) continue;        // 玩家的鎖定距離
+            if ((t.position - rangeOrigin).sqrMagnitude > rangeSqr) continue;    // 迫擊砲射程
+
+            Vector3 aimPos = GetTargetAimPoint(t);
+            Vector3 sp = cam.WorldToScreenPoint(aimPos);
+            if (sp.z <= 0f) continue;
+
+            float proxSqr = (new Vector2(sp.x, sp.y) - center).sqrMagnitude;
+            if (proxSqr > circleSqr || proxSqr >= bestSqr) continue;
+
+            // 貴的檢查只做在「可能成為答案」的敵人上
+            Renderer r = enemy.GetComponentInChildren<Renderer>();
+            if (r != null && !r.isVisible) continue;
+            if (requireLineOfSight && !HasLineOfSight(t, aimPos)) continue;
+
+            bestSqr = proxSqr;
+            best = t;
+        }
+        return best;
+    }
+
+    /// <summary>目標（的瞄準點）現在在不在螢幕的鎖定圈裡（而且在鏡頭前方）。</summary>
+    public bool IsInLockCircle(Transform target)
+    {
+        if (target == null || mainCam == null) return false;
+        Vector3 sp = mainCam.WorldToScreenPoint(GetTargetAimPoint(target));
+        if (sp.z <= 0f) return false;
+        float radius = GetLockAreaPixelRadius() + 0.01f;
+        Vector2 center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+        return (new Vector2(sp.x, sp.y) - center).sqrMagnitude <= radius * radius;
+    }
+
+    /// <summary>
     /// 目前鎖定目標的瞄準位置（有 AimPoint 用它，沒有就是 transform 原點）。
     /// 沒有鎖定（或目標已失效）時回傳 false。給開火時計算落點用。
     /// </summary>

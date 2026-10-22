@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private AttackManager attackManager;
+    private bool _weaponsSuppressed;   // 迫擊砲鎖定模式中 / 剛退出、按鍵還沒放開
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -86,6 +87,25 @@ public class PlayerController : MonoBehaviour
         {
             if (PlayerAiming.Instance != null)
                 PlayerAiming.Instance.ToggleAutoAim();
+        }
+
+        // 迫擊砲鎖定模式：滑鼠左右鍵交給 SupplyManager，左右手、肩膀武器、近戰、換彈都不動作。
+        // 退出模式後，左右鍵要先放開一次才恢復（避免放開炮擊 / 按 G 取消時，按著的鍵直接開火）。
+        var supply = SupplyManager.Instance;
+        if (supply != null && supply.IsMortarTargeting)
+        {
+            if (!_weaponsSuppressed)
+            {
+                playerMovement.CancelAttackInput();
+                _weaponsSuppressed = true;
+            }
+            return;
+        }
+        if (_weaponsSuppressed)
+        {
+            if (playerControls.Player.LeftHandAttack.IsPressed() || playerControls.Player.RightHandAttack.IsPressed())
+                return;
+            _weaponsSuppressed = false;
         }
 
         // Reload gate:

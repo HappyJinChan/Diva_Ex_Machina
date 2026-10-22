@@ -4,7 +4,11 @@ using UnityEngine;
 /// <summary>
 /// 在地上畫一個圓圈，顯示迫擊砲炮擊的範圍。
 ///
-/// 顯示時機：炮擊開始（按下 G）→ 最後一顆砲彈落地為止。
+/// 顯示時機：
+///   · 鎖定模式按住右鍵（範圍炮擊）時：跟著準星、半徑慢慢變大（用預覽顏色）。
+///   · 範圍炮擊開始 → 最後一顆砲彈落地為止，用圈的半徑。
+///     鎖定目標的炮擊不在這裡畫（每個目標的圈由 MortarLockMarkers 畫）。
+///     不是從鎖定模式發起的炮擊（RequestMortarBarrage，測試用）照舊畫在目標上。
 ///   （可選）Show Preview：沒在炮擊時，也在「現在按下會打的地方」顯示（顏色可以另外設定）。
 /// 位置：炮擊的目標點 —— 跟著鎖定的敵人；敵人死掉、或打的是甲板上的點時，跟著船走（SupplyManager.TryGetBarrageCenter）。
 /// 半徑：散布半徑 + 爆炸半徑（自動讀船上第一座迫擊砲的砲彈 prefab），或手動指定。
@@ -78,11 +82,19 @@ public class BarrageAreaIndicator : MonoBehaviour
         if (supplyManager == null) supplyManager = SupplyManager.Instance;
         if (supplyManager == null) { Hide(); return; }
 
+        // 鎖定模式的範圍瞄準（右鍵按住中）
+        if (supplyManager.TryGetAreaAim(out Vector3 areaCenter, out float areaRadius))
+        {
+            Draw(areaCenter, areaRadius, preview: true);
+            return;
+        }
+
         // 炮擊中（或還有砲彈在空中）→ 顯示炮擊的目標點
         bool barrage = supplyManager.IsBarrageActive || MortarShell.LiveCount > 0;
-        if (barrage && supplyManager.TryGetBarrageCenter(out Vector3 center))
+        if (barrage && !supplyManager.IsTargetLockBarrage && supplyManager.TryGetBarrageCenter(out Vector3 center))
         {
-            Draw(center, preview: false);
+            float r = supplyManager.BarrageAreaRadius > 0f ? supplyManager.BarrageAreaRadius : Radius;
+            Draw(center, r, preview: false);
             return;
         }
 
@@ -92,16 +104,15 @@ public class BarrageAreaIndicator : MonoBehaviour
             supplyManager.TryGetPlayerTarget(out Transform t, out AimSpot spot))
         {
             Vector3 p = t != null ? TurretController.GetAimPoint(t) : spot.Position;
-            Draw(p, preview: true);
+            Draw(p, Radius, preview: true);
             return;
         }
 
         Hide();
     }
 
-    private void Draw(Vector3 center, bool preview)
+    private void Draw(Vector3 center, float r, bool preview)
     {
-        float r = Radius;
         if (r <= 0f) { Hide(); return; }
 
         if (preview != _showingPreview || !_line.enabled)

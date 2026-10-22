@@ -570,6 +570,19 @@ public class PlayerMovement : MonoBehaviour
 
         }
     }
+    /// <summary>
+    /// 清掉所有攻擊輸入狀態（單發緩衝、對準計時、近戰緩衝、攻擊朝向）。
+    /// 進入迫擊砲鎖定模式時呼叫：之後不再呼叫 ProcessAttackFacingAndAttack，按著的武器不會自己收尾。
+    /// </summary>
+    public void CancelAttackInput()
+    {
+        pendingSingleUntil.Clear();
+        alignStartTime.Clear();
+        meleeBufferedWeapon = null;
+        attackFacingOwner = null;
+        attackFacingActive = false;
+    }
+
     /// <summary>近戰緩衝插槽是這把武器時才清掉，避免誤清掉另一隻手剛按下的輸入。</summary>
     private void ClearMeleeBufferIfSelf(Weapon w)
     {

@@ -186,6 +186,15 @@ public class MortarShell : MonoBehaviour, IBallisticProjectile
     }
 
     /// <summary>
+    /// 改用另一個散布半徑，重新抽一次落點偏移。在 Launch 之後呼叫（MortarBrain 的範圍炮擊用）。
+    /// </summary>
+    public void SetScatterRadius(float r)
+    {
+        Vector2 disk = UnityEngine.Random.insideUnitCircle * Mathf.Max(0f, r);
+        _scatter = new Vector3(disk.x, 0f, disk.y);
+    }
+
+    /// <summary>
     /// 沒有目標時，改追一個會動的點（例如甲板上的一點）。在 Launch 之後呼叫（MortarBrain 會處理）。
     /// </summary>
     public void FollowSpot(AimSpot spot)
