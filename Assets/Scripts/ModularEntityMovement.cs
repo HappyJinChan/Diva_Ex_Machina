@@ -64,7 +64,41 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
         }
 
         ApplyHorizontalMovementFixed(dt);
+        ApplySteepSlopeLimit(dt);
         UpdateFacing();
+    }
+
+    // ── 陡坡限制 ─────────────────────────────────────────────────────────
+    //
+    // 水平速度每步被直接設成目標值，撞上陡坡時物理會把實體往上推，速度夠快就能衝上任何坡。
+    // 這裡在速度寫入之後，把「往陡坡上衝」的那部分水平速度扣掉。只對 Unity Terrain 有效，詳見 TerrainSlopeLimiter。
+
+    [Header("Steep Slope")]
+    [Tooltip("啟用陡坡限制。飛行單位（隼）如果被崖壁卡住，可以在 prefab 上關掉。")]
+    [SerializeField] protected bool limitSteepSlopes = true;
+    [Tooltip("超過這個角度的地形坡面爬不上去。")]
+    [SerializeField, Range(10f, 89f)] protected float maxSlopeAngle = 45f;
+    [Tooltip("往前取樣的距離（公尺，不含這一步會移動的距離）。約等於膠囊半徑。")]
+    [SerializeField, Min(0f)] protected float slopeProbeAhead = 0.5f;
+    [Tooltip("前方地面比腳底高超過這個值才會擋（公尺）。避免平地小起伏誤判。")]
+    [SerializeField, Min(0f)] protected float slopeMinRise = 0.3f;
+
+    private Terrain _slopeTerrainHint;
+
+    private void ApplySteepSlopeLimit(float dt)
+    {
+        if (!limitSteepSlopes || entityRigidbody == null || entityRigidbody.isKinematic || groundPoint == null) return;
+
+        ShipPassenger p = Passenger;
+        if (p != null && p.isOnShip) return;   // 在船上不管（船不是 Terrain）
+
+        Vector3 v = entityRigidbody.linearVelocity;
+        // 腳底位置用 Rigidbody 的物理位置推算（transform 有插值時會落後）
+        Vector3 feet = entityRigidbody.position + (groundPoint.position - entityRigidbody.transform.position);
+
+        Vector3 h = TerrainSlopeLimiter.Limit(v, feet, slopeProbeAhead, dt, maxSlopeAngle, slopeMinRise, ref _slopeTerrainHint);
+        if (h.x != v.x || h.z != v.z)
+            entityRigidbody.linearVelocity = new Vector3(h.x, v.y, h.z);
     }
 
     // ── 失衡 ─────────────────────────────────────────────────────────────

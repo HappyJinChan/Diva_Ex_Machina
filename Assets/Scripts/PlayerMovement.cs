@@ -15,6 +15,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool readyToJump;
     [SerializeField] private float jumpCooldown = 0.2f;
     [SerializeField] private bool canRegenerateEnergy;
+    [Tooltip("停止消耗能量（Dash、飛行、突擊推進）後，幾秒才開始回復。")]
+    [SerializeField, Min(0f)] private float energyRegenDelay = 1f;
+    [Tooltip("能量用光（≤ 0）時，幾秒才開始回復。")]
+    [SerializeField, Min(0f)] private float overheatRegenDelay = 5f;
     [SerializeField] private Vector3 moveDirection = new Vector3(0, 0, 0);
     [SerializeField] private float groundCheckDistance = 0.1f;
     [SerializeField] private Transform groundPoint;
@@ -327,6 +331,39 @@ public class PlayerMovement : MonoBehaviour
         ApplyMeleeHoverFixed(Time.fixedDeltaTime);
         ApplyMeleeBrakeFixed(Time.fixedDeltaTime);
 
+        ApplySteepSlopeLimit(Time.fixedDeltaTime);   // 所有速度寫入之後最後執行
+    }
+
+    // ── 陡坡限制 ─────────────────────────────────────────────────────────
+    //
+    // 水平速度每步被直接設成目標值，撞上陡坡時物理會把角色往上推，速度夠快就能衝上任何坡。
+    // 這裡在所有移動（一般移動、衝刺、突擊推進、近戰突進）寫入速度之後，
+    // 把「往陡坡上衝」的那部分水平速度扣掉。只對 Unity Terrain 有效，詳見 TerrainSlopeLimiter。
+    // 跳躍 / 飛行不受限：腳底高過前方地面就不會被擋。
+
+    [Header("Steep Slope")]
+    [SerializeField] private bool limitSteepSlopes = true;
+    [Tooltip("超過這個角度的地形坡面爬不上去。")]
+    [SerializeField, Range(10f, 89f)] private float maxSlopeAngle = 45f;
+    [Tooltip("往前取樣的距離（公尺，不含這一步會移動的距離）。約等於膠囊半徑。")]
+    [SerializeField, Min(0f)] private float slopeProbeAhead = 0.5f;
+    [Tooltip("前方地面比腳底高超過這個值才會擋（公尺）。避免平地小起伏誤判。")]
+    [SerializeField, Min(0f)] private float slopeMinRise = 0.3f;
+
+    private Terrain _slopeTerrainHint;
+
+    private void ApplySteepSlopeLimit(float dt)
+    {
+        if (!limitSteepSlopes || playerRigidbody == null || playerRigidbody.isKinematic || groundPoint == null) return;
+        if (_onMobilePlatform) return;   // 在船上不管（船不是 Terrain）
+
+        Vector3 v = playerRigidbody.linearVelocity;
+        // 腳底位置用 Rigidbody 的物理位置推算（transform 有插值時會落後）
+        Vector3 feet = playerRigidbody.position + (groundPoint.position - playerRigidbody.transform.position);
+
+        Vector3 h = TerrainSlopeLimiter.Limit(v, feet, slopeProbeAhead, dt, maxSlopeAngle, slopeMinRise, ref _slopeTerrainHint);
+        if (h.x != v.x || h.z != v.z)
+            playerRigidbody.linearVelocity = new Vector3(h.x, v.y, h.z);
     }
     private void ApplyHorizontalMovementFixed(float dt)
     {
@@ -1963,11 +2000,14 @@ public class PlayerMovement : MonoBehaviour
         }
         else if (PlayerStats.Instance.currentEnergy < PlayerStats.Instance.maxEnergy && !canRegenerateEnergy && PlayerStats.Instance.currentEnergy <= 0)
         {
-            Invoke("ResetEnergyRegenerate", 5);
+            // 只排一次：消耗能量的動作會 CancelInvoke，下一幀才重新從頭計時
+            if (!IsInvoking(nameof(ResetEnergyRegenerate)))
+                Invoke(nameof(ResetEnergyRegenerate), overheatRegenDelay);
         }
         else if (PlayerStats.Instance.currentEnergy < PlayerStats.Instance.maxEnergy && !canRegenerateEnergy)
         {
-            Invoke("ResetEnergyRegenerate", 1);
+            if (!IsInvoking(nameof(ResetEnergyRegenerate)))
+                Invoke(nameof(ResetEnergyRegenerate), energyRegenDelay);
         }
         else if (PlayerStats.Instance.currentEnergy < 0)
         {
