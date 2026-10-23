@@ -288,8 +288,8 @@ MonoBehaviour:
   armAtApex: 1
   proximityFuse: 0
   scatterRadius: 20
-  maxGuidanceAccel: 8
-  guidanceResponse: 1
+  maxGuidanceAccel: 15
+  guidanceResponse: 0.3
   guidanceStopTime: 1
   explosionPrefab: {fileID: 1995891022914219490, guid: f615fb1c90e22a84688c328e7b430967, type: 3}
   scaleEffectWithRadius: 1

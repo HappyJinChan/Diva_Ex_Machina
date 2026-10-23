@@ -142,7 +142,15 @@ public class PlayerAiming : MonoBehaviour
     [SerializeField] private float assaultBoostShoulderOffsetZForward = 0.5f;
     [SerializeField] private float assaultBoostShoulderOffsetX = 1f;
 
+    [Header("Mortar Lock-On Camera")]
+    [Tooltip("迫擊砲鎖定模式時，鏡頭距離（Third Person Follow 的 Camera Distance）乘上這個比例。\n" +
+             "1 = 不變；0.7 = 拉近到 70%。")]
+    [SerializeField, Range(0.2f, 1f)] private float lockOnCameraDistanceScale = 0.7f;
+    [Tooltip("鏡頭距離過渡的速度（越大越快）。")]
+    [SerializeField] private float lockOnCameraDistanceLerpSpeed = 6f;
+
     private CinemachineThirdPersonFollow _thirdPersonFollow;
+    private float _defaultCameraDistance = -1f;   // 開始時 Third Person Follow 的 Camera Distance
 
     public LayerMask ignoreLayer;
 
@@ -171,6 +179,9 @@ public class PlayerAiming : MonoBehaviour
         if (virtualCamera != null)
             _thirdPersonFollow = virtualCamera.GetCinemachineComponent(CinemachineCore.Stage.Body)
                          as CinemachineThirdPersonFollow;
+
+        if (_thirdPersonFollow != null)
+            _defaultCameraDistance = _thirdPersonFollow.CameraDistance;
     }
 
     private void Update()
@@ -1181,6 +1192,21 @@ public class PlayerAiming : MonoBehaviour
             newY,
             newZ
         );
+
+        UpdateLockOnCameraDistance();
+    }
+
+    /// <summary>迫擊砲鎖定模式：鏡頭拉近（Camera Distance × lockOnCameraDistanceScale），退出後拉回原本的距離。</summary>
+    private void UpdateLockOnCameraDistance()
+    {
+        if (_defaultCameraDistance < 0f) return;
+
+        bool lockOn = SupplyManager.Instance != null && SupplyManager.Instance.IsMortarTargeting;
+        float target = _defaultCameraDistance * (lockOn ? lockOnCameraDistanceScale : 1f);
+
+        float current = _thirdPersonFollow.CameraDistance;
+        if (Mathf.Abs(current - target) < 0.001f) return;
+        _thirdPersonFollow.CameraDistance = Mathf.Lerp(current, target, Time.deltaTime * lockOnCameraDistanceLerpSpeed);
     }
 
     // 由 PlayerMovement 的 OnTriggerStay / OnTriggerExit 呼叫
