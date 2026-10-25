@@ -127,6 +127,55 @@ public class SupplyManager : MonoBehaviour
         return result.Count;
     }
 
+    public enum MarkState { Locking, Fired, Lost }
+
+    /// <summary>對敵鎖定的標記（MortarLockArrows 用）。</summary>
+    public struct MarkedTarget
+    {
+        public int id;               // 目標的 InstanceID（從鎖定到開火都一樣，UI 用來對應同一個標記）
+        public Transform target;     // 死掉後是 null
+        public Vector3 position;     // 目標的瞄準點；死掉後是最後的位置
+        public MarkState state;      // 鎖定中 / 已開火 / 目標已死（砲彈還在飛）
+    }
+
+    /// <summary>
+    /// 對敵鎖定的標記：鎖定中 → 已鎖定的目標（Locking）；
+    /// 對敵鎖定的炮擊還沒結束、或砲彈還在空中 → 這次炮擊的目標（活著 = Fired，死掉 = Lost，在最後位置）。回傳數量。
+    /// </summary>
+    public int GetMarkedTargets(List<MarkedTarget> result)
+    {
+        result.Clear();
+        if (Mode == MortarMode.LockingTargets)
+        {
+            foreach (Transform t in _locks)
+            {
+                if (t == null || !t.gameObject.activeInHierarchy) continue;
+                result.Add(new MarkedTarget
+                {
+                    id = t.GetInstanceID(),
+                    target = t,
+                    position = TurretController.GetAimPoint(t),
+                    state = MarkState.Locking,
+                });
+            }
+        }
+        else if (IsTargetLockBarrage && (IsBarrageActive || MortarShell.LiveCount > 0))
+        {
+            foreach (BarrageAim a in _barrageAims)
+            {
+                Vector3 p = a.MarkPosition(out bool alive);
+                result.Add(new MarkedTarget
+                {
+                    id = a.id,
+                    target = alive ? a.target : null,
+                    position = p,
+                    state = alive ? MarkState.Fired : MarkState.Lost,
+                });
+            }
+        }
+        return result.Count;
+    }
+
     /// <summary>這次 / 最近一次炮擊是從「左鍵多目標鎖定」發起的。</summary>
     public bool IsTargetLockBarrage { get; private set; }
 
@@ -163,9 +212,14 @@ public class SupplyManager : MonoBehaviour
         public Transform target;
         public AimSpot spot;
         public float scatter = -1f;   // < 0 = 用砲彈自己的散布半徑
+        public int id;                // 目標的 InstanceID（標記 UI 用來對應同一個目標）；點目標 = 0
+        public Vector3 lastSeen;      // 目標最後一次被看到的瞄準點
 
-        public static BarrageAim ForTarget(Transform t, float scatter = -1f) =>
-            new BarrageAim { target = t, spot = AimSpot.Static(TurretController.GetAimPoint(t)), scatter = scatter };
+        public static BarrageAim ForTarget(Transform t, float scatter = -1f)
+        {
+            Vector3 p = TurretController.GetAimPoint(t);
+            return new BarrageAim { target = t, spot = AimSpot.Static(p), scatter = scatter, id = t.GetInstanceID(), lastSeen = p };
+        }
 
         public static BarrageAim ForSpot(AimSpot s, float scatter = -1f) =>
             new BarrageAim { spot = s, scatter = scatter };
@@ -174,12 +228,29 @@ public class SupplyManager : MonoBehaviour
         public void Refresh()
         {
             if (target != null && target.gameObject.activeInHierarchy)
-                spot = AimSpot.Static(TurretController.GetAimPoint(target));
+            {
+                lastSeen = TurretController.GetAimPoint(target);
+                spot = AimSpot.Static(lastSeen);
+            }
             else if (!ReferenceEquals(target, null))   // 被 Destroy 的物件 == null 也是 true，要看參照本身
             {
-                spot = AimSpot.AnchoredBelow(spot.Position);
+                spot = AimSpot.AnchoredBelow(lastSeen);
                 target = null;
             }
+        }
+
+        /// <summary>標記 UI 用：目標活著 → 它現在的瞄準點；死掉 → 最後的位置（甲板上跟著船走）。活著時不配置記憶體。</summary>
+        public Vector3 MarkPosition(out bool alive)
+        {
+            if (target != null && target.gameObject.activeInHierarchy)
+            {
+                alive = true;
+                lastSeen = TurretController.GetAimPoint(target);
+                return lastSeen;
+            }
+            Refresh();   // 剛死掉：換成最後位置
+            alive = false;
+            return spot.Position;
         }
 
         public void ApplyTo(MortarBrain m, bool withScatter)

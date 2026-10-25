@@ -37,8 +37,18 @@ public class MortarBrain : MonoBehaviour
     [Tooltip("輪到這座射擊時，最多等炮口對準幾秒；超過就放棄這一發。")]
     [SerializeField, Min(0.1f)] private float fireTimeout = 3f;
 
+    [Header("Target Tracking")]
+    [Tooltip("瞄準敵人時的提前量比例：0 = 瞄它現在的位置；1 = 照它目前的速度推算落地時的位置。\n" +
+             "砲彈飛 11～16 秒，敵人常會轉向，預判太滿反而容易偏；砲彈之後還會追蹤修正。")]
+    [SerializeField, Range(0f, 1f)] private float leadFactor = 0.5f;
+
+    [Tooltip("砲彈追蹤鎖定的敵人（過了最高點之後追它當下的位置，見 MortarShell 的 Target Guidance Accel）。")]
+    [SerializeField] private bool shellTracksTarget = true;
+
     private bool _hasAim;
     private Transform _aimTarget;
+    private Rigidbody _aimTargetRb;   // 目標的 Rigidbody（算提前量用），換目標才重新找
+    private Transform _aimTargetRbOwner;
     private AimSpot _aimSpot;         // 目標最後的位置 / 指定的點（可能黏在會動的甲板上）
     private bool _pendingFire;
     private float _pendingSince;
@@ -178,7 +188,17 @@ public class MortarBrain : MonoBehaviour
         if (_aimTarget != null && _aimTarget.gameObject.activeInHierarchy)
         {
             _aimSpot = AimSpot.AnchoredBelow(TurretController.GetAimPoint(_aimTarget));
-            turret.TrackPoint(_aimSpot.Position, _aimSpot.Velocity);
+
+            // 提前量：目標自己的速度（世界座標，已含甲板的移動）× leadFactor；沒有 Rigidbody 就只算甲板
+            if (_aimTargetRbOwner != _aimTarget)
+            {
+                _aimTargetRbOwner = _aimTarget;
+                _aimTargetRb = _aimTarget.GetComponentInParent<Rigidbody>();
+            }
+            Vector3 vel = _aimTargetRb != null
+                ? Vector3.Lerp(_aimSpot.Velocity, _aimTargetRb.linearVelocity, leadFactor)
+                : _aimSpot.Velocity;
+            turret.TrackPoint(_aimSpot.Position, vel);
         }
         else
         {
@@ -209,6 +229,13 @@ public class MortarBrain : MonoBehaviour
 
         shell.attacker = attacker;
         if (_scatterOverride >= 0f) shell.SetScatterRadius(_scatterOverride);
+
+        // 鎖定的敵人還活著：砲彈追蹤它（砲塔一律用點模式，砲彈本身拿不到目標，要在這裡交給它）
+        if (shellTracksTarget && _aimTarget != null && _aimTarget.gameObject.activeInHierarchy)
+        {
+            shell.FollowTarget(_aimTarget);
+            return;
+        }
         // 甲板上的點：砲彈也跟著船追（目標本身不追 —— 砲塔一律用點模式，砲彈拿不到目標）
         if (_aimSpot != null && _aimSpot.IsMoving)
             shell.FollowSpot(_aimSpot);

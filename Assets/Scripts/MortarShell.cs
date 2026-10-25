@@ -68,6 +68,10 @@ public class MortarShell : MonoBehaviour, IBallisticProjectile
     [Tooltip("預計落地前這麼多秒就停止修正（避免最後一刻急轉）。")]
     [SerializeField, Min(0f)] private float guidanceStopTime = 0.3f;
 
+    [Tooltip("追蹤敵人時（迫擊砲鎖定目標，FollowTarget）用的最大修正加速度（m/s²）。\n" +
+             "比 Max Guidance Accel 大：要追得上移動中的敵人。打點 / 範圍炮擊仍用 Max Guidance Accel。")]
+    [SerializeField, Min(0f)] private float targetGuidanceAccel = 30f;
+
     [Header("Effects")]
     [Tooltip("爆炸特效。走 PrefabPool。")]
     [SerializeField] private GameObject explosionPrefab;
@@ -197,6 +201,19 @@ public class MortarShell : MonoBehaviour, IBallisticProjectile
     /// <summary>
     /// 沒有目標時，改追一個會動的點（例如甲板上的一點）。在 Launch 之後呼叫（MortarBrain 會處理）。
     /// </summary>
+    /// <summary>
+    /// 追蹤一個敵人：過了最高點之後，誘導改追它「當下」的位置（用 Target Guidance Accel）。
+    /// 在 Launch 之後呼叫（MortarBrain 鎖定敵人時會處理）。敵人死掉就打它最後的位置。
+    /// </summary>
+    public void FollowTarget(Transform target)
+    {
+        if (target == null || !target.gameObject.activeInHierarchy) return;
+        _target = target;
+        _targetRb = target.GetComponentInParent<Rigidbody>();
+        _targetPoint = TurretController.GetAimPoint(target);
+        _spot = null;
+    }
+
     public void FollowSpot(AimSpot spot)
     {
         if (_target != null || spot == null) return;
@@ -246,7 +263,8 @@ public class MortarShell : MonoBehaviour, IBallisticProjectile
 
     private void Guide(Vector3 pos, Vector3 v)
     {
-        if (maxGuidanceAccel <= 0f || !_pastApex) return;
+        float maxAccel = _target != null ? targetGuidanceAccel : maxGuidanceAccel;
+        if (maxAccel <= 0f || !_pastApex) return;
 
         float tgo = _arrivalTime - Time.time;
         if (tgo <= guidanceStopTime) return;
@@ -257,7 +275,7 @@ public class MortarShell : MonoBehaviour, IBallisticProjectile
         Vector3 predicted = _targetPoint + _scatter + targetVel * tgo;
 
         Vector3 required = MathToolKit.BallisticVelocityToReach(pos, predicted, tgo, _gravity);
-        Vector3 accel = Vector3.ClampMagnitude((required - v) / guidanceResponse, maxGuidanceAccel);
+        Vector3 accel = Vector3.ClampMagnitude((required - v) / guidanceResponse, maxAccel);
         _rb.AddForce(accel, ForceMode.Acceleration);
     }
 
