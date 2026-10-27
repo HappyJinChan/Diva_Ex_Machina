@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class FalconMovement : ModularEntityMovement
 {
@@ -25,6 +25,14 @@ public class FalconMovement : ModularEntityMovement
     // 懸停目標：由 brain 在每次思考時設定，這裡每個物理步套用
     private bool _hasHoverTarget;
     private float _hoverHeight;
+
+    public override void OnSpawned()
+    {
+        base.OnSpawned();
+        _hasHoverTarget = false;
+        targetBank = 0f;
+        currentBank = 0f;
+    }
 
     public override void ManagedFixedUpdate(float dt)
     {

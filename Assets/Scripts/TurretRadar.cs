@@ -38,19 +38,29 @@ public class TurretRadar : MonoBehaviour
     private float[] _lastSeenTime;
 
     // 掃描用的暫存（避免每次掃描都配置記憶體）
-    private readonly List<Candidate> _candidates = new List<Candidate>();
+    // _inRange：這次掃描時，雷達範圍內的敵人（已依距離由近到遠排好）。
+    // 每次掃描只走一次全部敵人、讀一次位置，各門砲共用這份短名單。
+    private readonly List<Candidate> _inRange = new List<Candidate>();
+    private readonly HashSet<int> _used = new HashSet<int>();
     private readonly RaycastHit[] _losHits = new RaycastHit[8];
 
     private struct Candidate
     {
         public GameObject go;
+        public int id;
+        public Vector3 pos;
         public float distSqr;
     }
+
+    private static readonly System.Comparison<Candidate> ByDistance = (a, b) => a.distSqr.CompareTo(b.distSqr);
 
     private void Awake()
     {
         if (lineOfSightBlockers.value == 0)
             lineOfSightBlockers = LayerMask.GetMask("Default", "Ground", "Mobile Platform", "Defence Fortifications", "Obstacle");
+
+        // 錯開掃描時間：所有雷達同時從 0 開始的話，會擠在同一幀一起掃
+        _scanTimer = Random.Range(0f, Mathf.Max(0.01f, scanInterval));
     }
 
     void Update()
@@ -86,7 +96,10 @@ public class TurretRadar : MonoBehaviour
         if (_lastSeenTime == null || _lastSeenTime.Length != n)
             _lastSeenTime = new float[n];
 
-        var used = preferUniqueTargets ? new HashSet<int>() : null;
+        CollectInRange(enemies);
+
+        _used.Clear();
+        HashSet<int> used = preferUniqueTargets ? _used : null;
 
         for (int i = 0; i < n; i++)
         {
@@ -116,8 +129,13 @@ public class TurretRadar : MonoBehaviour
             if (bestT != null && bestT != previous)
                 _lastSeenTime[i] = Time.time;
 
+            // 目標沒換就沿用原本的 Rigidbody，不用每次掃描都 GetComponent
+            Rigidbody bestRb = null;
+            if (best != null)
+                bestRb = (bestT == previous && fa.targetRigidbody != null) ? fa.targetRigidbody : best.GetComponent<Rigidbody>();
+
             fa.target = bestT;
-            fa.targetRigidbody = best != null ? best.GetComponent<Rigidbody>() : null;
+            fa.targetRigidbody = bestRb;
 
             if (preferUniqueTargets && used != null && bestT != null)
                 used.Add(best.GetInstanceID());
@@ -125,43 +143,47 @@ public class TurretRadar : MonoBehaviour
     }
 
     /// <summary>
-    /// 在雷達範圍、轉向角度內，找最近的「看得到」的敵人。
-    /// 先依距離排序，從近到遠打視線射線，打到第一個看得到的就停（遠處的敵人不用打射線）。
+    /// 走一次全部敵人：留下雷達範圍內的，記下位置和距離，依距離由近到遠排序。
     /// </summary>
-    private GameObject PickClosestVisible(int idx, Firearm fa, Transform aimFrom, List<GameObject> enemies,
-                                          float halfAngle, HashSet<int> exclude)
+    private void CollectInRange(List<GameObject> enemies)
     {
-        _candidates.Clear();
+        _inRange.Clear();
         float rangeSqr = radarRange * radarRange;
+        Vector3 origin = transform.position;
 
         for (int e = 0; e < enemies.Count; e++)
         {
             var go = enemies[e];
             if (go == null) continue;
             if (ignoreDeadObjects && !go.activeInHierarchy) continue;
-            if (exclude != null && exclude.Contains(go.GetInstanceID())) continue;
 
-            Vector3 to = go.transform.position - transform.position;
-            to.y = 0f;
-            float distSqr = to.sqrMagnitude;
+            Vector3 pos = go.transform.position;
+            float dx = pos.x - origin.x, dz = pos.z - origin.z;
+            float distSqr = dx * dx + dz * dz;
+            if (distSqr > rangeSqr) continue;
 
-            if (distSqr > rangeSqr)
-                continue;
-
-            if (!IsWithinYawHalfAngle(aimFrom, go.transform.position, halfAngle))
-                continue;
-
-            _candidates.Add(new Candidate { go = go, distSqr = distSqr });
+            _inRange.Add(new Candidate { go = go, id = go.GetInstanceID(), pos = pos, distSqr = distSqr });
         }
 
-        if (_candidates.Count == 0) return null;
-        _candidates.Sort((a, b) => a.distSqr.CompareTo(b.distSqr));
+        if (_inRange.Count > 1) _inRange.Sort(ByDistance);
+    }
 
-        for (int c = 0; c < _candidates.Count; c++)
+    /// <summary>
+    /// 在雷達範圍（_inRange，已排序）、轉向角度內，找最近的「看得到」的敵人。
+    /// 從近到遠打視線射線，打到第一個看得到的就停（遠處的敵人不用打射線）。
+    /// </summary>
+    private GameObject PickClosestVisible(int idx, Firearm fa, Transform aimFrom, List<GameObject> enemies,
+                                          float halfAngle, HashSet<int> exclude)
+    {
+        for (int c = 0; c < _inRange.Count; c++)
         {
-            GameObject go = _candidates[c].go;
-            if (IsVisibleOrInGrace(idx, fa, go.transform))
-                return go;
+            Candidate cand = _inRange[c];
+            if (cand.go == null) continue;
+            if (exclude != null && exclude.Contains(cand.id)) continue;
+            if (!IsWithinYawHalfAngle(aimFrom, cand.pos, halfAngle)) continue;
+
+            if (IsVisibleOrInGrace(idx, fa, cand.go.transform))
+                return cand.go;
         }
         return null;
     }

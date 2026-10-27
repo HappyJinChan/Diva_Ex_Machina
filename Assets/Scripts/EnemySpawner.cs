@@ -1,31 +1,31 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// ¼Ä¤H¥Í¦¨¾¹¡C
+/// æ•µäººç”Ÿæˆå™¨ã€‚
 ///
-/// ¨C¹j¤@¬qÀH¾÷®É¶¡¡A«öÅv­«©â¤@­Ó SpawnGroup¡A§â¨º¤@²Õ¸Ì­±ªº¼Ä¤H¥ş³¡¥Í¥X¨Ó¡A
-/// ¨Ãµù¥U¨ì GameManager.enemies¡C
+/// æ¯éš”ä¸€æ®µéš¨æ©Ÿæ™‚é–“ï¼ŒæŒ‰æ¬Šé‡æŠ½ä¸€å€‹ SpawnGroupï¼ŒæŠŠé‚£ä¸€çµ„è£¡é¢çš„æ•µäººå…¨éƒ¨ç”Ÿå‡ºä¾†ï¼Œ
+/// ä¸¦è¨»å†Šåˆ° GameManager.enemiesã€‚
 ///
-/// ¥Í¦¨»İ­n¦P®Éº¡¨¬¤T­Ó±ø¥ó¡Gª±®a¦b activeRange ¤º¡B¦s¬¡¼Æ¥¼¹F¤W­­¡B
-/// ¥H¤Î¡]canSpawnInSight = false ®É¡^¥Í¦¨¾¹¤£¦bª±®aµø³¥¤º¡C
+/// ç”Ÿæˆéœ€è¦åŒæ™‚æ»¿è¶³ä¸‰å€‹æ¢ä»¶ï¼šç©å®¶åœ¨ activeRange å…§ã€å­˜æ´»æ•¸æœªé”ä¸Šé™ã€
+/// ä»¥åŠï¼ˆcanSpawnInSight = false æ™‚ï¼‰ç”Ÿæˆå™¨ä¸åœ¨ç©å®¶è¦–é‡å…§ã€‚
 ///
-/// ¥ô¦ó¤@­Ó±ø¥ó¤£¦¨¥ß®É¡A­p®É¾¹³£¡u¤£·|¡v­«¸m ¡X¡X ¥¦°±¦b 0 ¥H¤U¡A
-/// ±ø¥ó¤@«ì´_´N¦b¦P¤@´V¸É¤W¥Í¦¨¡A³Q¾×¦íªºµ¥«İ®É¶¡¤£·|¥Õ¥Õ®ö¶O¡C
+/// ä»»ä½•ä¸€å€‹æ¢ä»¶ä¸æˆç«‹æ™‚ï¼Œè¨ˆæ™‚å™¨éƒ½ã€Œä¸æœƒã€é‡ç½® â€”â€” å®ƒåœåœ¨ 0 ä»¥ä¸‹ï¼Œ
+/// æ¢ä»¶ä¸€æ¢å¾©å°±åœ¨åŒä¸€å¹€è£œä¸Šç”Ÿæˆï¼Œè¢«æ“‹ä½çš„ç­‰å¾…æ™‚é–“ä¸æœƒç™½ç™½æµªè²»ã€‚
 /// </summary>
 public class EnemySpawner : MonoBehaviour
 {
     /// <summary>
-    /// ¤@­Ó¥Í¦¨²Õ¡C³Q©â¤¤®É¡AspawnEnemy ¸Ìªº¼Ä¤H·|¡u¥ş³¡¡v¥Í¦¨¡A¤£¬O±q¤¤¬D¤@­Ó¡C
+    /// ä¸€å€‹ç”Ÿæˆçµ„ã€‚è¢«æŠ½ä¸­æ™‚ï¼ŒspawnEnemy è£¡çš„æ•µäººæœƒã€Œå…¨éƒ¨ã€ç”Ÿæˆï¼Œä¸æ˜¯å¾ä¸­æŒ‘ä¸€å€‹ã€‚
     /// </summary>
     [System.Serializable]
     public class SpawnGroup
     {
-        [Tooltip("³o¤@²Õ³Q©â¤¤ªºÅv­«¡C¬O¬Û¹ï­È ¡X¡X Åv­« 2 ªº²Õ³Q©â¤¤ªº¾÷²v¬OÅv­« 1 ªº¨â­¿¡C\n" +
-                 "0 ©Î­t¼Æ = ³o¤@²Õ¥Ã»·¤£·|³Q©â¤¤¡C")]
+        [Tooltip("é€™ä¸€çµ„è¢«æŠ½ä¸­çš„æ¬Šé‡ã€‚æ˜¯ç›¸å°å€¼ â€”â€” æ¬Šé‡ 2 çš„çµ„è¢«æŠ½ä¸­çš„æ©Ÿç‡æ˜¯æ¬Šé‡ 1 çš„å…©å€ã€‚\n" +
+                 "0 æˆ–è² æ•¸ = é€™ä¸€çµ„æ°¸é ä¸æœƒè¢«æŠ½ä¸­ã€‚")]
         public float spawnWeight = 1f;
 
-        [Tooltip("³o¤@²Õ³Q©â¤¤®É­n¥Í¦¨ªº©Ò¦³¼Ä¤H¡C")]
+        [Tooltip("é€™ä¸€çµ„è¢«æŠ½ä¸­æ™‚è¦ç”Ÿæˆçš„æ‰€æœ‰æ•µäººã€‚")]
         public GameObject[] spawnEnemy;
     }
 
@@ -33,48 +33,56 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private SpawnGroup[] spawnGroups;
 
     [Header("Timing")]
-    [Tooltip("¨â¦¸¥Í¦¨¤§¶¡ªº¶¡¹j¡]¬í¡^¡Cx = ³Ì¤p­È¡Ay = ³Ì¤j­È¡C")]
+    [Tooltip("å…©æ¬¡ç”Ÿæˆä¹‹é–“çš„é–“éš”ï¼ˆç§’ï¼‰ã€‚x = æœ€å°å€¼ï¼Œy = æœ€å¤§å€¼ã€‚")]
     [SerializeField] private Vector2 spawnTimeRange = new Vector2(5f, 10f);
 
     [Header("Visibility")]
-    [Tooltip("false = ¥Í¦¨¾¹¦bª±®aµø³¥¤º®É¤£¥Í¦¨¡Aµ¥ª±®a§âµø½uÂà¶}¤~¥Í¦¨¡C\n" +
-             "true  = ª±®a¬İµÛ¤]·Ó¼Ë¥Í¦¨¡C")]
+    [Tooltip("false = ç”Ÿæˆå™¨åœ¨ç©å®¶è¦–é‡å…§æ™‚ä¸ç”Ÿæˆï¼Œç­‰ç©å®¶æŠŠè¦–ç·šè½‰é–‹æ‰ç”Ÿæˆã€‚\n" +
+             "true  = ç©å®¶çœ‹è‘—ä¹Ÿç…§æ¨£ç”Ÿæˆã€‚")]
     [SerializeField] private bool canSpawnInSight = false;
 
-    [Tooltip("¯dªÅ·|¦Û°Ê§ì Camera.main¡C")]
+    [Tooltip("ç•™ç©ºæœƒè‡ªå‹•æŠ“ Camera.mainã€‚")]
     [SerializeField] private Camera playerCamera;
 
     [Header("Limits")]
-    [Tooltip("³o­Ó¥Í¦¨¾¹¦P®É¦s¬¡¦b³õ¤Wªº¼Ä¤H¼Æ¶q¤W­­¡C¹F¨ì¤W­­´N¼È°±¡Aµ¥¼Ä¤H¦º±¼¤~«ì´_¡C\n" +
-             "¥u¦b¡u¥Í¦¨¤@²Õ¤§«e¡vÀË¬d¤@¦¸¡A©Ò¥H¤@²Õ¦h°¦®É³Ì²×¼Æ¶q¥i¯à²¤°ª©ó¤W­­¡C\n" +
-             "0 ©Î­t¼Æ = ¤£­­¨î¡C")]
+    [Tooltip("é€™å€‹ç”Ÿæˆå™¨åŒæ™‚å­˜æ´»åœ¨å ´ä¸Šçš„æ•µäººæ•¸é‡ä¸Šé™ã€‚é”åˆ°ä¸Šé™å°±æš«åœï¼Œç­‰æ•µäººæ­»æ‰æ‰æ¢å¾©ã€‚\n" +
+             "åªåœ¨ã€Œç”Ÿæˆä¸€çµ„ä¹‹å‰ã€æª¢æŸ¥ä¸€æ¬¡ï¼Œæ‰€ä»¥ä¸€çµ„å¤šéš»æ™‚æœ€çµ‚æ•¸é‡å¯èƒ½ç•¥é«˜æ–¼ä¸Šé™ã€‚\n" +
+             "0 æˆ–è² æ•¸ = ä¸é™åˆ¶ã€‚")]
     [SerializeField] private int maxAliveEnemies = 10;
 
     [Header("Active Range")]
-    [Tooltip("ª±®a¦b³o­Ó¶ZÂ÷¤º¤~·|¥Í¦¨¼Ä¤H¡C¥Î 3D ª½½u¶ZÂ÷¡C\n" +
-             "0 ©Î­t¼Æ = ¤£­­¨î¶ZÂ÷¡C")]
+    [Tooltip("ç©å®¶åœ¨é€™å€‹è·é›¢å…§æ‰æœƒç”Ÿæˆæ•µäººã€‚ç”¨ 3D ç›´ç·šè·é›¢ã€‚\n" +
+             "0 æˆ–è² æ•¸ = ä¸é™åˆ¶è·é›¢ã€‚")]
     [SerializeField] private float activeRange = 100f;
 
-    [Tooltip("ª±®aªº Transform¡C¯dªÅ·|°h¦Ó¨Ï¥Î¬Û¾÷¦ì¸m·í§@ª±®a¦ì¸m ¡X¡X\n" +
-             "²Ä¤T¤HºÙ¤U¬Û¾÷¦bª±®a«á¤è´X¤½¤Ø¡A¹ï activeRange ³oºØ¤Ø«×³q±`°÷¥Î¡C")]
+    [Tooltip("ç©å®¶çš„ Transformã€‚ç•™ç©ºæœƒé€€è€Œä½¿ç”¨ç›¸æ©Ÿä½ç½®ç•¶ä½œç©å®¶ä½ç½® â€”â€”\n" +
+             "ç¬¬ä¸‰äººç¨±ä¸‹ç›¸æ©Ÿåœ¨ç©å®¶å¾Œæ–¹å¹¾å…¬å°ºï¼Œå° activeRange é€™ç¨®å°ºåº¦é€šå¸¸å¤ ç”¨ã€‚")]
     [SerializeField] private Transform playerTransform;
 
     [Header("Default Target")]
-    [Tooltip("true = ¥Í¦¨ªº¼Ä¤H¤@¥X¥Í´N§â²îªº Core ³]¦¨¹w³]¥Ø¼Ğ¡Aª½±µ©¹²îªº¤è¦V¥h¡A\n" +
-             "¤£¥Îµ¥¦Û¤vªº°»´ú½d³ò±½¨ìªF¦è¡C\n" +
-             "Core ¨ú¦Û LandshipNavigation.Instance.core¡C")]
+    [Tooltip("true = ç”Ÿæˆçš„æ•µäººä¸€å‡ºç”Ÿå°±æŠŠèˆ¹çš„ Core è¨­æˆé è¨­ç›®æ¨™ï¼Œç›´æ¥å¾€èˆ¹çš„æ–¹å‘å»ï¼Œ\n" +
+             "ä¸ç”¨ç­‰è‡ªå·±çš„åµæ¸¬ç¯„åœæƒåˆ°æ±è¥¿ã€‚\n" +
+             "Core å–è‡ª LandshipNavigation.Instance.coreã€‚")]
     [SerializeField] private bool setShipAsTarget = false;
 
-    // ³W®æ«ü©wªº©T©w­È¡C­n¯à¦b Inspector ½Õªº¸Ü¸ò§Ú»¡¡A©Ô¦¨Äæ¦ì«Ü§Ö¡C
+    // è¦æ ¼æŒ‡å®šçš„å›ºå®šå€¼ã€‚è¦èƒ½åœ¨ Inspector èª¿çš„è©±è·Ÿæˆ‘èªªï¼Œæ‹‰æˆæ¬„ä½å¾ˆå¿«ã€‚
     private const float ShipTargetPriority = 30f;
     private const float ShipTargetDecayMultiplier = 0f;
 
     private float _spawnTimer;
 
-    // ³o­Ó¥Í¦¨¾¹¥Í¥X¨Ó¡B¥Ø«eÁÙ¬¡µÛªº¼Ä¤H¡C
-    // ¼Ä¤H¦º¤`®É¬O³Q Destroy ªº¡]ModularEntityStats¡^¡A©Ò¥H¾a Unity ªº°² null
-    // ´N¯à§PÂ_¦s¬¡¡A¤£»İ­n¥ô¦ó¦º¤`³qª¾¾÷¨î¡C
-    private readonly List<GameObject> _spawned = new List<GameObject>();
+    // é€™å€‹ç”Ÿæˆå™¨ç”Ÿå‡ºä¾†ã€ç›®å‰é‚„æ´»è‘—çš„æ•µäººã€‚
+    // æ•µäººæ­»äº¡æ™‚æ˜¯è¢« Destroy çš„ï¼ˆModularEntityStatsï¼‰ï¼Œæ‰€ä»¥é  Unity çš„å‡ null
+    // å°±èƒ½åˆ¤æ–·å­˜æ´»ï¼Œä¸éœ€è¦ä»»ä½•æ­»äº¡é€šçŸ¥æ©Ÿåˆ¶ã€‚
+    // å­˜æ´»ä¸Šé™ç”¨ã€‚æ•µäººæ”¹ç”¨ç‰©ä»¶æ± ä¹‹å¾Œï¼Œæ­»æ‰çš„æ•µäººä¸æœƒè®Šæˆ nullï¼ˆåªæ˜¯åœç”¨ã€ä¹‹å¾Œé‚„æœƒè¢«åˆ¥çš„ç”Ÿæˆå™¨é‡æ–°å–å‡ºï¼‰ï¼Œ
+    // æ‰€ä»¥è¨˜ä¸‹ç”Ÿæˆç•¶ä¸‹çš„ SpawnSerialï¼šç‰©ä»¶é‚„å•Ÿç”¨ã€è€Œä¸”åºè™Ÿæ²’è®Šï¼Œæ‰ç®—æ˜¯ã€Œæˆ‘ç”Ÿçš„é‚£ä¸€éš»é‚„æ´»è‘—ã€ã€‚
+    private struct SpawnedEntry
+    {
+        public GameObject go;
+        public ModularEntityStats stats;
+        public int serial;
+    }
+    private readonly List<SpawnedEntry> _spawned = new List<SpawnedEntry>();
 
     private void OnEnable()
     {
@@ -89,12 +97,12 @@ public class EnemySpawner : MonoBehaviour
             return;
         }
 
-        // ¡¹ ¥H¤U¤T­Ó±ø¥ó¥ô¦ó¤@­Ó¤£¦¨¥ß³£ª½±µ return¡A¨è·N¡u¤£¡v­«¸m­p®É¾¹¡C
-        //   ­p®É¾¹°±¦b 0 ¥H¤U¡A±ø¥ó¤@«ì´_´N¦b¦P¤@´V¸É¤W¥Í¦¨¡A
-        //   ¦Ó¤£¬O­«·sµ¥¤@½ü¡C³Q¾×¦íªº®É¶¡¤£·|¥Õ¥Õ®ö¶O¡C
+        // â˜… ä»¥ä¸‹ä¸‰å€‹æ¢ä»¶ä»»ä½•ä¸€å€‹ä¸æˆç«‹éƒ½ç›´æ¥ returnï¼Œåˆ»æ„ã€Œä¸ã€é‡ç½®è¨ˆæ™‚å™¨ã€‚
+        //   è¨ˆæ™‚å™¨åœåœ¨ 0 ä»¥ä¸‹ï¼Œæ¢ä»¶ä¸€æ¢å¾©å°±åœ¨åŒä¸€å¹€è£œä¸Šç”Ÿæˆï¼Œ
+        //   è€Œä¸æ˜¯é‡æ–°ç­‰ä¸€è¼ªã€‚è¢«æ“‹ä½çš„æ™‚é–“ä¸æœƒç™½ç™½æµªè²»ã€‚
         //
-        //   ¶¶§Ç¥Ñ«K©y¨ì¶Q¡GIsPlayerInRange ¥u¬O¤@¦¸¶ZÂ÷¥­¤è¤ñ¸û¡A
-        //   CountAlive ­n¨«³X²M³æ¡A©Ò¥H©ñ¦b«á­±¡C
+        //   é †åºç”±ä¾¿å®œåˆ°è²´ï¼šIsPlayerInRange åªæ˜¯ä¸€æ¬¡è·é›¢å¹³æ–¹æ¯”è¼ƒï¼Œ
+        //   CountAlive è¦èµ°è¨ªæ¸…å–®ï¼Œæ‰€ä»¥æ”¾åœ¨å¾Œé¢ã€‚
         if (!IsPlayerInRange()) return;
         if (IsAtAliveCap()) return;
         if (!canSpawnInSight && IsVisibleToPlayer()) return;
@@ -110,16 +118,16 @@ public class EnemySpawner : MonoBehaviour
         _spawnTimer = Random.Range(min, max);
     }
 
-    /// <summary>ª±®a¦b¤£¦b activeRange ¤º¡C</summary>
+    /// <summary>ç©å®¶åœ¨ä¸åœ¨ activeRange å…§ã€‚</summary>
     private bool IsPlayerInRange()
     {
-        if (activeRange <= 0f) return true;   // ¤£­­¨î¶ZÂ÷
+        if (activeRange <= 0f) return true;   // ä¸é™åˆ¶è·é›¢
 
         Transform player = ResolvePlayer();
 
-        // ¡¹ §ä¤£¨ìª±®a ¡÷ ¦^¶Ç true¡]¤£¾×¡^¡C
-        //   ¸ò IsVisibleToPlayer ¦P¤@­Ó³W«h¡Gµû¦ô¤£¤Fªº­­¨î±ø¥ó´N¤£®M¥Î¡C
-        //   ¤Ï¹L¨Ó¡]§ä¤£¨ì´N¥Ã¤£¥Í¦¨¡^·|ÅÜ¦¨¤@­Ó¨S¦³¥ô¦ó¿ù»~°T®§ªºÀRÀq¥¢®Ä¡C
+        // â˜… æ‰¾ä¸åˆ°ç©å®¶ â†’ å›å‚³ trueï¼ˆä¸æ“‹ï¼‰ã€‚
+        //   è·Ÿ IsVisibleToPlayer åŒä¸€å€‹è¦å‰‡ï¼šè©•ä¼°ä¸äº†çš„é™åˆ¶æ¢ä»¶å°±ä¸å¥—ç”¨ã€‚
+        //   åéä¾†ï¼ˆæ‰¾ä¸åˆ°å°±æ°¸ä¸ç”Ÿæˆï¼‰æœƒè®Šæˆä¸€å€‹æ²’æœ‰ä»»ä½•éŒ¯èª¤è¨Šæ¯çš„éœé»˜å¤±æ•ˆã€‚
         if (player == null) return true;
 
         return (player.position - transform.position).sqrMagnitude <= activeRange * activeRange;
@@ -129,59 +137,62 @@ public class EnemySpawner : MonoBehaviour
     {
         if (playerTransform != null) return playerTransform;
 
-        // °h¸ô¡G¥Î¬Û¾÷¦ì¸mªñ¦üª±®a¦ì¸m¡C²Ä¤T¤HºÙ¤U¬Û¾÷¦bª±®a«á¤è´X¤½¤Ø¡A
-        // ¹ï activeRange ³oºØ¼Æ¤Q¤½¤Øªº¤Ø«×³q±`°÷¥Î¡C­nºë·Ç´N§â playerTransform «ü¦n¡C
+        // é€€è·¯ï¼šç”¨ç›¸æ©Ÿä½ç½®è¿‘ä¼¼ç©å®¶ä½ç½®ã€‚ç¬¬ä¸‰äººç¨±ä¸‹ç›¸æ©Ÿåœ¨ç©å®¶å¾Œæ–¹å¹¾å…¬å°ºï¼Œ
+        // å° activeRange é€™ç¨®æ•¸åå…¬å°ºçš„å°ºåº¦é€šå¸¸å¤ ç”¨ã€‚è¦ç²¾æº–å°±æŠŠ playerTransform æŒ‡å¥½ã€‚
         Camera cam = ResolveCamera();
         return (cam != null) ? cam.transform : null;
     }
 
-    /// <summary>³o­Ó¥Í¦¨¾¹ªº¦s¬¡¼Ä¤H¼Æ¬O§_¤w¹F¤W­­¡C</summary>
+    /// <summary>é€™å€‹ç”Ÿæˆå™¨çš„å­˜æ´»æ•µäººæ•¸æ˜¯å¦å·²é”ä¸Šé™ã€‚</summary>
     private bool IsAtAliveCap()
     {
-        if (maxAliveEnemies <= 0) return false;   // ¤£­­¨î
+        if (maxAliveEnemies <= 0) return false;   // ä¸é™åˆ¶
         return CountAlive() >= maxAliveEnemies;
     }
 
     /// <summary>
-    /// ²M±¼¤w³Q¾P·´ªº¶µ¥Ø¡A¦^¶ÇÁÙ¬¡µÛªº¼Æ¶q¡C
+    /// æ¸…æ‰å·²è¢«éŠ·æ¯€çš„é …ç›®ï¼Œå›å‚³é‚„æ´»è‘—çš„æ•¸é‡ã€‚
     ///
-    /// ¥u¦b­p®É¾¹Âk¹s¨º¤@´V¤~·|³Q©I¥s¡A©Ò¥H³o­Ó O(n) ¨«³Xªº¦¨¥»¥i¥H©¿²¤ ¡X¡X
-    /// n ¥»¨­¤]³Q maxAliveEnemies ¸j¦í¤F¡C
+    /// åªåœ¨è¨ˆæ™‚å™¨æ­¸é›¶é‚£ä¸€å¹€æ‰æœƒè¢«å‘¼å«ï¼Œæ‰€ä»¥é€™å€‹ O(n) èµ°è¨ªçš„æˆæœ¬å¯ä»¥å¿½ç•¥ â€”â€”
+    /// n æœ¬èº«ä¹Ÿè¢« maxAliveEnemies ç¶ä½äº†ã€‚
     /// </summary>
     private int CountAlive()
     {
-        // ­ËµÛ¨«¡ARemoveAt ¤~¤£·|¸õ¹L¤¸¯À
+        // å€’è‘—èµ°ï¼ŒRemoveAt æ‰ä¸æœƒè·³éå…ƒç´ 
         for (int i = _spawned.Count - 1; i >= 0; i--)
         {
-            if (_spawned[i] == null) _spawned.RemoveAt(i);
+            SpawnedEntry e = _spawned[i];
+            bool alive = e.go != null && e.go.activeInHierarchy
+                         && (e.stats == null || (e.stats.SpawnSerial == e.serial && !e.stats.IsDead));
+            if (!alive) _spawned.RemoveAt(i);
         }
         return _spawned.Count;
     }
 
     /// <summary>
-    /// ¥Í¦¨¾¹²{¦b¦b¤£¦bª±®a¬Û¾÷ªºµøÀ@¤º¡C
+    /// ç”Ÿæˆå™¨ç¾åœ¨åœ¨ä¸åœ¨ç©å®¶ç›¸æ©Ÿçš„è¦–éŒå…§ã€‚
     ///
-    /// ¥u°µµøÀ@§P©w¡A¤£°µ¾B¾×§P©w ¡X¡X ¥Í¦¨¾¹¸ú¦bÀğ«á­±¦ı¸¨¦bµe­±½d³ò¤º®É¡A
-    /// ³o¸Ì¤´µMºâ¡u¬İ±o¨ì¡v¡A·|¾×¦í¥Í¦¨¡C
+    /// åªåšè¦–éŒåˆ¤å®šï¼Œä¸åšé®æ“‹åˆ¤å®š â€”â€” ç”Ÿæˆå™¨èº²åœ¨ç‰†å¾Œé¢ä½†è½åœ¨ç•«é¢ç¯„åœå…§æ™‚ï¼Œ
+    /// é€™è£¡ä»ç„¶ç®—ã€Œçœ‹å¾—åˆ°ã€ï¼Œæœƒæ“‹ä½ç”Ÿæˆã€‚
     /// </summary>
     private bool IsVisibleToPlayer()
     {
         Camera cam = ResolveCamera();
-        if (cam == null) return false;   // ¨S¦³¬Û¾÷ = ¨S¦³¤H¦b¬İ¡A¤£¾×
+        if (cam == null) return false;   // æ²’æœ‰ç›¸æ©Ÿ = æ²’æœ‰äººåœ¨çœ‹ï¼Œä¸æ“‹
 
         Vector3 vp = cam.WorldToViewportPoint(transform.position);
 
-        // z <= 0 ¥Nªí¦b¬Û¾÷­I«á¡CWorldToViewportPoint ¹ï­I«áªºÂI
-        // ¤´µM·|¦^¶Ç¬İ¦ü¦Xªkªº x/y¡A©Ò¥H³o­ÓÀË¬d¤£¯à¬Ù¡C
+        // z <= 0 ä»£è¡¨åœ¨ç›¸æ©ŸèƒŒå¾Œã€‚WorldToViewportPoint å°èƒŒå¾Œçš„é»
+        // ä»ç„¶æœƒå›å‚³çœ‹ä¼¼åˆæ³•çš„ x/yï¼Œæ‰€ä»¥é€™å€‹æª¢æŸ¥ä¸èƒ½çœã€‚
         return vp.z > 0f
             && vp.x >= 0f && vp.x <= 1f
             && vp.y >= 0f && vp.y <= 1f;
     }
 
     /// <summary>
-    /// ¨C¦¸³£½T»{¤@¤U¬Û¾÷ÁÙ¬¡µÛ¡C
-    /// ±M®×¸Ì¦³¥|²Õ camera set ·|³Q UIManager ¶}¶}ÃöÃö¡A
-    /// §Ö¨ú¦íªº¨º¥x¥i¯à¤w¸g³Q SetActive(false) ¤F¡C
+    /// æ¯æ¬¡éƒ½ç¢ºèªä¸€ä¸‹ç›¸æ©Ÿé‚„æ´»è‘—ã€‚
+    /// å°ˆæ¡ˆè£¡æœ‰å››çµ„ camera set æœƒè¢« UIManager é–‹é–‹é—œé—œï¼Œ
+    /// å¿«å–ä½çš„é‚£å°å¯èƒ½å·²ç¶“è¢« SetActive(false) äº†ã€‚
     /// </summary>
     private Camera ResolveCamera()
     {
@@ -201,45 +212,55 @@ public class EnemySpawner : MonoBehaviour
             GameObject prefab = group.spawnEnemy[i];
             if (prefab == null) continue;
 
-            GameObject enemy = Instantiate(prefab, transform.position, transform.rotation);
+            // ç‰©ä»¶æ± å–ä»£ Instantiateï¼ˆå ´æ™¯è£¡æ²’æœ‰ PrefabPool æ™‚æœƒè‡ªå‹•é€€å› Instantiateï¼‰ã€‚
+            // Spawn å›å‚³å‰å·²ç¶“å‘¼å«éæ•µäººå„å…ƒä»¶çš„ OnSpawnedï¼ˆé‡ç½®è¡€é‡ã€AIã€ç§»å‹•ç‹€æ…‹ï¼‰ï¼Œ
+            // æ‰€ä»¥ä¸‹é¢åŠ çš„ç›®æ¨™ï¼ˆèˆ¹çš„ Coreï¼‰ä¸æœƒè¢«æ¸…æ‰ã€‚
+            GameObject enemy = PrefabPool.Spawn(prefab, transform.position, transform.rotation);
+            if (enemy == null) continue;
 
-            // ¼Ä¤H¤]¥i¯à¦b¦Û¤vªº Awake / OnEnable ¸Ì´N©I¥s¹L AddEnemy
-            //¡]Instantiate ¬O¦P¨Bªº¡A¨º¨Ç¦^©I¦b³o¤@¦æ¤§«e´N¶]§¹¤F¡^¡C
-            // GameManager.AddEnemy ¤º³¡¦³ Contains ÀË¬d¡A­«½Æµù¥U¬O¦w¥şªº¡C
+            // æ•µäººä¹Ÿå¯èƒ½åœ¨è‡ªå·±çš„ Awake / OnEnable è£¡å°±å‘¼å«é AddEnemy
+            //ï¼ˆInstantiate æ˜¯åŒæ­¥çš„ï¼Œé‚£äº›å›å‘¼åœ¨é€™ä¸€è¡Œä¹‹å‰å°±è·‘å®Œäº†ï¼‰ã€‚
+            // GameManager.AddEnemy å…§éƒ¨æœ‰ Contains æª¢æŸ¥ï¼Œé‡è¤‡è¨»å†Šæ˜¯å®‰å…¨çš„ã€‚
             if (GameManager.Instance != null)
                 GameManager.Instance.AddEnemy(enemy);
 
             if (setShipAsTarget) AssignShipAsTarget(enemy);
 
-            _spawned.Add(enemy);   // ¦s¬¡¤W­­¥Î¡F¦º¤`®ÉÅÜ¦¨°² null¡ACountAlive ·|²M±¼
+            ModularEntityStats stats = enemy.GetComponent<ModularEntityStats>();
+            _spawned.Add(new SpawnedEntry
+            {
+                go = enemy,
+                stats = stats,
+                serial = stats != null ? stats.SpawnSerial : 0,
+            });
         }
     }
 
     /// <summary>
-    /// §â²îªº Core ¥[¶i³o°¦¼Ä¤Hªº¥Ø¼Ğ²M³æ¡C
+    /// æŠŠèˆ¹çš„ Core åŠ é€²é€™éš»æ•µäººçš„ç›®æ¨™æ¸…å–®ã€‚
     ///
-    /// ®É¾÷¬O¦w¥şªº¡GInstantiate ·|¦P¨B¶]§¹ Awake / OnEnable¡A¦Ó targets ¬O¦b
-    /// Äæ¦ì«Å§i®É´N new ¦nªº¡A©Ò¥H³o¸Ì¥[±o¶i¥h¡CModularEntityBrain.Start()
-    /// ¥u³] spawnLocation / pathFinder / ª¬ºA¡A¤£·|²MªÅ targets¡A
-    /// ©Ò¥H³o¤@µ§¤£·|¦b¤U¤@´V³Q¬~±¼¡C
+    /// æ™‚æ©Ÿæ˜¯å®‰å…¨çš„ï¼šInstantiate æœƒåŒæ­¥è·‘å®Œ Awake / OnEnableï¼Œè€Œ targets æ˜¯åœ¨
+    /// æ¬„ä½å®£å‘Šæ™‚å°± new å¥½çš„ï¼Œæ‰€ä»¥é€™è£¡åŠ å¾—é€²å»ã€‚ModularEntityBrain.Start()
+    /// åªè¨­ spawnLocation / pathFinder / ç‹€æ…‹ï¼Œä¸æœƒæ¸…ç©º targetsï¼Œ
+    /// æ‰€ä»¥é€™ä¸€ç­†ä¸æœƒåœ¨ä¸‹ä¸€å¹€è¢«æ´—æ‰ã€‚
     ///
-    /// AddTarget ¤º³¡¦³¥h­«¡A¸ò¼Ä¤H¦Û¤v°»´ú¨ì Core ªº±¡ªp¤£·|¥´¬[ ¡X¡X
-    /// ­«½Æ®É¨ú¸û°ªªºÀu¥ı«×¡C
+    /// AddTarget å…§éƒ¨æœ‰å»é‡ï¼Œè·Ÿæ•µäººè‡ªå·±åµæ¸¬åˆ° Core çš„æƒ…æ³ä¸æœƒæ‰“æ¶ â€”â€”
+    /// é‡è¤‡æ™‚å–è¼ƒé«˜çš„å„ªå…ˆåº¦ã€‚
     /// </summary>
     private void AssignShipAsTarget(GameObject enemy)
     {
         LandshipNavigation nav = LandshipNavigation.Instance;
         if (nav == null || nav.core == null) return;
 
-        // ¥Î GetComponentInChildren ¦Ó¤£¬O GetComponent¡G¥Ø«eªº prefab
-        // ¡]Wolf / Falcon¡^brain ³£±¾¦b root¡A¦ı³o¼Ë¤£¬D¶¥¼hµ²ºc¡C
+        // ç”¨ GetComponentInChildren è€Œä¸æ˜¯ GetComponentï¼šç›®å‰çš„ prefab
+        // ï¼ˆWolf / Falconï¼‰brain éƒ½æ›åœ¨ rootï¼Œä½†é€™æ¨£ä¸æŒ‘éšå±¤çµæ§‹ã€‚
         ModularEntityBrain brain = enemy.GetComponentInChildren<ModularEntityBrain>();
         if (brain == null) return;
 
         brain.AddTarget(nav.core, TargetType.Core, ShipTargetPriority, ShipTargetDecayMultiplier);
     }
 
-    /// <summary>«ö spawnWeight ¥[Åv©â¤@²Õ¡CÅv­« &lt;= 0 ªº²Õ·|³Q¸õ¹L¡C</summary>
+    /// <summary>æŒ‰ spawnWeight åŠ æ¬ŠæŠ½ä¸€çµ„ã€‚æ¬Šé‡ &lt;= 0 çš„çµ„æœƒè¢«è·³éã€‚</summary>
     private SpawnGroup PickGroup()
     {
         if (spawnGroups == null || spawnGroups.Length == 0) return null;
@@ -256,7 +277,7 @@ public class EnemySpawner : MonoBehaviour
             lastValid = g;
         }
 
-        if (total <= 0f) return null;   // ¨S¦³¥ô¦ó¤@²Õ¦³¥¿Åv­«
+        if (total <= 0f) return null;   // æ²’æœ‰ä»»ä½•ä¸€çµ„æœ‰æ­£æ¬Šé‡
 
         float roll = Random.value * total;
 
@@ -269,8 +290,8 @@ public class EnemySpawner : MonoBehaviour
             if (roll <= 0f) return g;
         }
 
-        // ¯BÂI»~®tÅı roll ­è¦n¨S³Q¦©§¹®Éªº«O©³¡C¦^¶Ç³Ì«á¤@­Ó¦³®Ä²Õ¡A
-        // ¤£­n¦^¶Ç null ¡X¡X ¨º·|ªí²{¦¨¡u¥Í¦¨¾¹°¸º¸²ö¦W¨ä§®¸õ¹L¤@¦¸¡v¡C
+        // æµ®é»èª¤å·®è®“ roll å‰›å¥½æ²’è¢«æ‰£å®Œæ™‚çš„ä¿åº•ã€‚å›å‚³æœ€å¾Œä¸€å€‹æœ‰æ•ˆçµ„ï¼Œ
+        // ä¸è¦å›å‚³ null â€”â€” é‚£æœƒè¡¨ç¾æˆã€Œç”Ÿæˆå™¨å¶çˆ¾è«åå…¶å¦™è·³éä¸€æ¬¡ã€ã€‚
         return lastValid;
     }
 }

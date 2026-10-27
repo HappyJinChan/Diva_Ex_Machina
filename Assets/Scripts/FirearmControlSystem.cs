@@ -476,14 +476,21 @@ public class FirearmControlSystem : MonoBehaviour
             }
 
             Quaternion rot = Quaternion.LookRotation(dir, muzzle.up);
-            GameObject b = Instantiate(fa.bulletPrefab, muzzle.position, rot);
+            // 物件池取代 Instantiate（跟 TurretController / RangeAttackController 一樣）。池子缺席時內部會退回 Instantiate。
+            // ★ 欄位寫入必須在 Spawn 之後：Bullet 被啟用時會把欄位還原成 prefab 值，先寫會被蓋掉。
+            GameObject b = PrefabPool.Spawn(fa.bulletPrefab, muzzle.position, rot);
+            if (b == null) continue;
+
             var bulletComp = b.GetComponent<Bullet>();
-            bulletComp.attacker = gameObject;
-            bulletComp.physicalDamage = fa.physicalDamage;
-            bulletComp.explosionDamage = fa.explosionDamage;
-            bulletComp.energyDamage = fa.energyDamage;
-            bulletComp.coldDamage = fa.coldDamage;
-            bulletComp.impact = fa.impact;
+            if (bulletComp != null)
+            {
+                bulletComp.attacker = gameObject;
+                bulletComp.physicalDamage = fa.physicalDamage;
+                bulletComp.explosionDamage = fa.explosionDamage;
+                bulletComp.energyDamage = fa.energyDamage;
+                bulletComp.coldDamage = fa.coldDamage;
+                bulletComp.impact = fa.impact;
+            }
             Rigidbody rb = b.GetComponent<Rigidbody>();
             if (rb != null)
             {

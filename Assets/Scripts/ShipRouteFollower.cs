@@ -14,6 +14,7 @@ using UnityEngine;
 /// 死路：走到沒有出口的節點會自動減速停在節點上。
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
+[DefaultExecutionOrder(-100)]   // 比乘客（PlayerMovement 等）早跑，乘客這一步就讀得到 RotationAfterStep
 public class ShipRouteFollower : MonoBehaviour
 {
     public enum BranchPolicy { Default, Random }
@@ -35,9 +36,19 @@ public class ShipRouteFollower : MonoBehaviour
     public float maxAccel = 50f;
     [Tooltip("往前看多遠（公尺）決定航向。越大轉彎越圓、越會切彎。")]
     public float lookAheadDistance = 40f;
+    [Tooltip("離目前目標點這麼近（公尺）就換下一段，不必等越線。急轉彎（> 90°）靠這個才不會卡住打轉。死路節點不受影響。")]
+    public float arriveRadius = 20f;
+    [Tooltip("轉向速度上限（度/秒）。航向（Max Accel 拉出來的弧線）和船頭（Turn Speed 的 Slerp）平常照舊，\n" +
+             "只有轉得比這個快時（急彎）才會被壓住，避免原地甩頭。\n" +
+             "轉越快，站在甲板邊緣的人切線速度越大（離中心 r 公尺 ≈ r × 轉速），乘客補償的誤差也越明顯。")]
+    public float maxTurnRate = 30f;
+    [Tooltip("航向跟目標方向差很多時（例如急轉彎）先減速，最低降到 speed 的這個比例。\n" +
+             "避免轉彎半徑（速度 ÷ 轉速）比 Look Ahead 大，繞著目標點打轉。")]
+    [Range(0.05f, 1f)] public float minTurnSpeedFactor = 0.3f;
 
     [Header("Facing")]
     public bool faceMoveDirection = true;
+    [Tooltip("船頭追速度方向的 Slerp 係數（每秒）。越大越快對準；轉速仍受 Max Turn Rate 限制。")]
     public float turnSpeed = 12f;
     public bool keepUpright = true;
     public float minSpeedToTurn = 0.05f;
@@ -66,11 +77,24 @@ public class ShipRouteFollower : MonoBehaviour
 
     public bool IsAtDeadEnd => To != null && PlannedNext == null && To.IsDeadEnd;
 
+    /// <summary>
+    /// 這個 physics step 模擬完之後船的朝向（MoveRotation 的目標）。
+    /// rb.rotation 要等模擬跑完才會更新，乘客如果讀 rb.rotation 會慢一步 —— 船在轉、人沒跟上，看起來就是在甲板上滑。
+    /// 只在 RotationStepTime == Time.fixedTime 時有效（表示這一步已經算過）。
+    /// </summary>
+    public Quaternion RotationAfterStep { get; private set; } = Quaternion.identity;
+    public float RotationStepTime { get; private set; } = -1f;
+
     private Rigidbody rb;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+
+        // 質心固定在原點。自動計算的質心離原點約 45 m，船轉向時實際上是繞質心轉，
+        // 乘客的旋轉補償卻是繞原點算 —— 每轉 1 弧度就差約 45 m（ShipDriftProbe：drift ≈ 轉速 × comOffset）。
+        // 讓兩者重合，轉軸是哪一個都對。船不受重力、旋轉全鎖，質心位置不影響其他行為。
+        rb.centerOfMass = Vector3.zero;
     }
 
     void Start()
@@ -126,6 +150,22 @@ public class ShipRouteFollower : MonoBehaviour
         Vector3 pos = rb.position;
         AdvanceAlongRoute(pos);
 
+        // 轉向完全由 MoveRotation 控制；碰撞留下的角速度會讓船自己轉，乘客的旋轉補償也算不準 → 每步清掉
+        rb.angularVelocity = Vector3.zero;
+        RotationAfterStep = rb.rotation;   // 這一步沒有轉向時 = 目前朝向
+        RotationStepTime = Time.fixedTime;
+
+        float dt = Time.fixedDeltaTime;
+
+        // 目前的水平航向：有速度就用速度方向，幾乎停著就用船頭方向
+        Vector3 vNow = rb.linearVelocity;
+        Vector3 vFlat = new Vector3(vNow.x, 0f, vNow.z);
+        float curSpeed = vFlat.magnitude;
+        Vector3 heading = curSpeed > minSpeedToTurn
+            ? vFlat / curSpeed
+            : Vector3.ProjectOnPlane(rb.rotation * Vector3.forward, Vector3.up).normalized;
+        if (heading.sqrMagnitude < 0.000001f) heading = Vector3.forward;
+
         Vector3 desiredVel = Vector3.zero;
         if (!stopped)
         {
@@ -139,13 +179,30 @@ public class ShipRouteFollower : MonoBehaviour
                 wantSpeed = Mathf.Min(speed, Mathf.Sqrt(2f * maxAccel * Mathf.Max(0f, remainingToDeadEnd)));
 
             if (toTarget.sqrMagnitude > 0.000001f && wantSpeed > 0.01f)
-                desiredVel = toTarget.normalized * wantSpeed;
+            {
+                Vector3 wantDir = toTarget.normalized;
+
+                // 航向差越多越慢（差 90° 以上 = 最低速），轉彎半徑才收得進來
+                float align = Mathf.Clamp01(Vector3.Dot(heading, wantDir));
+                desiredVel = wantDir * (wantSpeed * Mathf.Lerp(minTurnSpeedFactor, 1f, align));
+            }
         }
 
-        Vector3 dv = desiredVel - rb.linearVelocity;
-        dv.y = 0f;   // 垂直交給 PinHeight
-        Vector3 accel = Vector3.ClampMagnitude(dv / Time.fixedDeltaTime, maxAccel);
-        rb.AddForce(accel, ForceMode.Acceleration);
+        // 跟以前一樣：用加速度（maxAccel）把速度拉向目標，轉彎是自然的弧線
+        Vector3 newVel = vFlat + Vector3.ClampMagnitude(desiredVel - vFlat, maxAccel * dt);
+
+        // 急彎時才介入：方向一步最多轉 maxTurnRate·dt
+        float newSpeed = newVel.magnitude;
+        if (curSpeed > minSpeedToTurn && newSpeed > minSpeedToTurn)
+        {
+            float maxRad = maxTurnRate * Mathf.Deg2Rad * dt;
+            Vector3 newDir = newVel / newSpeed;
+            if (Vector3.Angle(heading, newDir) * Mathf.Deg2Rad > maxRad)
+                newVel = Vector3.RotateTowards(heading, newDir, maxRad, 0f) * newSpeed;
+        }
+
+        // 直接改速度，不用 AddForce：AddForce 要等模擬時才生效，乘客這一步讀到的還是舊速度。
+        rb.linearVelocity = new Vector3(newVel.x, vNow.y, newVel.z);   // 垂直交給 PinHeight
 
         if (faceMoveDirection)
         {
@@ -175,7 +232,11 @@ public class ShipRouteFollower : MonoBehaviour
         for (int guard = 0; guard < 8; guard++)
         {
             if (From == null || To == null || From == To) return;
-            if (ShipRouteGraph.ProjectXZ(pos, From.Position, To.Position) < 1f) return;
+            // 越過這段的終點，或已經進入抵達半徑（後面還有路時）就換段。
+            // 只看投影的話，轉角大於 90° 時船切彎後投影永遠到不了 1，會卡在原地繞圈。
+            bool passed = ShipRouteGraph.ProjectXZ(pos, From.Position, To.Position) >= 1f;
+            bool arrived = PlannedNext != null && ShipRouteGraph.DistanceXZ(pos, To.Position) <= arriveRadius;
+            if (!passed && !arrived) return;
 
             // 抵達 To
             ShipRouteNode reached = To;
@@ -255,9 +316,14 @@ public class ShipRouteFollower : MonoBehaviour
     {
         Quaternion oldRot = rb.rotation;
         Quaternion targetRot = Quaternion.LookRotation(forward, Vector3.up);
+        // 平常用 Slerp（起步快、接近時慢慢收）；轉得比 maxTurnRate 快時壓住
         Quaternion newRot = Quaternion.Slerp(oldRot, targetRot, turnSpeed * Time.fixedDeltaTime);
+        float maxDeg = maxTurnRate * Time.fixedDeltaTime;
+        if (Quaternion.Angle(oldRot, newRot) > maxDeg)
+            newRot = Quaternion.RotateTowards(oldRot, targetRot, maxDeg);
 
         rb.MoveRotation(newRot);
+        RotationAfterStep = newRot;
 
         // 鏡頭跟著轉同樣的角度
         if (cameraTransform != null)

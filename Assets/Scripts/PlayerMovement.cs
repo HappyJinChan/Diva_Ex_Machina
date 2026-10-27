@@ -306,6 +306,7 @@ public class PlayerMovement : MonoBehaviour
         GroundCheck();          // 同一條射線同時更新 grounded 和 ShipPassenger
         SyncMobilePlatform();   // 讀剛更新的船上狀態
         CarryWithPlatformRotation(Time.fixedDeltaTime);
+        CarryWithPlatformAcceleration();
 
         // 換裝硬直：每一步都把速度壓回硬直速度（相對船），重力累積的下墜也清掉 → 空中也不會掉
         if (IsMovementFrozen)
@@ -2300,6 +2301,8 @@ public class PlayerMovement : MonoBehaviour
     private Transform _mobilePlatformTf;
     private Quaternion _mobilePlatformLastRot;
     private bool _mobilePlatformRotInit;
+    private ShipRouteFollower _mobilePlatformFollower;   // 船的轉向來源；沒有的話讀 rb.rotation（會慢一步）
+    private Vector3 _mobilePlatformLastVel;              // 上一步的船速，用來把船的加速度直接加給玩家
     // 對外公開：玩家目前站著的移動平台（沒站平台 = null）。給殘影 parent 用。
     public Transform CurrentPlatform => _onMobilePlatform ? _mobilePlatformTf : null;
     // ── 在不在船上：改讀 ShipPassenger（往下射線），跟敵人共用同一套判斷 ──
@@ -2342,6 +2345,8 @@ public class PlayerMovement : MonoBehaviour
     {
         _mobilePlatformRb = rb;
         _mobilePlatformTf = rb.transform;
+        _mobilePlatformFollower = rb.GetComponent<ShipRouteFollower>();
+        _mobilePlatformLastVel = rb.linearVelocity;
         _mobilePlatformLastRot = rb.rotation;
         _mobilePlatformRotInit = true;
         _onMobilePlatform = true;
@@ -2358,6 +2363,7 @@ public class PlayerMovement : MonoBehaviour
         _onMobilePlatform = false;
         _mobilePlatformRb = null;
         _mobilePlatformTf = null;
+        _mobilePlatformFollower = null;
         _mobilePlatformRotInit = false;
         if (Effects != null) Effects.SetSimulationSpaceWorld();
         attackManager.SetOffShip();
@@ -2371,12 +2377,35 @@ public class PlayerMovement : MonoBehaviour
         if (!_onMobilePlatform || _mobilePlatformRb == null) return Vector3.zero;
         return _mobilePlatformRb.linearVelocity; // Unity 6
     }
+    /// <summary>
+    /// 船加速 / 減速 / 轉彎（速度方向改變）時，把同樣的速度變化直接加給玩家。
+    /// 不加的話：所有移動都用「玩家速度 − 船速」當相對速度，船速一變，差值就被當成玩家自己的速度，
+    /// 站著不動時要靠 decelerationSpeed 慢慢煞掉；船的加速度（轉彎時最多 maxAccel）比它大，
+    /// 就永遠煞不完 → 人在甲板上持續滑。
+    /// </summary>
+    private void CarryWithPlatformAcceleration()
+    {
+        if (!_onMobilePlatform || _mobilePlatformRb == null) return;
+
+        Vector3 v = _mobilePlatformRb.linearVelocity;
+        Vector3 dv = v - _mobilePlatformLastVel;
+        _mobilePlatformLastVel = v;
+
+        if (dv.sqrMagnitude > 0f)
+            playerRigidbody.linearVelocity += dv;
+    }
+
     private void CarryWithPlatformRotation(float dt)
     {
         if (!_onMobilePlatform || _mobilePlatformRb == null || _mobilePlatformTf == null) return;
         if (dt <= 0f) return;
 
-        Quaternion current = _mobilePlatformRb.rotation;
+        // 用船「這一步之後」的朝向：船跟人在同一個模擬步裡一起轉，不會慢一步。
+        // rb.rotation 是上一步模擬完的結果，用它的話人永遠落後船一步（轉得越快、離中心越遠，滑得越明顯）。
+        ShipRouteFollower f = _mobilePlatformFollower;
+        Quaternion current = (f != null && f.isActiveAndEnabled && f.RotationStepTime == Time.fixedTime)
+            ? f.RotationAfterStep
+            : _mobilePlatformRb.rotation;
 
         if (!_mobilePlatformRotInit)
         {

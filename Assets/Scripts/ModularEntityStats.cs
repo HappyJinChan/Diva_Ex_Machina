@@ -11,7 +11,7 @@ public enum EntitySize
     Large,
 }
 
-public class ModularEntityStats : MonoBehaviour, IDamageable
+public class ModularEntityStats : MonoBehaviour, IDamageable, IPooled
 {
     public EntitySize entitySize;
     public float maxHealth;
@@ -64,6 +64,19 @@ public class ModularEntityStats : MonoBehaviour, IDamageable
 
     public bool IsDead => _dead;
 
+    // ── 物件池 ──
+    // 死亡時不再 Destroy，而是回到 PrefabPool；重新上場時由 OnSpawned 重置。
+    [Tooltip("死亡後至少隔多久（秒）才能被物件池重新取出。\n" +
+             "避免還追著這隻敵人的東西（迫擊砲彈、鎖定箭頭、自動瞄準）在同一瞬間跳到重生的新位置。")]
+    [SerializeField, Min(0f)] private float despawnReuseDelay = 0.5f;
+
+    private float _spawnHealth = -1f;   // prefab 上設定的初始血量（Awake 記下，重生時還原）
+
+    /// <summary>每次從物件池上場就 +1。外部（EnemySpawner）用它分辨「還是同一隻」還是「回收後重生的另一隻」。</summary>
+    public int SpawnSerial { get; private set; }
+
+    private static readonly WaitForEndOfFrame s_EndOfFrame = new WaitForEndOfFrame();
+
     // 受傷時通知 Brain 拉仇恨。第一次受傷才找，之後沿用。
     private ModularEntityBrain _brain;
     private bool _brainSearched;
@@ -90,6 +103,21 @@ public class ModularEntityStats : MonoBehaviour, IDamageable
             return _status;
         }
     }
+
+    private void Awake()
+    {
+        _spawnHealth = health;
+    }
+
+    /// <summary>從物件池取出（SetActive 之後）。重置成剛生成的狀態。</summary>
+    public void OnSpawned()
+    {
+        SpawnSerial++;
+        _dead = false;
+        health = _spawnHealth > 0f ? _spawnHealth : maxHealth;
+    }
+
+    public void OnDespawned() { }
 
     public void TakeDamage(DamageInfo dmg, GameObject attacker)
     {
@@ -163,7 +191,21 @@ public class ModularEntityStats : MonoBehaviour, IDamageable
         SpawnDeathEffect();
         DealDeathExplosionDamage();
         OnDeath?.Invoke();
-        Destroy(gameObject);
+        StartCoroutine(DespawnAtEndOfFrame());
+    }
+
+    /// <summary>
+    /// 跟原本的 Destroy 一樣等到這一幀結束才真的消失（同一幀其他系統還在走訪敵人清單）。
+    /// 停用後交給物件池；Despawn Reuse Delay 秒之後才會回到池子裡、可以被再取出。
+    /// 沒有物件池 / 不是池子生的：一樣會在延遲後被銷毀，行為跟原本相同。
+    /// </summary>
+    private IEnumerator DespawnAtEndOfFrame()
+    {
+        yield return s_EndOfFrame;
+
+        if (GameManager.Instance != null) GameManager.Instance.RemoveEnemy(gameObject);
+        gameObject.SetActive(false);   // → 各元件 OnDisable 歸零（失衡、感測器、近戰、受擊閃光、船上狀態、攻擊名額）
+        PrefabPool.Despawn(gameObject, despawnReuseDelay);
     }
 
     /// <summary>

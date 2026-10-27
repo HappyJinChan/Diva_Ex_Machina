@@ -1,7 +1,7 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 
-public class PathFinder : MonoBehaviour
+public class PathFinder : MonoBehaviour, IPooled
 {
     public Vector3 targetLocation;
     public bool isTargetOnShip = false;
@@ -90,6 +90,17 @@ public class PathFinder : MonoBehaviour
     {
         path = new NavMeshPath();
     }
+
+    // 物件池重新上場：清掉上一輩子的船上狀態與路徑。
+    public void OnSpawned()
+    {
+        isOnShip = false;
+        isTargetOnShip = false;
+        lastPathOnShip = false;
+        if (path != null) path.ClearCorners();
+    }
+
+    public void OnDespawned() { }
 
     public Vector3[] FindPath(Vector3 targetLocation)
     {

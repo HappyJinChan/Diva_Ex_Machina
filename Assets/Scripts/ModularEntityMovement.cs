@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class ModularEntityMovement : MonoBehaviour, IManagedEntity
+public class ModularEntityMovement : MonoBehaviour, IManagedEntity, IPooled
 {
     [Header("Rigidbody")]
     [SerializeField] protected Rigidbody entityRigidbody;
@@ -37,6 +37,32 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity
     {
         ModularEntityManager.Unregister(this);
     }
+
+    // ── 物件池 ───────────────────────────────────────────────────────────
+    //
+    // 從物件池重新上場時，清掉上一輩子的移動狀態。PrefabPool 在啟用前已經擺好 transform，
+    // 這裡再把 Rigidbody 對齊過去並歸零速度 —— 否則有插值時會從上次死掉的地方「滑」過來。
+    // 子類別有自己的狀態時覆寫並呼叫 base。
+
+    public virtual void OnSpawned()
+    {
+        moveDirection = Vector3.zero;
+        _knockbackUntil = 0f;
+        _wasStaggered = false;
+        _hasVelocityOverride = false;
+        _hasFacingTarget = false;
+        _rotCarryShip = null;
+
+        if (entityRigidbody != null && !entityRigidbody.isKinematic)
+        {
+            entityRigidbody.position = entityRigidbody.transform.position;
+            entityRigidbody.rotation = entityRigidbody.transform.rotation;
+            entityRigidbody.linearVelocity = Vector3.zero;
+            entityRigidbody.angularVelocity = Vector3.zero;
+        }
+    }
+
+    public virtual void OnDespawned() { }
 
     /// <summary>每個物理步由 ModularEntityManager 呼叫。子類別覆寫時記得呼叫 base。</summary>
     public virtual void ManagedFixedUpdate(float dt)

@@ -45,7 +45,7 @@ public class TargetPreference
     public float priorityDecreaseMultiplier;
 }
 
-public class ModularEntityBrain : MonoBehaviour, IManagedEntity
+public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
 {
     public ModularEntityMovement modularEntityMovement;
 
@@ -218,7 +218,35 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity
     protected virtual void OnDisable()
     {
         ModularEntityManager.Unregister(this);
+
+        // 死亡 / 回收到物件池：交還攻擊名額。
+        // 原本靠 Destroy 之後 GameManager 自己清掉空參照；池化後物件不會被銷毀，不還的話名額會被一直佔著。
+        ReleaseAttackSlot();
     }
+
+    // ═══════════════════════ 物件池 ═══════════════════════
+    //
+    // Start() 只在第一次生成時跑。重複使用時，下面這些「每一隻都要從頭開始」的狀態在這裡重置。
+    // （元件參照、偏好快取這類設定不用重抓。）
+    // 呼叫時機：PrefabPool.Spawn 擺好位置、SetActive(true) 之後，回傳給生成端（EnemySpawner）之前 ——
+    // 所以生成端之後加的目標（例如船的 Core）不會被這裡清掉。
+
+    public virtual void OnSpawned()
+    {
+        spawnLocation = transform.position;
+        currentState = EntityState.Idle;
+        targets.Clear();
+        path = null;
+        destination = transform.position;
+        destinationTimer = 0f;
+        currentWaypointIndex = 0;
+        LookTarget = null;
+        CombatTarget = null;
+        _velocityTarget = null;
+        _velocityTargetRb = null;
+    }
+
+    public virtual void OnDespawned() { }
 
     /// <summary>登記時由 ModularEntityManager 呼叫，把第一次思考錯開到隨機時間點。</summary>
     public void ScheduleFirstThink(float time)
