@@ -86,9 +86,50 @@ public class PathFinder : MonoBehaviour, IPooled
     private bool lastPathOnShip = false;
 
     [SerializeField] private float disembarkDistance = 50f;
+
+    // ── 路徑分散（只套用在地面路徑）─────────────────────────────
+    //
+    // 問題：同一區域出發的敵人，起點、終點（同一個 docking point）、
+    //       NavMesh 轉角（全部貼著障礙物邊緣）都一樣 → 路徑完全重合，150 隻看起來像一條線。
+    //
+    // 做法：每隻敵人生成時抽一個固定的車道值 laneValue（-1 ~ 1），一輩子不變，
+    //       所以每次重算路徑都偏在同一側，不會左右亂跳。
+    //   1. 中間的轉角點沿路徑垂直方向偏移 laneValue × laneWidth，
+    //      越接近終點偏移越小（laneFadeDistance），最後收回原路徑。
+    //   2. 太長的直線段先在中點插一個點，讓空曠地形上也能散開成弧形。
+    //   3. 地面 → 船：終點從 docking point 改成它旁邊的一個橫向位置（dockSpreadRadius），
+    //      離 docking point dockSpreadInnerDistance 以內收回 0，保證最後真的走進登船口。
+    //   每個偏移點都用 NavMesh.Raycast 檢查，被擋住就先減半再試，還是不行就用原本的點，不會被推進牆裡。
+    //   成本只在重算路徑時發生（每隻每 1~3 秒一次，幾條 NavMesh 射線）。
+    [Header("Path Spread (ground paths only)")]
+    [Tooltip("關掉 = 完全照舊走最短路徑。飛行單位（Falcon）可以關掉。")]
+    [SerializeField] private bool enableLaneSpread = true;
+    [Tooltip("車道最大橫向偏移（公尺）。實際偏移 = laneValue(-1~1) × 這個值。")]
+    [SerializeField, Min(0f)] private float laneWidth = 6f;
+    [Tooltip("離終點剩下多少路程內，偏移從全額線性收回 0。")]
+    [SerializeField, Min(0.01f)] private float laneFadeDistance = 25f;
+    [Tooltip("直線段長於這個值就在中點插一個點，讓它也能偏移。0 = 不插點。")]
+    [SerializeField, Min(0f)] private float splitSegmentLength = 40f;
+    [Tooltip("登船口前的最大橫向分散距離（公尺）。")]
+    [SerializeField, Min(0f)] private float dockSpreadRadius = 8f;
+    [Tooltip("離 docking point 這個水平距離以內，終點不再分散，直接走進登船口。建議跟 Brain 的 Dock Update Distance 一致。")]
+    [SerializeField, Min(0f)] private float dockSpreadInnerDistance = 30f;
+    [Tooltip("超過 Inner Distance 之後，再過這麼遠才達到全額分散。")]
+    [SerializeField, Min(0.01f)] private float dockSpreadRampDistance = 30f;
+
+    private float laneValue;
+    private bool laneAssigned;
+
+    private void AssignLane()
+    {
+        laneValue = Random.Range(-1f, 1f);
+        laneAssigned = true;
+    }
+
     void Start()
     {
         path = new NavMeshPath();
+        if (!laneAssigned) AssignLane();   // 場景裡直接擺的敵人不會收到 OnSpawned
     }
 
     // 物件池重新上場：清掉上一輩子的船上狀態與路徑。
@@ -98,6 +139,7 @@ public class PathFinder : MonoBehaviour, IPooled
         isTargetOnShip = false;
         lastPathOnShip = false;
         if (path != null) path.ClearCorners();
+        AssignLane();   // 每一輩子重抽車道
     }
 
     public void OnDespawned() { }
@@ -148,10 +190,15 @@ public class PathFinder : MonoBehaviour, IPooled
         else if (!isOnShip && isTargetOnShip) // if player not on ship but target on ship, find path to ship docking point
         {
             Vector3 dockPos = GetClosestDockingLocation();
-            result = ComputeGroundPath(transform.position, dockPos);
+            Vector3 dockGoal = enableLaneSpread ? GetDockSpreadGoal(dockPos) : dockPos;
+            result = ComputeGroundPath(transform.position, dockGoal);
+            if (result.Length == 0 && dockGoal != dockPos)
+                result = ComputeGroundPath(transform.position, dockPos);   // 分散點算不出路 → 退回原本的 docking point
 
             if (result.Length == 0)
                 result = BuildFallbackPath(dockPos, false);
+            else if (enableLaneSpread)
+                result = ApplyLaneSpread(result);
         }
         else
         {
@@ -159,6 +206,8 @@ public class PathFinder : MonoBehaviour, IPooled
 
             if (result.Length == 0)
                 result = BuildFallbackPath(targetLocation, false);
+            else if (enableLaneSpread)
+                result = ApplyLaneSpread(result);
         }
 
         lastPath = result;
@@ -420,6 +469,120 @@ public class PathFinder : MonoBehaviour, IPooled
 
         return corners;
     }
+
+    /// <summary>
+    /// 登船口前的分散終點：docking point 往「接近方向的垂直方向」偏移。
+    /// 離 docking point 越近偏移越小，進入 dockSpreadInnerDistance 就是 docking point 本身。
+    /// </summary>
+    private Vector3 GetDockSpreadGoal(Vector3 dockPos)
+    {
+        if (dockSpreadRadius <= 0f || Mathf.Abs(laneValue) < 0.001f) return dockPos;
+
+        Vector3 approach = dockPos - transform.position;
+        approach.y = 0f;
+        float dist = approach.magnitude;
+        if (dist < 0.001f) return dockPos;
+
+        float scale = Mathf.Clamp01((dist - dockSpreadInnerDistance) / dockSpreadRampDistance);
+        if (scale <= 0f) return dockPos;
+
+        Vector3 side = new Vector3(approach.z, 0f, -approach.x) / dist;   // 接近方向的右手邊
+        Vector3 goal = dockPos + side * (laneValue * dockSpreadRadius * scale);
+
+        // 分散點要跟 docking point 在 NavMesh 上直線相通，否則退回 docking point
+        if (!NavMesh.SamplePosition(dockPos, out NavMeshHit d, navSampleMaxDistance, NavMesh.AllAreas)) return dockPos;
+        if (!NavMesh.SamplePosition(goal, out NavMeshHit g, dockSpreadRadius, NavMesh.AllAreas)) return dockPos;
+        if (NavMesh.Raycast(d.position, g.position, out _, NavMesh.AllAreas)) return dockPos;
+        return g.position;
+    }
+
+    /// <summary>
+    /// 把地面路徑的中間轉角點沿垂直方向偏移 laneValue × laneWidth。起點和終點不動。
+    /// 長直線段先插中點。每個偏移點都用 NavMesh.Raycast 檢查進出兩段是否通暢。
+    /// </summary>
+    private Vector3[] ApplyLaneSpread(Vector3[] corners)
+    {
+        if (corners == null || corners.Length < 2) return corners;
+        if (laneWidth <= 0f || Mathf.Abs(laneValue) < 0.001f) return corners;
+
+        Vector3[] c = (splitSegmentLength > 0f) ? SplitLongSegments(corners) : corners;
+        int n = c.Length;
+        if (n < 3) return c;
+
+        // 每個點到終點的剩餘路程（水平），用來決定偏移收回多少
+        float[] remain = new float[n];
+        for (int i = n - 2; i >= 0; i--)
+            remain[i] = remain[i + 1] + FlatDistance(c[i], c[i + 1]);
+
+        Vector3[] outArr = (Vector3[])c.Clone();
+        for (int i = 1; i < n - 1; i++)
+        {
+            float scale = Mathf.Clamp01(remain[i] / laneFadeDistance);
+            if (scale <= 0f) continue;
+
+            Vector3 dIn = FlatDir(c[i - 1], c[i]);
+            Vector3 dOut = FlatDir(c[i], c[i + 1]);
+            Vector3 normal = Perp(dIn) + Perp(dOut);
+            if (normal.sqrMagnitude < 0.0001f) normal = Perp(dIn);   // 180° 折返
+            if (normal.sqrMagnitude < 0.0001f) continue;
+            normal.Normalize();
+
+            Vector3 offset = normal * (laneValue * laneWidth * scale);
+            Vector3 prev = outArr[i - 1];
+            Vector3 next = c[i + 1];
+
+            // 全額 → 半額 → 放棄（用原本的轉角點）
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
+                Vector3 candidate = c[i] + offset;
+                if (!NavMesh.Raycast(prev, candidate, out _, NavMesh.AllAreas) &&
+                    !NavMesh.Raycast(candidate, next, out _, NavMesh.AllAreas))
+                {
+                    outArr[i] = candidate;
+                    break;
+                }
+                offset *= 0.5f;
+            }
+        }
+        return outArr;
+    }
+
+    /// <summary>長於 splitSegmentLength 的線段在中點插一個點。沒有要插的就回傳原陣列。</summary>
+    private Vector3[] SplitLongSegments(Vector3[] c)
+    {
+        int extra = 0;
+        for (int i = 0; i < c.Length - 1; i++)
+            if (FlatDistance(c[i], c[i + 1]) > splitSegmentLength) extra++;
+        if (extra == 0) return c;
+
+        var outArr = new Vector3[c.Length + extra];
+        int k = 0;
+        for (int i = 0; i < c.Length - 1; i++)
+        {
+            outArr[k++] = c[i];
+            if (FlatDistance(c[i], c[i + 1]) > splitSegmentLength)
+                outArr[k++] = (c[i] + c[i + 1]) * 0.5f;
+        }
+        outArr[k] = c[c.Length - 1];
+        return outArr;
+    }
+
+    private static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        float dx = b.x - a.x, dz = b.z - a.z;
+        return Mathf.Sqrt(dx * dx + dz * dz);
+    }
+
+    private static Vector3 FlatDir(Vector3 a, Vector3 b)
+    {
+        Vector3 d = b - a;
+        d.y = 0f;
+        float m = d.magnitude;
+        return (m > 0.0001f) ? d / m : Vector3.zero;
+    }
+
+    /// <summary>水平方向的右手垂直向量。</summary>
+    private static Vector3 Perp(Vector3 d) => new Vector3(d.z, 0f, -d.x);
 
     private void OnDrawGizmos()
     {

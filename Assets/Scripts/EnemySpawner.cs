@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// 敵人生成器。
@@ -31,6 +32,11 @@ public class EnemySpawner : MonoBehaviour
 
     [Header("Spawn Groups")]
     [SerializeField] private SpawnGroup[] spawnGroups;
+
+    [Tooltip("每隻敵人生在生成器周圍這個半徑內的隨機位置（水平），並貼到 NavMesh 上。\n" +
+             "原本整組都生在同一個點，起點重疊 → 路徑重疊，而且第一個物理步會互相彈開。\n" +
+             "0 = 照舊全部生在生成器位置。")]
+    [SerializeField, Min(0f)] private float spawnRadius = 5f;
 
     [Header("Timing")]
     [Tooltip("兩次生成之間的間隔（秒）。x = 最小值，y = 最大值。")]
@@ -207,15 +213,31 @@ public class EnemySpawner : MonoBehaviour
         SpawnGroup group = PickGroup();
         if (group == null || group.spawnEnemy == null) return;
 
+        // 生成器中心在 NavMesh 上的高度，用來把每個分散點的高度差加回生成器的高度
+        //（生成器的 pivot 不一定剛好貼地，直接用 NavMesh 高度可能讓敵人生在半空或地下）
+        NavMeshHit centerHit = default;
+        bool canSpread = spawnRadius > 0f &&
+                         NavMesh.SamplePosition(transform.position, out centerHit, spawnRadius + 5f, NavMesh.AllAreas);
+        float centerNavY = canSpread ? centerHit.position.y : 0f;
+
         for (int i = 0; i < group.spawnEnemy.Length; i++)
         {
             GameObject prefab = group.spawnEnemy[i];
             if (prefab == null) continue;
 
+            Vector3 spawnPos = transform.position;
+            if (canSpread)
+            {
+                Vector2 r = Random.insideUnitCircle * spawnRadius;
+                Vector3 candidate = transform.position + new Vector3(r.x, 0f, r.y);
+                if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, 3f, NavMesh.AllAreas))
+                    spawnPos = new Vector3(hit.position.x, transform.position.y + (hit.position.y - centerNavY), hit.position.z);
+            }
+
             // 物件池取代 Instantiate（場景裡沒有 PrefabPool 時會自動退回 Instantiate）。
             // Spawn 回傳前已經呼叫過敵人各元件的 OnSpawned（重置血量、AI、移動狀態），
             // 所以下面加的目標（船的 Core）不會被清掉。
-            GameObject enemy = PrefabPool.Spawn(prefab, transform.position, transform.rotation);
+            GameObject enemy = PrefabPool.Spawn(prefab, spawnPos, transform.rotation);
             if (enemy == null) continue;
 
             // 敵人也可能在自己的 Awake / OnEnable 裡就呼叫過 AddEnemy
