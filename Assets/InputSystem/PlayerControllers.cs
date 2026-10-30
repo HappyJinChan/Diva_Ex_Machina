@@ -280,6 +280,24 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Zoom In"",
+                    ""type"": ""Button"",
+                    ""id"": ""6fff2441-9b9f-4847-af10-9ca256987886"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Zoom Out"",
+                    ""type"": ""Button"",
+                    ""id"": ""a543cda1-e177-4775-8879-50b62ee03eea"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -797,6 +815,28 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Mortar"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""122f1f3f-e130-4782-9aa4-ba2f3dbcf6e4"",
+                    ""path"": ""<Keyboard>/numpadPlus"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Zoom In"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""890dfd5d-7b1a-4f38-b114-2dca130fc102"",
+                    ""path"": ""<Keyboard>/numpadMinus"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Zoom Out"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1405,6 +1445,8 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         m_Player_Set2 = m_Player.FindAction("Set2", throwIfNotFound: true);
         m_Player_Set3 = m_Player.FindAction("Set3", throwIfNotFound: true);
         m_Player_Mortar = m_Player.FindAction("Mortar", throwIfNotFound: true);
+        m_Player_ZoomIn = m_Player.FindAction("Zoom In", throwIfNotFound: true);
+        m_Player_ZoomOut = m_Player.FindAction("Zoom Out", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1519,6 +1561,8 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Set2;
     private readonly InputAction m_Player_Set3;
     private readonly InputAction m_Player_Mortar;
+    private readonly InputAction m_Player_ZoomIn;
+    private readonly InputAction m_Player_ZoomOut;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1615,6 +1659,14 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @Mortar => m_Wrapper.m_Player_Mortar;
         /// <summary>
+        /// Provides access to the underlying input action "Player/ZoomIn".
+        /// </summary>
+        public InputAction @ZoomIn => m_Wrapper.m_Player_ZoomIn;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/ZoomOut".
+        /// </summary>
+        public InputAction @ZoomOut => m_Wrapper.m_Player_ZoomOut;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_Player; }
@@ -1703,6 +1755,12 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
             @Mortar.started += instance.OnMortar;
             @Mortar.performed += instance.OnMortar;
             @Mortar.canceled += instance.OnMortar;
+            @ZoomIn.started += instance.OnZoomIn;
+            @ZoomIn.performed += instance.OnZoomIn;
+            @ZoomIn.canceled += instance.OnZoomIn;
+            @ZoomOut.started += instance.OnZoomOut;
+            @ZoomOut.performed += instance.OnZoomOut;
+            @ZoomOut.canceled += instance.OnZoomOut;
         }
 
         /// <summary>
@@ -1777,6 +1835,12 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
             @Mortar.started -= instance.OnMortar;
             @Mortar.performed -= instance.OnMortar;
             @Mortar.canceled -= instance.OnMortar;
+            @ZoomIn.started -= instance.OnZoomIn;
+            @ZoomIn.performed -= instance.OnZoomIn;
+            @ZoomIn.canceled -= instance.OnZoomIn;
+            @ZoomOut.started -= instance.OnZoomOut;
+            @ZoomOut.performed -= instance.OnZoomOut;
+            @ZoomOut.canceled -= instance.OnZoomOut;
         }
 
         /// <summary>
@@ -2224,6 +2288,20 @@ public partial class @PlayerControllers: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnMortar(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Zoom In" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnZoomIn(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Zoom Out" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnZoomOut(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.
