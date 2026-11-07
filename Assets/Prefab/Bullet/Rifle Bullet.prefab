@@ -5016,6 +5016,7 @@ MonoBehaviour:
   explosionDamage: 0
   energyDamage: 0
   coldDamage: 0
+  impact: 0
   criticalChance: 0.05
   criticalMultiplier: 1.5
   lifespan: 1.5
@@ -5027,9 +5028,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   ignoreObstacles: 0
-  hitEffect: {fileID: 7856939199014537196, guid: 212ef1a41838ce044a9ac54994866708, type: 3}
+  hitEffect: {fileID: 5238538877814813142, guid: 47096eff328e11a418ace7db2d72aa97, type: 3}
   hitEffectLifetime: 0.1
   hitEffectSurfaceOffset: 0.1
+  targetHitEffect: {fileID: 4045248135465351480, guid: 31977612140d222428968bd67e7a868b, type: 3}
+  targetHitEffectLifetime: 0
   homingDegreePerSecond: 0
   homingRange: 50
   homingSearchAngle: 40
@@ -5044,7 +5047,16 @@ MonoBehaviour:
   homingStartDelay: 0
   lockAssignedTarget: 1
   penetration: 0
-  explodePrefab: {fileID: 0}
+  effectiveRange: 0
+  falloffEndMultiplier: 2
+  falloffMinDamage: 0.3
+  physicalExplosionDamageConversionRate: 0
+  explosionDamageConversionRate: 0
+  energyExplosionDamageConversionRate: 0
+  coldExplosionDamageConversionRate: 0
+  explosionACSConversion: 0
+  explosionRadius: 0
+  explosionPrefab: {fileID: 0}
 --- !u!65 &2975075516652997088
 BoxCollider:
   m_ObjectHideFlags: 0

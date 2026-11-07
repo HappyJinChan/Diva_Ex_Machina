@@ -1774,7 +1774,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 112
@@ -1791,6 +1791,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e94ff33a15dcc07488c44ccf814bb00b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PathFinder
+  profileNearDockDistance: 30
   targetLocation: {x: 0, y: 0, z: 0}
   isTargetOnShip: 0
   isOnShip: 0
@@ -1809,6 +1810,14 @@ MonoBehaviour:
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   waypointGizmoRadius: 0.3
   disembarkDistance: 50
+  enableLaneSpread: 1
+  laneWidth: 6
+  laneFadeDistance: 25
+  splitSegmentLength: 40
+  dockSpreadRadius: 8
+  dockSpreadInnerDistance: 30
+  dockSpreadRampDistance: 30
+  approachPassWidth: 15
 --- !u!114 &6554016129530084711
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1842,7 +1851,7 @@ MonoBehaviour:
   reactionCoolDown: 3
   reactionChance: 0.5
   dockUpdateDistance: 30
-  dockDestinationUpdateRange: {x: 0.1, y: 0.3}
+  dockDestinationUpdateRange: {x: 0.3, y: 1}
   attackSlotHoldSeconds: 8
   priorityRetentionRadius: 0
   damageThreat: 1
@@ -1881,9 +1890,13 @@ MonoBehaviour:
   groundPoint: {fileID: 1409231633084866904}
   whatIsGround:
     serializedVersion: 2
-    m_Bits: 4224
+    m_Bits: 28800
   grounded: 0
   readyToJump: 0
+  limitSteepSlopes: 1
+  maxSlopeAngle: 45
+  slopeProbeAhead: 0.5
+  slopeMinRise: 0.3
   staggerSpeedRetain: 0.1
   shipPassenger: {fileID: 0}
   hoverRaycastDistance: 100
@@ -1929,6 +1942,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   chainExplosionDelay: 0.1
+  despawnReuseDelay: 0.5
 --- !u!114 &5651169939837934045
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1981,6 +1995,7 @@ MonoBehaviour:
   overlayShader: {fileID: 4800000, guid: 4015c7514db91f74ebe092e401033253, type: 3}
   flashColor: {r: 1, g: 1, b: 1, a: 1}
   exclude: []
+  dynamicRenderers: 0
 --- !u!114 &8430547879345299795
 MonoBehaviour:
   m_ObjectHideFlags: 0

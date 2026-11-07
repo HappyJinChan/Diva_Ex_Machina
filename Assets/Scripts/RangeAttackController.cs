@@ -193,6 +193,15 @@ public class RangeAttackController : MonoBehaviour
                     if (Effects != null) Effects.PlayRightMuzzleFeedback();
                     attackManager.playerAnimation.TriggerFireRight();
                 }
+                else if (isLeftShoulder)
+                {
+                    // 肩武器的開火動畫已在上面的 FireShoulderAndWait 觸發，這裡只播槍口回饋（發光 + 音效）
+                    if (Effects != null) Effects.PlayLeftShoulderMuzzleFeedback(muzzle);
+                }
+                else if (isRightShoulder)
+                {
+                    if (Effects != null) Effects.PlayRightShoulderMuzzleFeedback(muzzle);
+                }
 
                 Vector3 targetPoint;
 

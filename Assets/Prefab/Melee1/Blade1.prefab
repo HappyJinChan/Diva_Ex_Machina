@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &449869049312454508
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4243115975595014777}
+  m_Layer: 8
+  m_Name: BladeTrail_Base
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4243115975595014777
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 449869049312454508}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6875261368348746511}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2027917490675088931
 GameObject:
   m_ObjectHideFlags: 0
@@ -31,6 +62,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6875261368348746511}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7185642306951817343
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2247479815885242121}
+  m_Layer: 8
+  m_Name: BladeTrail_Tip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2247479815885242121
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7185642306951817343}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.247, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6875261368348746511}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &5263425265059917156
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -54,6 +116,10 @@ PrefabInstance:
     - target: {fileID: 2123748689605059989, guid: 8ceaf8810beb1b54bb2e8e7b064a941c, type: 3}
       propertyPath: m_Layer
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2123748689605059989, guid: 8ceaf8810beb1b54bb2e8e7b064a941c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3072576547980467607, guid: 8ceaf8810beb1b54bb2e8e7b064a941c, type: 3}
       propertyPath: m_Layer
@@ -297,6 +363,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6009261806207622871}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2247479815885242121}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4243115975595014777}
     - targetCorrespondingSourceObject: {fileID: 8199278469382801581, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8843364152323564749}
@@ -310,6 +382,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1823105104084379910}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3635951631200461320}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 167043695115756412}
   m_SourcePrefab: {fileID: 100100000, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}
 --- !u!4 &2966426190728645705 stripped
 Transform:
@@ -351,8 +429,12 @@ MonoBehaviour:
   colliders:
   - {fileID: 1823105104084379910}
   addKinematicRigidbody: 0
+  detectionMode: 0
+  arcOriginHeight: 1
+  arcPointBlank: 0.6
   logHits: 0
   drawGizmoWhenOpen: 1
+  gizmoLinger: 1
 --- !u!65 &1823105104084379910
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -374,6 +456,144 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.4, y: 2.5, z: 1}
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &3635951631200461320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6062413980630317493}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37e9486741c7c1c47baa54e951f885bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BodySpaceTrail
+  space: {fileID: 0}
+  autoSpaceName: Body
+  tip: {fileID: 2247479815885242121}
+  basePoint: {fileID: 4243115975595014777}
+  fallbackWidth: 0.4
+  lifetime: 0.5
+  minSampleDistance: 0.06
+  smoothing: 4
+  maxSamples: 48
+  material: {fileID: 2100000, guid: 951e15189dd13084797a0fee76d81bfa, type: 2}
+  colorOverLength:
+    serializedVersion: 2
+    key0: {r: 0.75, g: 0.92, b: 1, a: 1}
+    key1: {r: 0.3, g: 0.6, b: 1, a: 0.6}
+    key2: {r: 0.1, g: 0.25, b: 0.9, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 19661
+    ctime2: 65535
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 22937
+    atime2: 65535
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 3
+    m_NumAlphaKeys: 3
+  widthOverLength:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: -0.7
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.3
+      inSlope: -0.7
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  renderLayer: 0
+  crossPlane: 1
+  crossWidth: 0.5
+  crossCenter: 0.8
+  crossAlpha: 0.6
+  coreMaterial: {fileID: 2100000, guid: 1f87bac04ae263f40aa20ed4ca76b7c7, type: 2}
+  coreColorOverLength:
+    serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 0.7, g: 0.9, b: 1, a: 0.5}
+    key2: {r: 0, g: 0, b: 0, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 13107
+    atime2: 39321
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 3
+  coreWidth: 0.18
+  uvMode: 0
+  tileLength: 0.6
+  scrollSpeed: 0
+  emitting: 1
+  minEmitSpeed: 6
+  emitHoldTime: 0.08
+--- !u!114 &167043695115756412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6062413980630317493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fa74609b5cb17045870cd1683e5a161, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttackEffectGate
+  trigger: 1
+  movement: {fileID: 0}
+  melee: {fileID: 0}
+  hitbox: {fileID: 0}
+  trail: {fileID: 0}
+  endHold: 0
+  clearOnEnd: 0
 --- !u!4 &6875261368348746511 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2553fd69c94a9444fbbdbc16c00f9723, type: 3}

@@ -92,6 +92,11 @@ public class PlayerAiming : MonoBehaviour
              "直接切換會讓鏡頭一頓，0.1~0.2 之間比較順。")]
     [SerializeField] private float meleeFocusBlendTime = 0.15f;
 
+    [Tooltip("近戰攻擊期間，鏡頭最多往下看幾度（pitch，正值 = 往下；一般時候的上限是 Top Clamp）。\n" +
+             "貼著敵人時 AutoAim 會從鏡頭位置瞄向目標，角度一下子壓到很低，畫面只剩地面。\n" +
+             "AutoAim 會平滑地收回這個角度以內；手動轉鏡頭時只是不能再往下壓（不會突然彈回來）。")]
+    [SerializeField] private float meleeMaxPitchDown = 25f;
+
     private bool _meleeFocus;
     private float _meleeFocusWeight;
 
@@ -215,7 +220,9 @@ public class PlayerAiming : MonoBehaviour
         if (Mathf.Abs(mouseY) > 0.001f)
         {
             turn.y -= mouseY;
-            turn.y = ClampAngle(turn.y, BottomClamp, TopClamp);
+            // 近戰中：不能再往下壓超過 meleeMaxPitchDown（已經在下面的話只能往上，不會彈回來）
+            float top = _meleeFocus ? Mathf.Max(Mathf.Min(TopClamp, meleeMaxPitchDown), Mathf.Min(turn.y + mouseY, TopClamp)) : TopClamp;
+            turn.y = ClampAngle(turn.y, BottomClamp, top);
         }
 
         if (_platform != null)
@@ -781,7 +788,9 @@ public class PlayerAiming : MonoBehaviour
         Vector3 e = look.eulerAngles;
 
         float desiredYaw = e.y;
-        float desiredPitch = ClampAngle(NormalizePitch(e.x), BottomClamp, TopClamp);
+        // 近戰中往下看的上限收緊（隨近戰對焦權重過渡）。Slerp 有轉速上限，所以超出時是平滑收回
+        float pitchTop = Mathf.Lerp(TopClamp, Mathf.Min(TopClamp, meleeMaxPitchDown), _meleeFocusWeight);
+        float desiredPitch = ClampAngle(NormalizePitch(e.x), BottomClamp, pitchTop);
         Quaternion targetRot = Quaternion.Euler(desiredPitch, desiredYaw, 0f);
 
         Quaternion current = playerOrientation.transform.rotation;

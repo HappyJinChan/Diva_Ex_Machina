@@ -763,6 +763,32 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
+--- !u!1102 &-5077420258841339923
+AnimatorState:
+  serializedVersion: 6
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LongSword_1H_R_03_Dash
+  m_Speed: 1
+  m_CycleOffset: 0
+  m_Transitions: []
+  m_StateMachineBehaviours: []
+  m_Position: {x: 50, y: 50, z: 0}
+  m_IKOnFeet: 0
+  m_WriteDefaultValues: 1
+  m_Mirror: 0
+  m_SpeedParameterActive: 0
+  m_MirrorParameterActive: 0
+  m_CycleOffsetParameterActive: 0
+  m_TimeParameterActive: 0
+  m_Motion: {fileID: 1773865067958565017, guid: 67d6367891c41fe4dbad4971d289c46a, type: 3}
+  m_Tag: 
+  m_SpeedParameter: 
+  m_MirrorParameter: 
+  m_CycleOffsetParameter: 
+  m_TimeParameter: 
 --- !u!1102 &-5048053488889158778
 AnimatorState:
   serializedVersion: 6
@@ -1320,7 +1346,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: LongSword_1H_R_01
-  m_Speed: 1.5
+  m_Speed: 2.5
   m_CycleOffset: 0
   m_Transitions: []
   m_StateMachineBehaviours: []
@@ -1332,7 +1358,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 279f183662bb5a34baccbe0a828844d4, type: 2}
+  m_Motion: {fileID: 7400000, guid: bf44a0790ca4b5d4b9db6ea2fce727ac, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -1948,18 +1974,6 @@ AnimatorController:
     m_SyncedLayerAffectsTiming: 0
     m_Controller: {fileID: 9100000}
   - serializedVersion: 5
-    m_Name: One_Hand_Melee_Attack
-    m_StateMachine: {fileID: 90920389793410657}
-    m_Mask: {fileID: 31900000, guid: 25a0a37deb2d44845ba0ac6e3b077265, type: 2}
-    m_Motions: []
-    m_Behaviours: []
-    m_BlendingMode: 0
-    m_SyncedLayerIndex: -1
-    m_DefaultWeight: 0
-    m_IKPass: 0
-    m_SyncedLayerAffectsTiming: 0
-    m_Controller: {fileID: 9100000}
-  - serializedVersion: 5
     m_Name: Shoulder_Weapon_Right
     m_StateMachine: {fileID: 3684220941355819401}
     m_Mask: {fileID: 31900000, guid: ce53a32a560316c468bc7248ba6e89e8, type: 2}
@@ -2007,6 +2021,18 @@ AnimatorController:
     m_IKPass: 0
     m_SyncedLayerAffectsTiming: 0
     m_Controller: {fileID: 9100000}
+  - serializedVersion: 5
+    m_Name: One_Hand_Melee_Attack
+    m_StateMachine: {fileID: 90920389793410657}
+    m_Mask: {fileID: 0}
+    m_Motions: []
+    m_Behaviours: []
+    m_BlendingMode: 0
+    m_SyncedLayerIndex: -1
+    m_DefaultWeight: 0
+    m_IKPass: 0
+    m_SyncedLayerAffectsTiming: 0
+    m_Controller: {fileID: 9100000}
 --- !u!1102 &54602640710789512
 AnimatorState:
   serializedVersion: 6
@@ -2027,7 +2053,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 16a321348bd4afd428dc3de034dec5cf, type: 2}
+  m_Motion: {fileID: 7400000, guid: bf44a0790ca4b5d4b9db6ea2fce727ac, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -2069,6 +2095,15 @@ AnimatorStateMachine:
   - serializedVersion: 1
     m_State: {fileID: -7801137217430146407}
     m_Position: {x: 1570, y: -30, z: 0}
+  - serializedVersion: 1
+    m_State: {fileID: 4399062307397286230}
+    m_Position: {x: 1360, y: -210, z: 0}
+  - serializedVersion: 1
+    m_State: {fileID: 7128586546426505535}
+    m_Position: {x: 1360, y: -150, z: 0}
+  - serializedVersion: 1
+    m_State: {fileID: -5077420258841339923}
+    m_Position: {x: 1360, y: -90, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
   m_EntryTransitions: []
@@ -2229,7 +2264,7 @@ BlendTree:
   m_Name: Blend Tree
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: -9106541228446943975, guid: 67d6367891c41fe4dbad4971d289c46a, type: 3}
+    m_Motion: {fileID: 7400000, guid: 04051c5e5d28e4f458563cb416957219, type: 2}
     m_Threshold: 0.75
     m_Position: {x: -1, y: 0}
     m_TimeScale: 1
@@ -2237,7 +2272,7 @@ BlendTree:
     m_DirectBlendParameter: x
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 5821723988029604184, guid: 67d6367891c41fe4dbad4971d289c46a, type: 3}
+    m_Motion: {fileID: 7400000, guid: 04fbf4fd34fd32349823ba8f7a59ab28, type: 2}
     m_Threshold: 0.8125
     m_Position: {x: 1, y: 0}
     m_TimeScale: 1
@@ -2245,7 +2280,7 @@ BlendTree:
     m_DirectBlendParameter: x
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 5206064894682773941, guid: 67d6367891c41fe4dbad4971d289c46a, type: 3}
+    m_Motion: {fileID: 7400000, guid: c2aea84e55953e74eaeb4eed10535f40, type: 2}
     m_Threshold: 0.875
     m_Position: {x: 0, y: 1}
     m_TimeScale: 1
@@ -2253,7 +2288,7 @@ BlendTree:
     m_DirectBlendParameter: x
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 1579674897681094516, guid: 67d6367891c41fe4dbad4971d289c46a, type: 3}
+    m_Motion: {fileID: 7400000, guid: cc7657c2cba0c3b468eaf2ace5f5a589, type: 2}
     m_Threshold: 0.9375
     m_Position: {x: 0, y: -1}
     m_TimeScale: 1
@@ -2895,7 +2930,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: LongSword_1H_R_02
-  m_Speed: 1.5
+  m_Speed: 2.5
   m_CycleOffset: 0
   m_Transitions: []
   m_StateMachineBehaviours: []
@@ -2907,7 +2942,33 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: ba3d9e6f13133a1459d8841227418a7d, type: 2}
+  m_Motion: {fileID: 7400000, guid: 183e8650cc669574891efe583f134387, type: 2}
+  m_Tag: 
+  m_SpeedParameter: 
+  m_MirrorParameter: 
+  m_CycleOffsetParameter: 
+  m_TimeParameter: 
+--- !u!1102 &4399062307397286230
+AnimatorState:
+  serializedVersion: 6
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LongSword_1H_R_01_Dash
+  m_Speed: 1
+  m_CycleOffset: 0
+  m_Transitions: []
+  m_StateMachineBehaviours: []
+  m_Position: {x: 50, y: 50, z: 0}
+  m_IKOnFeet: 0
+  m_WriteDefaultValues: 1
+  m_Mirror: 0
+  m_SpeedParameterActive: 0
+  m_MirrorParameterActive: 0
+  m_CycleOffsetParameterActive: 0
+  m_TimeParameterActive: 0
+  m_Motion: {fileID: -6091281100680983141, guid: 67d6367891c41fe4dbad4971d289c46a, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -2986,7 +3047,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 2cfd0da3debaa1a4ea3f746688ff08f8, type: 2}
+  m_Motion: {fileID: 7400000, guid: 183e8650cc669574891efe583f134387, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -3415,7 +3476,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 93495723677d2b144ba90b4e6a5363de, type: 2}
+  m_Motion: {fileID: 7400000, guid: 17a3a77ff3b905d44ac671521eb765cc, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -3545,6 +3606,32 @@ AnimatorStateTransition:
   m_InterruptionSource: 0
   m_OrderedInterruption: 1
   m_CanTransitionToSelf: 1
+--- !u!1102 &7128586546426505535
+AnimatorState:
+  serializedVersion: 6
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LongSword_1H_R_02_Dash
+  m_Speed: 1
+  m_CycleOffset: 0
+  m_Transitions: []
+  m_StateMachineBehaviours: []
+  m_Position: {x: 50, y: 50, z: 0}
+  m_IKOnFeet: 0
+  m_WriteDefaultValues: 1
+  m_Mirror: 0
+  m_SpeedParameterActive: 0
+  m_MirrorParameterActive: 0
+  m_CycleOffsetParameterActive: 0
+  m_TimeParameterActive: 0
+  m_Motion: {fileID: 8920378242320356884, guid: 67d6367891c41fe4dbad4971d289c46a, type: 3}
+  m_Tag: 
+  m_SpeedParameter: 
+  m_MirrorParameter: 
+  m_CycleOffsetParameter: 
+  m_TimeParameter: 
 --- !u!1102 &7439436137638966459
 AnimatorState:
   serializedVersion: 6
@@ -3894,7 +3981,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: LongSword_1H_R_03
-  m_Speed: 1.5
+  m_Speed: 2.5
   m_CycleOffset: 0
   m_Transitions: []
   m_StateMachineBehaviours: []
@@ -3906,7 +3993,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 6680cc7f54acd84428eef3334810219c, type: 2}
+  m_Motion: {fileID: 7400000, guid: 17a3a77ff3b905d44ac671521eb765cc, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 

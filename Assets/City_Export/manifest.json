@@ -1,0 +1,889 @@
+{
+ "cell_size_m": 100.0,
+ "unit_height_m": 24.5,
+ "coordinates": "旋轉 0 時的朝向以 Blender 座標描述（Z 向上）。Unity 對應見 README。",
+ "modules": [
+  {
+   "name": "BLD_BASE_W",
+   "file": "Models/BLD_BASE_W.fbx",
+   "source": "Base",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": "W",
+   "category": "tower_base",
+   "gate_open_at_rot0": null,
+   "note": "寬型塔基",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -63.1,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    63.1,
+    63.1,
+    49.0
+   ],
+   "triangles": 156
+  },
+  {
+   "name": "BLD_POD_Fill",
+   "file": "Models/BLD_POD_Fill.fbx",
+   "source": "Base Empty",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台填充（無裝飾）",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    24.5
+   ],
+   "triangles": 12
+  },
+  {
+   "name": "BLD_POD_Corner",
+   "file": "Models/BLD_POD_Corner.fbx",
+   "source": "Base L",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台角，外側 (+X,-Y)",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure"
+   ],
+   "bounds_min": [
+    -50.0,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    57.5,
+    50.0,
+    49.0
+   ],
+   "triangles": 28
+  },
+  {
+   "name": "BLD_POD_Edge",
+   "file": "Models/BLD_POD_Edge.fbx",
+   "source": "Base L2",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台邊，外側 -Y",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -50.0,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    49.0
+   ],
+   "triangles": 32
+  },
+  {
+   "name": "BLD_POD_CapEdge",
+   "file": "Models/BLD_POD_CapEdge.fbx",
+   "source": "Base L3",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台頂蓋邊（單簷線），外側 -Y",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -50.0,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    49.0
+   ],
+   "triangles": 56
+  },
+  {
+   "name": "BLD_POD_CapCorner",
+   "file": "Models/BLD_POD_CapCorner.fbx",
+   "source": "BaseL4",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台頂蓋角，外側 (+X,-Y)",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure"
+   ],
+   "bounds_min": [
+    -50.0,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    57.5,
+    50.0,
+    49.0
+   ],
+   "triangles": 52
+  },
+  {
+   "name": "BLD_POD_CornerHalf",
+   "file": "Models/BLD_POD_CornerHalf.fbx",
+   "source": "BaseL5",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台半層角，外側 (+X,-Y)",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure"
+   ],
+   "bounds_min": [
+    -50.0,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    57.5,
+    50.0,
+    24.5
+   ],
+   "triangles": 28
+  },
+  {
+   "name": "BLD_POD_CornerRound",
+   "file": "Models/BLD_POD_CornerRound.fbx",
+   "source": "BaseL6",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台圓角，外側 (+X,-Y)",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    49.0
+   ],
+   "triangles": 56
+  },
+  {
+   "name": "BLD_POD_CapCornerRound",
+   "file": "Models/BLD_POD_CapCornerRound.fbx",
+   "source": "BaseL7",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台圓角頂蓋，外側 (+X,-Y)",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure"
+   ],
+   "bounds_min": [
+    -50.0,
+    -55.0,
+    -0.0
+   ],
+   "bounds_max": [
+    55.0,
+    50.0,
+    49.0
+   ],
+   "triangles": 76
+  },
+  {
+   "name": "BLD_BRG_End",
+   "file": "Models/BLD_BRG_End.fbx",
+   "source": "Bridge ",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "bridge",
+   "gate_open_at_rot0": null,
+   "note": "橋端，塔在 -Y，往 +Y 延伸",
+   "materials": [
+    "M_City_Roof",
+    "M_City_Structure"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    49.0
+   ],
+   "triangles": 64
+  },
+  {
+   "name": "BLD_BRG_Span",
+   "file": "Models/BLD_BRG_Span.fbx",
+   "source": "Bridge2",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "bridge",
+   "gate_open_at_rot0": null,
+   "note": "橋身，-Y 端開口",
+   "materials": [
+    "M_City_Roof",
+    "M_City_Structure"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    24.5
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    49.0
+   ],
+   "triangles": 28
+  },
+  {
+   "name": "BLD_FLR_W_Plain",
+   "file": "Models/BLD_FLR_W_Plain.fbx",
+   "source": "Floor",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "W",
+   "category": "tower_floor",
+   "gate_open_at_rot0": null,
+   "note": "寬型標準層",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -63.1,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    63.1,
+    63.1,
+    24.5
+   ],
+   "triangles": 156
+  },
+  {
+   "name": "BLD_FLR_W_ToN",
+   "file": "Models/BLD_FLR_W_ToN.fbx",
+   "source": "Floor2",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "W",
+   "category": "tower_floor",
+   "gate_open_at_rot0": null,
+   "note": "寬→窄過渡層",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -63.1,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    63.1,
+    63.1,
+    24.5
+   ],
+   "triangles": 252
+  },
+  {
+   "name": "BLD_FLR_N_Silo_Mid",
+   "file": "Models/BLD_FLR_N_Silo_Mid.fbx",
+   "source": "Floor3",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "N",
+   "category": "tower_floor",
+   "gate_open_at_rot0": null,
+   "note": "燃料箱中段，燃料箱在 +X",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_FuelTank"
+   ],
+   "bounds_min": [
+    -57.5,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    78.86,
+    57.5,
+    24.5
+   ],
+   "triangles": 106
+  },
+  {
+   "name": "BLD_FLR_N_Silo_End",
+   "file": "Models/BLD_FLR_N_Silo_End.fbx",
+   "source": "Floor4",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "N",
+   "category": "tower_floor",
+   "gate_open_at_rot0": null,
+   "note": "燃料箱終點，燃料箱在 +X",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_FuelTank"
+   ],
+   "bounds_min": [
+    -57.5,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    78.86,
+    57.5,
+    24.5
+   ],
+   "triangles": 162
+  },
+  {
+   "name": "BLD_FLR_W_FlatSide",
+   "file": "Models/BLD_FLR_W_FlatSide.fbx",
+   "source": "Floor5",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "W",
+   "category": "tower_floor",
+   "gate_open_at_rot0": null,
+   "note": "用途待確認（+Y 側是平面）",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -63.1,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    63.1,
+    57.5,
+    24.5
+   ],
+   "triangles": 136
+  },
+  {
+   "name": "BLD_FLR_N_Plain",
+   "file": "Models/BLD_FLR_N_Plain.fbx",
+   "source": "Floor6",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "N",
+   "category": "tower_floor",
+   "gate_open_at_rot0": null,
+   "note": "窄型標準層（橋只能接這種）",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure"
+   ],
+   "bounds_min": [
+    -57.5,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    57.5,
+    57.5,
+    24.5
+   ],
+   "triangles": 76
+  },
+  {
+   "name": "BLD_FLR_N_Silo_Start",
+   "file": "Models/BLD_FLR_N_Silo_Start.fbx",
+   "source": "Floor7",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "N",
+   "category": "tower_floor",
+   "gate_open_at_rot0": null,
+   "note": "燃料箱起點，燃料箱在 +X",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_FuelTank"
+   ],
+   "bounds_min": [
+    -57.5,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    78.86,
+    57.5,
+    24.5
+   ],
+   "triangles": 162
+  },
+  {
+   "name": "BLD_FLR_W_FromN",
+   "file": "Models/BLD_FLR_W_FromN.fbx",
+   "source": "Floor8",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "W",
+   "category": "tower_floor",
+   "gate_open_at_rot0": null,
+   "note": "窄→寬過渡層",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -63.1,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    63.1,
+    63.1,
+    24.5
+   ],
+   "triangles": 252
+  },
+  {
+   "name": "BLD_POD_EdgeHalf",
+   "file": "Models/BLD_POD_EdgeHalf.fbx",
+   "source": "Floor9",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台半層邊，外側 -Y",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -50.0,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    24.5
+   ],
+   "triangles": 32
+  },
+  {
+   "name": "BLD_BASE_W_GateI",
+   "file": "Models/BLD_BASE_W_GateI.fbx",
+   "source": "Hole",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "W",
+   "category": "tower_base",
+   "gate_open_at_rot0": [
+    "+Y",
+    "-Y"
+   ],
+   "note": "門洞塔基，直線貫穿",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Tunnel",
+    "M_City_TunnelCeiling",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -63.1,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    63.1,
+    57.5,
+    24.5
+   ],
+   "triangles": 164
+  },
+  {
+   "name": "BLD_BASE_W_GateL",
+   "file": "Models/BLD_BASE_W_GateL.fbx",
+   "source": "Hole2",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "W",
+   "category": "tower_base",
+   "gate_open_at_rot0": [
+    "+X",
+    "+Y"
+   ],
+   "note": "門洞塔基，L 形",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Tunnel",
+    "M_City_TunnelCeiling",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -63.1,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    57.5,
+    57.5,
+    24.5
+   ],
+   "triangles": 224
+  },
+  {
+   "name": "BLD_BASE_N_GateX",
+   "file": "Models/BLD_BASE_N_GateX.fbx",
+   "source": "Hole3",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": "N",
+   "category": "tower_base",
+   "gate_open_at_rot0": [
+    "+X",
+    "+Y",
+    "-X",
+    "-Y"
+   ],
+   "note": "門洞塔基，十字",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Tunnel",
+    "M_City_TunnelCeiling"
+   ],
+   "bounds_min": [
+    -57.5,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    57.5,
+    57.5,
+    24.5
+   ],
+   "triangles": 156
+  },
+  {
+   "name": "BLD_POD_Gate_I",
+   "file": "Models/BLD_POD_Gate_I.fbx",
+   "source": "Hole4",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": [
+    "+Y",
+    "-Y"
+   ],
+   "note": "地面門洞，直線",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Tunnel",
+    "M_City_TunnelCeiling"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    24.5
+   ],
+   "triangles": 36
+  },
+  {
+   "name": "BLD_POD_Gate_X",
+   "file": "Models/BLD_POD_Gate_X.fbx",
+   "source": "Hole5",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": [
+    "+X",
+    "+Y",
+    "-X",
+    "-Y"
+   ],
+   "note": "地面門洞，十字",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Tunnel",
+    "M_City_TunnelCeiling"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    24.5
+   ],
+   "triangles": 92
+  },
+  {
+   "name": "BLD_POD_Gate_L",
+   "file": "Models/BLD_POD_Gate_L.fbx",
+   "source": "Hole6",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": [
+    "+X",
+    "+Y"
+   ],
+   "note": "地面門洞，L 形",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Tunnel",
+    "M_City_TunnelCeiling"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    24.5
+   ],
+   "triangles": 74
+  },
+  {
+   "name": "BLD_POD_Gate_T",
+   "file": "Models/BLD_POD_Gate_T.fbx",
+   "source": "Hole7",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": [
+    "+X",
+    "+Y",
+    "-Y"
+   ],
+   "note": "地面門洞，T 形",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Tunnel",
+    "M_City_TunnelCeiling"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    24.5
+   ],
+   "triangles": 88
+  },
+  {
+   "name": "BLD_POD_Ramp",
+   "file": "Models/BLD_POD_Ramp.fbx",
+   "source": "Slop",
+   "height_units": 1,
+   "height_m": 24.5,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "坡道，往 -Y 升高 1 層",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof"
+   ],
+   "bounds_min": [
+    -50.0,
+    -50.0,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    24.5
+   ],
+   "triangles": 8
+  },
+  {
+   "name": "BLD_TOP_W_Cap",
+   "file": "Models/BLD_TOP_W_Cap.fbx",
+   "source": "Top 1",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": "W",
+   "category": "tower_top",
+   "gate_open_at_rot0": null,
+   "note": "寬型塔頂",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -63.1,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    63.1,
+    63.1,
+    49.0
+   ],
+   "triangles": 252
+  },
+  {
+   "name": "BLD_TOP_N_Tower",
+   "file": "Models/BLD_TOP_N_Tower.fbx",
+   "source": "Top 2",
+   "height_units": 6,
+   "height_m": 147.0,
+   "profile": "N",
+   "category": "tower_top",
+   "gate_open_at_rot0": null,
+   "note": "窄型塔頂，側翼在 +X（伸出 63 m）",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -57.5,
+    -57.5,
+    -0.0
+   ],
+   "bounds_max": [
+    113.1,
+    57.5,
+    147.0
+   ],
+   "triangles": 136
+  },
+  {
+   "name": "BLD_POD_CapEdge2",
+   "file": "Models/BLD_POD_CapEdge2.fbx",
+   "source": "Example 2/Cube.034",
+   "height_units": 2,
+   "height_m": 49.0,
+   "profile": null,
+   "category": "podium",
+   "gate_open_at_rot0": null,
+   "note": "平台頂蓋邊（雙簷線，取自 Example 2），外側 -Y",
+   "materials": [
+    "M_City_Wall",
+    "M_City_Roof",
+    "M_City_Structure",
+    "M_City_Core"
+   ],
+   "bounds_min": [
+    -50.0,
+    -63.1,
+    -0.0
+   ],
+   "bounds_max": [
+    50.0,
+    50.0,
+    49.0
+   ],
+   "triangles": 72
+  }
+ ]
+}

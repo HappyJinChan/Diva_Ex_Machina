@@ -90,7 +90,7 @@ public enum Attributes
     //Melee Weapon Specific
     MeleeOutput = 34,
     MeleeSpeed = 35,
-    MeleeDashDistance = 36,   // 已停用：近戰突進距離改由 dashSpeed / sprintSpeed × 動畫長度決定。保留號碼當墓碑，不要重用
+    MeleeDashDistance = 36,   // 近戰最大突進距離（公尺）：兩段式攻擊的突進上限。武器屬性，左右手各自計算（沒有通用的基礎值）
     MeleeReloadTime = 37,
 
     //Auto Aim Speed
@@ -910,6 +910,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
             case Attributes.CriticalChance:
             case Attributes.CriticalMultiplier:
             case Attributes.MeleeReloadTime:
+            case Attributes.MeleeDashDistance:
                 return true;
             default:
                 return false;
@@ -1057,6 +1058,14 @@ public class PlayerStats : MonoBehaviour, IDamageable
     {
         var hand = isLeftHand ? leftHand : rightHand;
         return ApplyBuffListToValue(hand.buffs, Attributes.MeleeSpeed, baseStats.meleeSpeed);
+    }
+
+    // 這隻手的最大近戰突進距離（兩段式攻擊用）。武器屬性：只看這隻手的武器 / 零件，沒有通用的基礎值。
+    // 武器沒有這個屬性（= 0）時，MeleeAttackController 用自己的 Default Dash Distance。
+    public float GetMeleeDashDistanceForHand(bool isLeftHand)
+    {
+        var hand = isLeftHand ? leftHand : rightHand;
+        return ApplyBuffListToValue(hand.buffs, Attributes.MeleeDashDistance, 0f);
     }
 
     // The effective melee reload/cooldown time for the specified hand:

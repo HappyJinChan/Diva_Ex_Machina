@@ -256,6 +256,22 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField, Range(0f, 180f)] private float aimRigForwardAngle = 60f;
     private float _aimRigAimBlend = 1f; // 1 = 看準星，0 = 看正前方
 
+    [Tooltip("指向方向的平滑速度。越大轉越快：12 約 0.1 秒追上 70% 的角度。0 = 不平滑（直接指過去）。\n" +
+             "切換鎖定目標、準星掃過物體邊緣（命中點從近處跳到遠處）、追蹤移動目標時，身體不會瞬間轉過去。")]
+    [SerializeField, Min(0f)] private float aimRigTurnSharpness = 12f;
+    [Tooltip("指向方向的最大角速度（度/秒）。大角度切換（例如換到身後的目標）時，身體不會一下子甩過去。0 = 不限制。")]
+    [SerializeField, Min(0f)] private float aimRigMaxTurnSpeed = 720f;
+    private Vector3 _aimRigDir;                 // 平滑後、實際使用的指向方向（世界座標）
+
+    [Tooltip("近戰攻擊期間，身體 Multi-Aim 的權重（0 = 完全交給攻擊動畫）。")]
+    [SerializeField, Range(0f, 1f)] private float meleeAimBodyWeight = 0f;
+    [Tooltip("近戰攻擊期間，頭部 Multi-Aim 的權重（0 = 完全交給攻擊動畫；調高可以讓頭繼續盯著目標）。")]
+    [SerializeField, Range(0f, 1f)] private float meleeAimHeadWeight = 0f;
+    [Tooltip("進入 / 離開近戰攻擊時，權重切換的速度（每秒）。10 約 0.1 秒。0 = 瞬間切換。")]
+    [SerializeField, Min(0f)] private float meleeAimFadeSpeed = 10f;
+    private float _meleeAimFade;                // 0 = 正常權重，1 = 近戰權重
+    private float _aimRigLastUpdateTime = float.NegativeInfinity;
+
     // ── 換裝硬直（支援艙命中時）────────────────────────────
     // 期間速度固定為「開始時速度 × speedRatio」（相對船，含垂直），所有移動（一般移動、飛行、Dash、
     // 突擊推進、近戰突進…）都不跑。PlayerController 期間也不接受操作（見 IsGameplayInputBlocked）。
@@ -299,7 +315,9 @@ public class PlayerMovement : MonoBehaviour
         {
             if (Effects != null) Effects.StopWalkFeedback();
         }
-        UIManager.Instance.speedText.text = playerRigidbody.linearVelocity.magnitude < 0.0001f ? 0.ToString("F2") : playerRigidbody.linearVelocity.magnitude.ToString("F2");
+        // 站在船上時顯示相對船的速度（扣掉船速），不然站著不動也會顯示船速
+        float uiSpeed = (playerRigidbody.linearVelocity - GetMobilePlatformVelocity()).magnitude;
+        UIManager.Instance.speedText.text = uiSpeed < 0.0001f ? 0.ToString("F2") : uiSpeed.ToString("F2");
     }
     public void FixedUpdate()
     {
@@ -445,6 +463,17 @@ public class PlayerMovement : MonoBehaviour
         var stats = PlayerStats.Instance;
         bool isLeft = (attackManager != null && w == attackManager.leftHandWeapon);
         bool isRight = (attackManager != null && w == attackManager.rightHandWeapon);
+
+        // 近戰攻擊期間（含突進、收招，到 StepEnd 為止）：所有遠程武器（另一隻手、兩邊肩武器）都不能開火，
+        // 也不能搶攻擊朝向。按下的單發直接丟掉，不會在近戰結束後補射；連發要近戰結束後繼續按住才會再開火。
+        if (w.kind != HandWeaponKind.Melee &&
+            attackManager.Melee != null && attackManager.Melee.IsAttacking)
+        {
+            pendingSingleUntil.Remove(w);
+            alignStartTime.Remove(w);
+            ClearAttackFacingOwnerIfSelf(w);
+            return;
+        }
 
 
         if (stats != null && (isLeft || isRight))
@@ -771,7 +800,7 @@ public class PlayerMovement : MonoBehaviour
         EndMeleeAnchor();
 
         if (meleeController != null)
-            meleeController.CancelByDash();
+            meleeController.CancelByDash("Dash");
 
         playerAnimation.setDashTrigger();
 
@@ -801,6 +830,11 @@ public class PlayerMovement : MonoBehaviour
 
     [Tooltip("突進的加速度。越大越快貼到目標速度，太小會軟綿綿。")]
     [SerializeField] private float meleeDashAccel = 400f;
+
+    [Tooltip("勾選 = 突進一開始就是全速，之後每一步都直接維持在目標速度（沒有加速過程，Melee Dash Accel 不使用）。\n" +
+             "轉向時側向的殘留速度也會一起拿掉，路線比較俐落。\n" +
+             "不勾 = 舊行為：用 Melee Dash Accel 慢慢加速到目標速度。")]
+    [SerializeField] private bool meleeDashInstantSpeed = true;
 
     [Tooltip("突進開始時保留多少比例的既有速度（0~1）。\n\n" +
              "★ 這個歸零是必要的，不是手感選項。攔截解算假設你會從當前位置以\n" +
@@ -853,6 +887,44 @@ public class PlayerMovement : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float meleeAnchorFactor = 0.7f;
 
+    [Header("Melee Dash Arrival")]
+    [Tooltip("到達停止距離時立刻煞住（不等 AnimEvent_MeleeBrake）。\n" +
+             "關掉 = 舊行為：只關掉突進，角色帶著全速繼續滑，直到動畫走到 Brake 才減速 —— 高速時會衝過頭。")]
+    [SerializeField] private bool meleeArrivalBrake = true;
+
+    [Tooltip("到達時保留多少比例的突進速度（0~1，沿突進方向）。0 = 釘在原地，0.1 = 留一點往前的慣性。")]
+    [Range(0f, 1f)]
+    [SerializeField] private float meleeArrivalSpeedFactor = 0.1f;
+
+    [Tooltip("到達時就開始錨定目標（繼承目標的部分速度，比例同 Melee Anchor Factor）。\n" +
+             "不勾 = 照舊從 HitboxOn 才開始錨定；移動中的目標會在煞住到出刀之間跑掉。")]
+    [SerializeField] private bool meleeArrivalAnchor = true;
+
+    [Tooltip("停止距離從目標碰撞體的「表面」量起（勾選），而不是目標中心。\n" +
+             "大小不同的敵人會停在一樣的位置。勾選後 Dash Stop Distance 通常要調小（0.5~1）。\n" +
+             "只支援 Box / Sphere / Capsule / Convex Mesh 碰撞體；都沒有時退回量中心。")]
+    [SerializeField] private bool meleeStopFromSurface = true;
+
+    [Tooltip("接近目標時的減速度（m/s²）。0 = 關閉：全速衝到停止距離再急停。\n" +
+             "> 0：速度上限 = √(2 × 減速度 × 剩餘距離)，越接近越慢，剛好停在停止距離 —— 起步猛、收尾穩。\n" +
+             "200~400 比較明顯；太小會在遠處就開始軟掉。")]
+    [Min(0f)]
+    [SerializeField] private float meleeDashArriveDecel = 0f;
+
+    [Tooltip("接近減速時，「接近速度」（相對目標）的下限（m/s）。\n" +
+             "減速區的長度 = 突進速度² ÷ (2 × 減速度)，例如 40 m/s、300 m/s² 時約 2.7 公尺 ——\n" +
+             "連段第二、三刀通常就從這個範圍內開始。沒有下限的話會慢吞吞地靠近，被擊退的敵人一下就拉開了。")]
+    [Min(0f)]
+    [SerializeField] private float meleeDashArriveMinSpeed = 12f;
+
+    [Tooltip("進入接近減速後，最多再追幾秒（秒）。時間到還沒到達停止距離 → 強制當成到達（煞住並出刀）。\n" +
+             "防止目標一直遠離時，角色在減速區裡慢慢追、遲遲不揮刀。0 = 關閉。只在 Melee Dash Arrive Decel > 0 時有作用。")]
+    [Min(0f)]
+    [SerializeField] private float meleeDashDecelMaxTime = 0.25f;
+
+    private readonly List<Collider> _meleeDashTargetCols = new List<Collider>();
+    private static readonly List<Collider> s_MeleeColScratch = new List<Collider>();
+
     [Header("Melee Pitch")]
     [Tooltip("近戰攻擊時，角色朝目標俯仰的最大角度。0 = 停用。\n" +
              "三維突進衝向空中目標時，角色若維持水平會很不協調。")]
@@ -873,6 +945,13 @@ public class PlayerMovement : MonoBehaviour
     private float _meleeDashSpeed;        // 這次突進的目標速度
     private float _meleeDashStopDistance; // ToTarget 用；到達目標附近時可早於 Brake 停止
     private Rigidbody _meleeDashTarget;   // null = Forward 模式。用 Rigidbody 才讀得到速度做攔截預判
+
+    // 兩段式（MeleeStepMode.TwoStage）：距離預算 + 到達通知
+    private float _meleeDashMaxDistance;      // 0 = 不限（一段式：照舊由 Brake 事件停止）
+    private float _meleeDashTravelled;        // 已經突進的距離（相對平台）
+    private float _meleeDashDecelStart = -1f; // 進入接近減速的時間（-1 = 還沒進入）
+    private System.Action _meleeDashOnArrive; // 到達 / 距離用完 / 目標消失時呼叫（通知控制器出刀）
+    private bool _meleeDashHadTarget;         // 開始時有目標 → 途中目標消失要能察覺
 
     // 滯空跟突進是「不同長度」的兩件事：Brake 可以先停掉突進，
     // 但滯空要持續到整段攻擊結束，否則刀還沒揮完人已經開始掉了。
@@ -1137,22 +1216,34 @@ public class PlayerMovement : MonoBehaviour
     /// speed 已由 MeleeAttackController 依能量狀態決定。
     /// </summary>
     public void BeginMeleeDash(Vector3 direction, float speed,
-                               Rigidbody target, float stopDistance)
+                               Rigidbody target, float stopDistance,
+                               float maxDistance = 0f, System.Action onArrive = null)
     {
         // 三維：不壓平 Y，才能衝向空中的目標。
         if (direction.sqrMagnitude < 0.0001f || speed <= 0f)
         {
             StopMeleeDash("invalidDashParams");
+            onArrive?.Invoke();   // 兩段式：衝不了就直接出刀，不要卡在突進動畫
             return;
         }
 
         _meleeDashDir = direction.normalized;
         _meleeDashSpeed = speed;
         _meleeDashTarget = target;
+        _meleeDashMaxDistance = Mathf.Max(0f, maxDistance);
+        _meleeDashTravelled = 0f;
+        _meleeDashDecelStart = -1f;
+        _meleeDashOnArrive = onArrive;
+        _meleeDashHadTarget = target != null;
         _meleeDashStopDistance = Mathf.Max(0f, stopDistance);
         _meleeDashing = true;
+        CacheMeleeDashTargetColliders(target);
 
         ApplyDashEntryBraking();
+
+        // 瞬間到達全速：起手這一幀就把速度設好（錨定已注入的速度要保留，帳才對得上）
+        if (meleeDashInstantSpeed && playerRigidbody != null)
+            playerRigidbody.linearVelocity = GetMobilePlatformVelocity() + _appliedAnchorVel + _meleeDashDir * _meleeDashSpeed;
 
         _dbgStartTime = Time.time;
         _dbgTravelled = 0f;
@@ -1331,6 +1422,73 @@ public class PlayerMovement : MonoBehaviour
         StopMeleeDashInternal(MeleeDashEndReason.ExternalStop);
     }
 
+    /// <summary>
+    /// 到達目標：煞住（保留一點往前的慣性）、開始錨定，然後結束突進。
+    /// 煞住是三維的（含 Y）：滯空期間沒有重力，不歸零的話會繼續往上 / 往下飄。
+    /// 錨定已經注入的速度（_appliedAnchorVel）要保留，否則錨定的增量帳會對不上。
+    /// </summary>
+    private void ArriveMeleeDash(Vector3 platformVel, float vAlong)
+    {
+        Rigidbody target = _meleeDashTarget;
+        System.Action onArrive = _meleeDashOnArrive;   // StopMeleeDashInternal 會清掉，先拿起來
+
+        if (meleeArrivalBrake && playerRigidbody != null)
+        {
+            if (target != null && meleeArrivalAnchor) BeginMeleeAnchor(target);
+
+            Vector3 residual = _meleeDashDir * (vAlong * Mathf.Clamp01(meleeArrivalSpeedFactor));
+            playerRigidbody.linearVelocity = platformVel + _appliedAnchorVel + residual;
+            CancelMeleeBrake();
+        }
+
+        StopMeleeDashInternal(MeleeDashEndReason.ReachedStopDistance);
+        onArrive?.Invoke();
+    }
+
+    /// <summary>
+    /// 現在離目標夠不夠近（停止距離內）。兩段式用來決定「已在攻擊範圍內 → 直接出刀」。
+    /// 距離的量法跟突進相同（Melee Stop From Surface 勾著時量到碰撞體表面）。
+    /// </summary>
+    public bool IsWithinMeleeStopDistance(Rigidbody target, float stopDistance)
+    {
+        if (target == null || playerRigidbody == null) return false;
+        CacheMeleeDashTargetColliders(target);
+        return MeleeDashDistance(playerRigidbody.position, target.position) <= stopDistance;
+    }
+
+    // 突進開始時收集目標身上可以量表面距離的碰撞體（ClosestPoint 只支援這幾種）
+    private void CacheMeleeDashTargetColliders(Rigidbody target)
+    {
+        _meleeDashTargetCols.Clear();
+        if (target == null || !meleeStopFromSurface) return;
+
+        s_MeleeColScratch.Clear();
+        target.GetComponentsInChildren(false, s_MeleeColScratch);
+        for (int i = 0; i < s_MeleeColScratch.Count; i++)
+        {
+            Collider c = s_MeleeColScratch[i];
+            if (c == null || !c.enabled || c.attachedRigidbody != target) continue;
+            bool supported = c is BoxCollider || c is SphereCollider || c is CapsuleCollider ||
+                             (c is MeshCollider mc && mc.convex);
+            if (supported) _meleeDashTargetCols.Add(c);
+        }
+        s_MeleeColScratch.Clear();
+    }
+
+    // 到目標的距離：有可用的碰撞體就量到最近的表面，否則量到中心
+    private float MeleeDashDistance(Vector3 selfPos, Vector3 targetPos)
+    {
+        float best = float.MaxValue;
+        for (int i = 0; i < _meleeDashTargetCols.Count; i++)
+        {
+            Collider c = _meleeDashTargetCols[i];
+            if (c == null || !c.enabled || !c.gameObject.activeInHierarchy) continue;
+            float d = (c.ClosestPoint(selfPos) - selfPos).magnitude;   // 在碰撞體裡面時 = 0
+            if (d < best) best = d;
+        }
+        return best < float.MaxValue ? best : (targetPos - selfPos).magnitude;
+    }
+
     private void StopMeleeDashInternal(MeleeDashEndReason reason)
     {
         LogDashDiagnostics(reason);
@@ -1339,6 +1497,9 @@ public class PlayerMovement : MonoBehaviour
         //     否則突進一停人就開始掉，刀還沒揮完就離開目標高度了。
         _meleeDashing = false;
         _meleeDashTarget = null;
+        _meleeDashOnArrive = null;      // 外部中止（StepEnd、下一段、Dash 取消）不通知出刀
+        _meleeDashMaxDistance = 0f;
+        _meleeDashHadTarget = false;
     }
 
     private void ApplyMeleeDashFixed(float dt)
@@ -1348,6 +1509,22 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 platformVel = GetMobilePlatformVelocity();
         Vector3 vRel = playerRigidbody.linearVelocity - platformVel;
+        float arriveDist = -1f;   // ToTarget 時 = 到目標（表面 / 中心）的距離
+        float targetAlong = 0f;   // ToTarget 時 = 目標沿突進方向的速度（往前跑 / 被擊退飛走 > 0）
+
+        // 突進途中目標死了 / 被收回物件池
+        if (_meleeDashHadTarget && (_meleeDashTarget == null || !_meleeDashTarget.gameObject.activeInHierarchy))
+        {
+            if (_meleeDashOnArrive != null)
+            {
+                // 兩段式：立刻出刀
+                ArriveMeleeDash(platformVel, Mathf.Max(0f, Vector3.Dot(vRel, _meleeDashDir)));
+                return;
+            }
+            // 一段式：照舊，改成沿目前方向往前衝（由 Brake 事件停止）
+            _meleeDashTarget = null;
+            _meleeDashHadTarget = false;
+        }
 
         // ToTarget：每幀重算方向，並且朝「攔截點」而不是目標當前位置。
         //
@@ -1365,15 +1542,26 @@ public class PlayerMovement : MonoBehaviour
 
             Vector3 toTarget = targetPos - selfPos;   // 三維，不壓平
 
-            if (toTarget.magnitude <= _meleeDashStopDistance)
-            {
-                StopMeleeDashInternal(MeleeDashEndReason.ReachedStopDistance);
-                return;
-            }
-
+            // 到達判定：
+            //   · 距離量到表面（meleeStopFromSurface）或中心
+            //   · 預判：用「這一步移動之後」的距離判斷 —— 高速時一步就是近 1 公尺，只看當下會整個跨過停止距離
+            //   · 越過：目標已經在突進方向的後面 → 也算到達（不然會一邊慢慢掉頭一邊往前飛）
             // 目標速度也要扣掉平台速度：兩者都站在同一艘船上時，
             // 共同的船速不該被算成需要提前量的相對運動。
             Vector3 targetVelRel = _meleeDashTarget.linearVelocity - platformVel;
+            targetAlong = Vector3.Dot(targetVelRel, _meleeDashDir);
+
+            // 用「相對目標的接近速度」判斷：目標被擊退往後飛時，這一步實際拉近的距離比自己的速度少
+            arriveDist = MeleeDashDistance(selfPos, targetPos);
+            float closing = Mathf.Max(0f, Vector3.Dot(vRel - targetVelRel, _meleeDashDir));
+            bool passed = Vector3.Dot(toTarget, _meleeDashDir) < 0f;
+            bool arriving = arriveDist - closing * dt <= _meleeDashStopDistance;
+
+            if (passed || arriving)
+            {
+                ArriveMeleeDash(platformVel, closing);
+                return;
+            }
 
             Vector3 aimPoint = targetPos;
 
@@ -1430,8 +1618,55 @@ public class PlayerMovement : MonoBehaviour
             if (vParallelRel > _dbgPeakSpeed) _dbgPeakSpeed = vParallelRel;
         }
 
+        // 兩段式：距離預算。這一步之後就會用完 → 到達（煞住並出刀）
+        if (_meleeDashMaxDistance > 0f)
+        {
+            float step = Mathf.Max(0f, vParallelRel) * dt;
+            if (_meleeDashTravelled + step >= _meleeDashMaxDistance)
+            {
+                ArriveMeleeDash(platformVel, Mathf.Max(0f, vParallelRel));
+                return;
+            }
+            _meleeDashTravelled += step;
+        }
+
         // 沒有速度曲線，也沒有距離預算。Dash Window 由動畫事件控制。
         float targetSpeed = _meleeDashSpeed;
+
+        // 接近減速（meleeDashArriveDecel > 0）：速度上限隨剩餘距離下降，剛好在停止距離停下
+        if (meleeDashArriveDecel > 0f && arriveDist >= 0f)
+        {
+            // 減速的是「相對目標的接近速度」，不是自己的絕對速度：
+            // 目標往前跑 / 被擊退飛走時，自己要比它快這麼多才追得上
+            float remain = Mathf.Max(0f, arriveDist - _meleeDashStopDistance);
+            float closingLimit = Mathf.Max(meleeDashArriveMinSpeed, Mathf.Sqrt(2f * meleeDashArriveDecel * remain));
+            targetSpeed = Mathf.Min(targetSpeed, Mathf.Max(0f, targetAlong) + closingLimit);
+
+            // 減速最大時間：速度上限開始低於突進速度 = 進入減速區，從這時開始計時
+            if (targetSpeed < _meleeDashSpeed - 0.01f)
+            {
+                if (_meleeDashDecelStart < 0f) _meleeDashDecelStart = Time.time;
+                else if (meleeDashDecelMaxTime > 0f && Time.time - _meleeDashDecelStart >= meleeDashDecelMaxTime)
+                {
+                    ArriveMeleeDash(platformVel, Mathf.Max(0f, vParallelRel));
+                    return;
+                }
+            }
+
+            float excess = vParallelRel - targetSpeed;
+            if (!meleeDashInstantSpeed && excess > 0f)
+            {
+                playerRigidbody.linearVelocity -= _meleeDashDir * Mathf.Min(excess, meleeDashArriveDecel * 2f * dt);
+                return;
+            }
+        }
+
+        // 瞬間全速：每一步直接設成「平台速度 + 錨定注入 + 突進方向 × 目標速度」
+        if (meleeDashInstantSpeed)
+        {
+            playerRigidbody.linearVelocity = platformVel + _appliedAnchorVel + _meleeDashDir * targetSpeed;
+            return;
+        }
 
         // 重力由 ApplyMeleeHoverFixed 統一處理（滯空期間 useGravity 已關閉）。
         if (vParallelRel >= targetSpeed) return;
@@ -1472,7 +1707,7 @@ public class PlayerMovement : MonoBehaviour
         EndMeleeHover();
         EndMeleeAnchor();
         if (meleeController != null)
-            meleeController.CancelByDash();
+            meleeController.CancelByDash("AssaultBoost");
 
         dashRequestUntil = 0f;
         dashActiveUntil = 0f;
@@ -2063,8 +2298,15 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void UpdateAimRig(bool aimAtCrosshair)
     {
-        if (multiAimBody != null) multiAimBody.weight = aimBodyWeight;
-        if (multiAimHead != null) multiAimHead.weight = aimHeadWeight;
+        // 近戰攻擊中：攻擊動畫要完整控制脊椎和頭，Multi-Aim 淡出（否則會把揮擊扭向準星）
+        bool meleeAttacking = meleeController != null && meleeController.IsAttacking;
+        float fadeGoal = meleeAttacking ? 1f : 0f;
+        _meleeAimFade = meleeAimFadeSpeed <= 0f
+            ? fadeGoal
+            : Mathf.MoveTowards(_meleeAimFade, fadeGoal, meleeAimFadeSpeed * Time.deltaTime);
+
+        if (multiAimBody != null) multiAimBody.weight = Mathf.Lerp(aimBodyWeight, meleeAimBodyWeight, _meleeAimFade);
+        if (multiAimHead != null) multiAimHead.weight = Mathf.Lerp(aimHeadWeight, meleeAimHeadWeight, _meleeAimFade);
 
         if (aimRigTarget == null || characterModel == null) return;
 
@@ -2096,7 +2338,26 @@ public class PlayerMovement : MonoBehaviour
 
         // 內插方向而不是位置：準星可能在 100 公尺外，直接內插位置會繞出奇怪的弧線
         Vector3 dir = Vector3.Slerp(faceDir, aimDir, _aimRigAimBlend);
-        aimRigTarget.position = origin + dir * aimRigTargetDistance;
+
+        // ★ 平滑最後的方向：上面的 _aimRigAimBlend 只平滑「看準星 ↔ 看正前方」的模式切換，
+        //   準星方向本身是每幀直接用的 —— 換鎖定目標、命中點從近處跳到遠處時，身體會瞬間轉過去。
+        //   第一次執行，或很久沒更新（角色停用後再啟用）時，直接用當下的方向，不從舊方向轉過來。
+        bool reset = Time.time - _aimRigLastUpdateTime > 0.5f || _aimRigDir.sqrMagnitude < 0.5f;
+        _aimRigLastUpdateTime = Time.time;
+        if (reset || aimRigTurnSharpness <= 0f)
+        {
+            _aimRigDir = dir;
+        }
+        else
+        {
+            float t = 1f - Mathf.Exp(-aimRigTurnSharpness * Time.deltaTime);   // 指數平滑，跟幀率無關
+            Vector3 next = Vector3.Slerp(_aimRigDir, dir, t);
+            if (aimRigMaxTurnSpeed > 0f)
+                next = Vector3.RotateTowards(_aimRigDir, next, aimRigMaxTurnSpeed * Mathf.Deg2Rad * Time.deltaTime, 0f);
+            _aimRigDir = next.normalized;
+        }
+
+        aimRigTarget.position = origin + _aimRigDir * aimRigTargetDistance;
     }
 
     private void RotateCharacter()

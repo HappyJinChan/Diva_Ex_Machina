@@ -223,6 +223,7 @@ public class TooltipManager : MonoBehaviour
         AppendStat(sb, stats, Attributes.MeleeOutput, "Melee Output");
         AppendStat(sb, stats, Attributes.MeleeSpeed, "Melee Speed");
         AppendStat(sb, stats, Attributes.MeleeReloadTime, "Melee Cooldown");
+        AppendStat(sb, stats, Attributes.MeleeDashDistance, "Melee Dash Distance");
 
         // 其餘還沒被上面消化掉的屬性，原樣列出 ——
         // 之後新增屬性時不會悄悄從 tooltip 消失。
@@ -330,7 +331,7 @@ public class TooltipManager : MonoBehaviour
     // 已停用的屬性：舊裝備資料上可能還留著，但不再有任何效果，不顯示以免誤導玩家。
     private static bool IsRetired(Attributes attr)
     {
-        return attr == Attributes.MeleeDashDistance;
+        return false;   // MeleeDashDistance re-enabled (two-stage melee max dash distance)
     }
 
     private float Take(Dictionary<Attributes, float> stats, Attributes attr)

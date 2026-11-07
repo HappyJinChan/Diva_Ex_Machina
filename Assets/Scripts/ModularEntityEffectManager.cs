@@ -8,6 +8,13 @@ public class ModularEntityEffectManager : MonoBehaviour, IPooled
 
     public MMF_Player damageFeedback;
 
+    [Tooltip("暴擊時的傷害數字（取代 Damage Feedback，不會兩個都播）。\n" +
+             "跟 Damage Feedback 一樣用傷害值當 intensity 播：裡面的 Floating Text 勾 Use Intensity As Value。\n" +
+             "要比較大：Floating Text 用另一個 Channel，場景裡放一個同 Channel、prefab / 縮放比較大的 MMFloatingTextSpawner。\n" +
+             "顏色：Floating Text 勾 Force Color。也可以在這裡加暴擊音效、小幅鏡頭震動。\n" +
+             "留空 = 暴擊也用 Damage Feedback。")]
+    public MMF_Player criticalDamageFeedback;
+
     [Tooltip("受擊閃光。用 MMF_Property 動畫 EntityHitFlash.FlashAmount（0 → 1 → 0）。\n" +
              "跟傷害數字分開：傷害數字是用傷害值當 intensity 播的，閃光放進同一個 MMF_Player 會被乘上傷害值。\n" +
              "連續中彈的頻率用這個 MMF_Player 的 Cooldown Duration 限制。")]
@@ -20,9 +27,10 @@ public class ModularEntityEffectManager : MonoBehaviour, IPooled
     // 敵人身上所有的粒子系統（含停用中的），重生時用來清掉殘留的特效
     private ParticleSystem[] _particles;
 
-    public void PlayDamageFeedback(float damage)
+    public void PlayDamageFeedback(float damage, bool critical = false)
     {
-        damageFeedback.PlayFeedbacks(this.transform.position, RoundForDisplay(damage));
+        MMF_Player numbers = (critical && criticalDamageFeedback != null) ? criticalDamageFeedback : damageFeedback;
+        numbers.PlayFeedbacks(this.transform.position, RoundForDisplay(damage));
 
         // 閃光固定用強度 1 播（不能傳傷害值）
         if (hitFlashFeedback != null)
@@ -62,6 +70,9 @@ public class ModularEntityEffectManager : MonoBehaviour, IPooled
     public void OnSpawned()
     {
         if (attackWarningFeedback != null) attackWarningFeedback.StopFeedbacks();
+        // 致命一擊時閃光正在播，敵人被停用後 MMF_Property 的 _coroutine 不會被清掉，
+        // 重用後每次 Play 都會直接 return（永遠不閃）。StopFeedbacks 會把它清空。
+        if (hitFlashFeedback != null) hitFlashFeedback.StopFeedbacks();
 
         if (_particles == null)
         {

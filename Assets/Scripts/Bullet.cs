@@ -37,6 +37,13 @@ public class Bullet : MonoBehaviour, IPooled
 
     [Tooltip("特效沿命中面法線往外推幾公尺，避免跟牆面 z-fighting 或被切掉一半。")]
     [Min(0f)] public float hitEffectSurfaceOffset = 0.1f;
+
+    [Tooltip("只有打中目標（敵人 / 可受傷的物件）時才額外播放的特效，例如火花。\n" +
+             "打中目標時會和上面的 Hit Effect 一起播；打到牆壁、地面、建築時只播 Hit Effect。留空 = 不用。")]
+    public GameObject targetHitEffect;
+
+    [Tooltip("目標命中特效存活幾秒後回池子。0 = 自動推算（同 Hit Effect Lifetime 的算法）。")]
+    [Min(0f)] public float targetHitEffectLifetime = 0f;
     // ──────────────────────────────────────────────────────────────
 
     [Header("Homing")]
@@ -363,6 +370,8 @@ public class Bullet : MonoBehaviour, IPooled
         public CollisionDetectionMode collisionDetectionMode;
 
         public GameObject hitEffect;
+        public GameObject targetHitEffect;
+        public float targetHitEffectLifetime;
         public float hitEffectLifetime;
         public float hitEffectSurfaceOffset;
 
@@ -397,6 +406,8 @@ public class Bullet : MonoBehaviour, IPooled
         _defaults.maxHomingAngle = maxHomingAngle;
         _defaults.retargetInterval = retargetInterval;
         _defaults.hitEffect = hitEffect;
+        _defaults.targetHitEffect = targetHitEffect;
+        _defaults.targetHitEffectLifetime = targetHitEffectLifetime;
         _defaults.hitEffectLifetime = hitEffectLifetime;
         _defaults.hitEffectSurfaceOffset = hitEffectSurfaceOffset;
 
@@ -451,6 +462,8 @@ public class Bullet : MonoBehaviour, IPooled
         maxHomingAngle = _defaults.maxHomingAngle;
         retargetInterval = _defaults.retargetInterval;
         hitEffect = _defaults.hitEffect;
+        targetHitEffect = _defaults.targetHitEffect;
+        targetHitEffectLifetime = _defaults.targetHitEffectLifetime;
         hitEffectLifetime = _defaults.hitEffectLifetime;
         hitEffectSurfaceOffset = _defaults.hitEffectSurfaceOffset;
 
@@ -1109,9 +1122,8 @@ public class Bullet : MonoBehaviour, IPooled
                 ClearTarget();
 
             // 暴擊在「攻擊方」這邊結算（暴擊是攻擊者的屬性）
-            float critMul = 1f;
-            if (Random.value < Mathf.Clamp01(criticalChance))
-                critMul = Mathf.Max(1f, criticalMultiplier);
+            bool isCrit = Random.value < Mathf.Clamp01(criticalChance);
+            float critMul = isCrit ? Mathf.Max(1f, criticalMultiplier) : 1f;
 
             // 距離衰減：乘在四種傷害與衝擊值上。暴擊只乘傷害，不乘衝擊值。
             float falloff = GetFalloffMultiplier(_flightDistance);
@@ -1125,10 +1137,12 @@ public class Bullet : MonoBehaviour, IPooled
                 coldDamage * mul,
                 impact * falloff
             );
+            dmg.isCritical = isCrit;
 
             target.TakeDamage(dmg, attacker);
 
             SpawnHitEffect(other);
+            SpawnHitEffect(other, targetHitEffect, targetHitEffectLifetime);   // 只有打中目標才有的特效（例如火花）
 
             // 爆炸：每命中一個敵人爆一次（貫穿彈每穿過一個就爆一次），直擊的目標也在範圍內
             Explode(GetImpactPoint(), other);
@@ -1266,7 +1280,13 @@ public class Bullet : MonoBehaviour, IPooled
     /// </summary>
     protected void SpawnHitEffect(Collider hitCollider)
     {
-        if (hitEffect == null) return;
+        SpawnHitEffect(hitCollider, hitEffect, hitEffectLifetime);
+    }
+
+    /// <summary>在命中點生成指定的特效（位置、朝向、跟隨與回收方式都和 Hit Effect 相同）。</summary>
+    protected void SpawnHitEffect(Collider hitCollider, GameObject effectPrefab, float effectLifetime)
+    {
+        if (effectPrefab == null) return;
 
         // 命中點：優先用 Predict 記下來的，結算時的 transform.position 已經穿過牆面了。
         // 位置仍然沿法線往外推一點點（朝向是另一回事），避免特效跟牆面 z-fighting、
@@ -1287,15 +1307,15 @@ public class Bullet : MonoBehaviour, IPooled
         Rigidbody hitRb = (hitCollider != null) ? hitCollider.attachedRigidbody : null;
         Transform follow = (hitRb != null) ? hitRb.transform : null;
 
-        GameObject fx = PrefabPool.Spawn(hitEffect, pos, rot, follow);
+        GameObject fx = PrefabPool.Spawn(effectPrefab, pos, rot, follow);
         if (fx == null) return;
 
         // 掛到目標底下之後，特效會繼承目標的縮放 —— 船如果不是 1:1:1，
         // 命中特效就會跟著變大變小。這裡把 localScale 反算回去，
         // 讓特效的世界大小永遠等於 prefab 上設定的大小。
-        NormalizeEffectScale(fx.transform, hitEffect.transform.localScale);
+        NormalizeEffectScale(fx.transform, effectPrefab.transform.localScale);
 
-        float life = hitEffectLifetime > 0f ? hitEffectLifetime : GetEffectDuration(fx);
+        float life = effectLifetime > 0f ? effectLifetime : GetEffectDuration(fx);
         PrefabPool.Despawn(fx, life);
     }
 

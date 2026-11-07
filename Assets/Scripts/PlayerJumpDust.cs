@@ -53,6 +53,9 @@ public class PlayerJumpDust : MonoBehaviour
     [Tooltip("整體亮度倍率。揚起的塵土受光面積大，通常比地面亮一點。")]
     [SerializeField] private float brightness = 1.15f;
 
+    public LayerMask GroundLayers => groundLayers;
+    public LayerMask PlatformLayers => platformLayers;
+
     private PlayerMovement _movement;
     private Rigidbody _rb;
 
@@ -145,6 +148,13 @@ public class PlayerJumpDust : MonoBehaviour
                              probeStartHeight + probeDistance, mask, QueryTriggerInteraction.Ignore))
             return;   // 腳下沒有地面（例如在空中觸發）→ 不噴
 
+        PlayAt(hit, intensity);
+    }
+
+    /// <summary>在指定的地面接觸點噴一次塵土（給 PlayerGroundWake 之類已經打過射線的呼叫端用）。</summary>
+    public void PlayAt(RaycastHit hit, float intensity)
+    {
+        if (dustPrefab == null) return;
         if (!TryGetDustColor(hit, out Color color)) return;   // DustSurface 設定不噴
 
         Transform space = GetPlatformSpace(hit.collider);
@@ -154,7 +164,8 @@ public class PlayerJumpDust : MonoBehaviour
 
     // ── 內部 ─────────────────────────────────────────────────────────────
 
-    private bool TryGetDustColor(RaycastHit hit, out Color color)
+    /// <summary>依地面取塵土顏色。DustSurface 設定不噴時回傳 false。</summary>
+    public bool TryGetDustColor(RaycastHit hit, out Color color)
     {
         DustSurface surface = hit.collider.GetComponentInParent<DustSurface>();
         if (surface != null)
@@ -178,7 +189,7 @@ public class PlayerJumpDust : MonoBehaviour
     }
 
     /// <summary>打到的是船 → 回傳船的 Transform（塵土用它當座標系）；地面回傳 null。</summary>
-    private Transform GetPlatformSpace(Collider col)
+    public Transform GetPlatformSpace(Collider col)
     {
         Rigidbody rb = col.attachedRigidbody;
         bool isPlatform = (platformLayers.value & (1 << col.gameObject.layer)) != 0 ||

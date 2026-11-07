@@ -342,6 +342,7 @@ MonoBehaviour:
   explosionDamage: 0
   energyDamage: 0
   coldDamage: 0
+  impact: 0
   criticalChance: 0.05
   criticalMultiplier: 1.5
   lifespan: 10
@@ -356,6 +357,8 @@ MonoBehaviour:
   hitEffect: {fileID: 5238538877814813142, guid: e4e263c1e88af644c8fb76d914e6b7e3, type: 3}
   hitEffectLifetime: 0
   hitEffectSurfaceOffset: 0.1
+  targetHitEffect: {fileID: 0}
+  targetHitEffectLifetime: 0
   homingDegreePerSecond: 0
   homingRange: 30
   homingSearchAngle: 40
@@ -370,7 +373,16 @@ MonoBehaviour:
   homingStartDelay: 0
   lockAssignedTarget: 1
   penetration: 0
-  explodePrefab: {fileID: 0}
+  effectiveRange: 0
+  falloffEndMultiplier: 2
+  falloffMinDamage: 0.3
+  physicalExplosionDamageConversionRate: 0
+  explosionDamageConversionRate: 0
+  energyExplosionDamageConversionRate: 0
+  coldExplosionDamageConversionRate: 0
+  explosionACSConversion: 0
+  explosionRadius: 0
+  explosionPrefab: {fileID: 0}
 --- !u!1 &4949459587639703064
 GameObject:
   m_ObjectHideFlags: 0

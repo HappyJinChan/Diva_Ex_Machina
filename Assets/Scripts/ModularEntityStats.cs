@@ -131,17 +131,17 @@ public class ModularEntityStats : MonoBehaviour, IDamageable, IPooled
                        * status.DamageTakenMultiplier;
 
         if (amount > 0f)
-            ApplyDamage(amount, attacker);
+            ApplyDamage(amount, attacker, dmg.isCritical);
 
         // 衝擊：扣 ACS。只有衝擊、沒有傷害的攻擊也算。這一擊打死的話就不用了。
         if (!_dead && dmg.impact > 0f)
             status.ApplyImpact(dmg.impact);
     }
 
-    private void ApplyDamage(float amount, GameObject attacker)
+    private void ApplyDamage(float amount, GameObject attacker, bool critical)
     {
         health -= amount;
-        modularEntityEffectManager.PlayDamageFeedback(amount);
+        modularEntityEffectManager.PlayDamageFeedback(amount, critical);
 
         // 被打就拉仇恨：用減防後的實際傷害。這一擊致命的話就不用了。
         if (health > 0f)

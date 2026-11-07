@@ -29,8 +29,8 @@ MonoBehaviour:
     mode: 1
     value: 1
   - attribute: 36
-    mode: 1
-    value: 5
+    mode: 0
+    value: 10
   - attribute: 8
     mode: 0
     value: 1

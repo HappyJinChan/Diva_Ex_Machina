@@ -1,8 +1,28 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using Unity.Profiling;
+using UnityEngine;
 using UnityEngine.AI;
 
 public class PathFinder : MonoBehaviour, IPooled
 {
+    // ── Profiler 量測（只量測，不改行為）────────────────────────────
+    // 在 Profiler 的 CPU Usage → Hierarchy 搜尋「PathFinder.」即可看到各分支耗時與呼叫次數。
+    // 「GroundToDock.NearDock」= 敵人離登船口 dockUpdateDistance 以內、用高頻更新時的那一部分。
+    static readonly ProfilerMarker s_FindPath        = new ProfilerMarker("PathFinder.FindPath");
+    static readonly ProfilerMarker s_ShipToShip      = new ProfilerMarker("PathFinder.ShipToShip");
+    static readonly ProfilerMarker s_ShipToGround    = new ProfilerMarker("PathFinder.ShipToGround");
+    static readonly ProfilerMarker s_GroundToDock    = new ProfilerMarker("PathFinder.GroundToDock");
+    static readonly ProfilerMarker s_GroundToDockNear = new ProfilerMarker("PathFinder.GroundToDock.NearDock");
+    static readonly ProfilerMarker s_GroundToGround  = new ProfilerMarker("PathFinder.GroundToGround");
+    static readonly ProfilerMarker s_CalculatePath   = new ProfilerMarker("PathFinder.CalculatePath");
+    static readonly ProfilerMarker s_LaneSpread      = new ProfilerMarker("PathFinder.LaneSpread");
+    static readonly ProfilerMarker s_DockSpreadGoal  = new ProfilerMarker("PathFinder.DockSpreadGoal");
+
+    [Header("Profiling")]
+    [Tooltip("只用來分類量測：離最近登船口小於這個水平距離時，GroundToDock 另外記到 NearDock。\n" +
+             "建議跟 Brain 的 Dock Update Distance 一致。不影響任何行為。")]
+    [SerializeField] private float profileNearDockDistance = 30f;
+
     public Vector3 targetLocation;
     public bool isTargetOnShip = false;
     public bool isOnShip = false;
@@ -120,6 +140,30 @@ public class PathFinder : MonoBehaviour, IPooled
     private float laneValue;
     private bool laneAssigned;
 
+    // ── 船身繞行（ShipHullOutline）──────────────────────────────
+    //
+    // 取代船上 17 個會一直重挖 NavMesh 的 NavMeshObstacle（Carving 每幀 3–4 ms）。
+    // 場景裡有有效的 ShipHullOutline 時：
+    //   · 地面 → 登船口：終點改成登船口外的接近點，最後再接登船口本身；
+    //     接近點與登船口存成船本地座標，每次讀取時跟著船投影 → 不會撲到船幾秒前的位置。
+    //   · 任何地面路徑穿過船身輪廓時，從穿越處改成沿輪廓頂點繞過去（頂點也跟著船走）。
+    // 沒有 ShipHullOutline 時行為完全照舊。
+    //
+    // 混合路徑：每個點各自記錄是世界座標（地面 NavMesh 轉角）還是船本地座標（輪廓、接近點、登船口）。
+    private bool lastPathHybrid;
+    private Vector3[] hybridPoints = System.Array.Empty<Vector3>();
+    private bool[] hybridLocal = System.Array.Empty<bool>();
+    private readonly List<Vector3> _hybridPts = new List<Vector3>();
+    private readonly List<bool> _hybridLoc = new List<bool>();
+    private static readonly List<int> s_hullRoute = new List<int>();
+    private static Vector2[] s_hullPoly = new Vector2[0];
+    static readonly ProfilerMarker s_HullDetour = new ProfilerMarker("PathFinder.HullDetour");
+
+    [Header("Ship Hull Approach")]
+    [Tooltip("走過接近點之後，離「接近點 → 登船口」這條線多遠以內，就直接走向登船口、不再回頭找接近點（公尺）。\n" +
+             "要比 Dock Spread Radius 大，否則分散到旁邊的敵人會被判定成還沒走過。")]
+    [SerializeField, Min(0f)] private float approachPassWidth = 15f;
+
     private void AssignLane()
     {
         laneValue = Random.Range(-1f, 1f);
@@ -138,6 +182,7 @@ public class PathFinder : MonoBehaviour, IPooled
         isOnShip = false;
         isTargetOnShip = false;
         lastPathOnShip = false;
+        lastPathHybrid = false;
         if (path != null) path.ClearCorners();
         AssignLane();   // 每一輩子重抽車道
     }
@@ -146,11 +191,19 @@ public class PathFinder : MonoBehaviour, IPooled
 
     public Vector3[] FindPath(Vector3 targetLocation)
     {
+        using (s_FindPath.Auto())
+            return FindPathImpl(targetLocation);
+    }
+
+    private Vector3[] FindPathImpl(Vector3 targetLocation)
+    {
         Vector3[] result;
         lastPathOnShip = false;   // 預設地面；下面命中 ghost 分支才設 true
+        lastPathHybrid = false;   // 預設不是混合路徑；下面繞船 / 登船口分支才設 true
 
         if (isOnShip && isTargetOnShip)// if both side on ship, convert gobal coordinates to ship local coordinates
         {
+            using var _m = s_ShipToShip.Auto();
             result = ComputeGhostPath(transform.position, targetLocation);
             lastPathOnShip = true;
 
@@ -159,6 +212,7 @@ public class PathFinder : MonoBehaviour, IPooled
         }
         else if (isOnShip && !isTargetOnShip)// if entity on ship but target not on ship
         {
+            using var _m = s_ShipToGround.Auto();
             // 先算「走到 dock」的船上路徑
             Vector3 dockPos = GetTargetClosestDockingLocation();
             result = ComputeGhostPath(transform.position, dockPos);
@@ -187,9 +241,18 @@ public class PathFinder : MonoBehaviour, IPooled
                 result = BuildFallbackPath(dockPos, true);
             }
         }
+        else if (!isOnShip && isTargetOnShip && HullAvailable(out ShipHullOutline hull))
+        {
+            using var _m = s_GroundToDock.Auto();
+            result = FindDockPathAroundHull(hull);
+        }
         else if (!isOnShip && isTargetOnShip) // if player not on ship but target on ship, find path to ship docking point
         {
             Vector3 dockPos = GetClosestDockingLocation();
+            Vector3 toDock = dockPos - transform.position; toDock.y = 0f;
+            bool nearDock = toDock.sqrMagnitude < profileNearDockDistance * profileNearDockDistance;
+            using var _m = s_GroundToDock.Auto();
+            if (nearDock) s_GroundToDockNear.Begin();   // 這個分支中間沒有 return，結尾一定會 End
             Vector3 dockGoal = enableLaneSpread ? GetDockSpreadGoal(dockPos) : dockPos;
             result = ComputeGroundPath(transform.position, dockGoal);
             if (result.Length == 0 && dockGoal != dockPos)
@@ -199,15 +262,28 @@ public class PathFinder : MonoBehaviour, IPooled
                 result = BuildFallbackPath(dockPos, false);
             else if (enableLaneSpread)
                 result = ApplyLaneSpread(result);
+            if (nearDock) s_GroundToDockNear.End();
         }
         else
         {
+            using var _m = s_GroundToGround.Auto();
             result = ComputeGroundPath(transform.position, targetLocation);
 
             if (result.Length == 0)
                 result = BuildFallbackPath(targetLocation, false);
-            else if (enableLaneSpread)
-                result = ApplyLaneSpread(result);
+            else
+            {
+                if (enableLaneSpread)
+                    result = ApplyLaneSpread(result);
+
+                // 路徑穿過船身才改成繞船；沒穿過就完全照舊
+                if (HullAvailable(out ShipHullOutline groundHull))
+                {
+                    Transform ship = RealShipRoot;
+                    if (BuildHullPath(groundHull, ship, result, result.Length - 1, result[result.Length - 1], false))
+                        result = CommitHybrid(ship);
+                }
+            }
         }
 
         lastPath = result;
@@ -257,6 +333,17 @@ public class PathFinder : MonoBehaviour, IPooled
     //   拿來當下讀取就好，不要存起來。
     public Vector3[] GetCurrentWorldPath()
     {
+        if (lastPathHybrid)
+        {
+            Transform ship = RealShipRoot;
+            if (ship == null) return lastPath;
+            if (_worldPathBuffer.Length != hybridPoints.Length)
+                _worldPathBuffer = new Vector3[hybridPoints.Length];
+            for (int i = 0; i < hybridPoints.Length; i++)
+                _worldPathBuffer[i] = hybridLocal[i] ? ship.TransformPoint(hybridPoints[i]) : hybridPoints[i];
+            return _worldPathBuffer;
+        }
+
         if (!lastPathOnShip)
             return lastPath;   // 地面路徑不會動，世界座標本來就不 stale
 
@@ -386,6 +473,164 @@ public class PathFinder : MonoBehaviour, IPooled
         return closestDockingPoint;
     }
 
+    private int GetClosestDockIndex()
+    {
+        LandshipNavigation nav = LandshipNavigation.Instance;
+        if (nav == null || nav.dockingPoints == null) return -1;
+        float best = Mathf.Infinity;
+        int index = -1;
+        for (int i = 0; i < nav.dockingPoints.Length; i++)
+        {
+            if (nav.dockingPoints[i] == null) continue;
+            float d = (nav.dockingPoints[i].position - transform.position).sqrMagnitude;
+            if (d < best) { best = d; index = i; }
+        }
+        return index;
+    }
+
+    // ======================= 船身繞行 =======================
+
+    private bool HullAvailable(out ShipHullOutline hull)
+    {
+        hull = ShipHullOutline.Instance;
+        return hull != null && hull.isActiveAndEnabled && hull.IsValid && RealShipRoot != null;
+    }
+
+    /// <summary>
+    /// 地面 → 登船口（有 ShipHullOutline 時）。
+    /// 路徑 = 地面 NavMesh 轉角（世界座標）→〔必要時沿輪廓繞船〕→ 接近點 → 登船口（後三者船本地座標）。
+    /// </summary>
+    private Vector3[] FindDockPathAroundHull(ShipHullOutline hull)
+    {
+        Transform ship = RealShipRoot;
+        int di = GetClosestDockIndex();
+        if (di < 0) return BuildFallbackPath(transform.position, false);
+
+        Transform dockT = LandshipNavigation.Instance.dockingPoints[di];
+        Transform appT = hull.GetApproach(di);
+        Vector3 appPos = appT != null ? appT.position : dockT.position;
+
+        // 已經走過接近點、正在「接近點 → 登船口」這一段上 → 直接走進登船口，不要再回頭找接近點。
+        // 少了這一步，登船口附近每 0.1–0.3 秒重算一次路徑時，每次都會把終點設回接近點，
+        // 敵人一走過接近點就被拉回去，全部卡在接近點來回打轉。
+        if (appT != null && IsPastApproach(appPos, dockT.position))
+        {
+            _hybridPts.Clear();
+            _hybridLoc.Clear();
+            _hybridPts.Add(transform.position);
+            _hybridLoc.Add(false);
+            _hybridPts.Add(ship.InverseTransformPoint(dockT.position));
+            _hybridLoc.Add(true);
+            return CommitHybrid(ship);
+        }
+
+        Vector3 goal = enableLaneSpread ? GetDockSpreadGoal(appPos) : appPos;
+        Vector3[] corners = ComputeGroundPath(transform.position, goal);
+        if (corners.Length == 0 && goal != appPos)
+        {
+            goal = appPos;                                                    // 分散點算不出路 → 退回接近點
+            corners = ComputeGroundPath(transform.position, appPos);
+        }
+        if (corners.Length > 0 && enableLaneSpread)
+            corners = ApplyLaneSpread(corners);
+
+        // 地面路徑的最後一點就是 goal（sample 過的版本）→ 拿掉，改用跟著船走的版本。
+        // 算不出地面路徑時，只剩「目前位置 → 接近點」，一樣會做繞船檢查。
+        Vector3[] fixedPts = corners.Length > 0 ? corners : new[] { transform.position };
+        int fixedCount = corners.Length > 0 ? corners.Length - 1 : 1;
+        if (fixedCount < 1) { fixedPts = new[] { transform.position }; fixedCount = 1; }
+
+        BuildHullPath(hull, ship, fixedPts, fixedCount, ship.InverseTransformPoint(goal), true);
+        _hybridPts.Add(ship.InverseTransformPoint(dockT.position));          // 最後走進登船口
+        _hybridLoc.Add(true);
+        return CommitHybrid(ship);
+    }
+
+    /// <summary>
+    /// 自己是否已經在「接近點 → 登船口」這一段上（水平面）：
+    /// 投影超過接近點，而且離這條線的橫向距離在 approachPassWidth 以內。
+    /// </summary>
+    private bool IsPastApproach(Vector3 app, Vector3 dock)
+    {
+        Vector2 a = new Vector2(app.x, app.z);
+        Vector2 v = new Vector2(dock.x, dock.z) - a;
+        Vector2 w = new Vector2(transform.position.x, transform.position.z) - a;
+        float len2 = v.sqrMagnitude;
+        if (len2 < 0.0001f) return true;
+        float t = Vector2.Dot(w, v) / len2;
+        if (t <= 0f) return false;
+        Vector2 lateral = w - v * Mathf.Min(t, 1f);
+        return lateral.magnitude < approachPassWidth;
+    }
+
+    /// <summary>
+    /// 把 fixedPts[0..fixedCount-1]（世界座標）接到 goal，途中穿過船身輪廓就改成沿輪廓頂點繞過去。
+    /// 結果寫進 _hybridPts / _hybridLoc（尚未套用，呼叫 CommitHybrid 才生效）。
+    /// goalIsLocal = true 代表 goal 是船本地座標（會跟著船走）。回傳是否真的繞了船。
+    /// </summary>
+    private bool BuildHullPath(ShipHullOutline hull, Transform ship, Vector3[] fixedPts, int fixedCount, Vector3 goal, bool goalIsLocal)
+    {
+        using var _m = s_HullDetour.Auto();
+        _hybridPts.Clear();
+        _hybridLoc.Clear();
+
+        int n = hull.FillLocalPolygon(ship, ref s_hullPoly);
+        Vector3 goalLocal3 = goalIsLocal ? goal : ship.InverseTransformPoint(goal);
+        Vector2 goal2 = new Vector2(goalLocal3.x, goalLocal3.z);
+
+        // 找出第一段穿過輪廓的線段（最後一段是 fixedPts 的最後一點 → goal）
+        int cross = -1;
+        Vector2 a2 = default;
+        for (int i = 0; i < fixedCount; i++)
+        {
+            Vector3 p = ship.InverseTransformPoint(fixedPts[i]);
+            Vector2 p2 = new Vector2(p.x, p.z);
+            Vector2 q2;
+            if (i + 1 < fixedCount)
+            {
+                Vector3 q = ship.InverseTransformPoint(fixedPts[i + 1]);
+                q2 = new Vector2(q.x, q.z);
+            }
+            else q2 = goal2;
+
+            if (ShipHullOutline.Blocked(s_hullPoly, n, p2, q2)) { cross = i; a2 = p2; break; }
+        }
+
+        bool detoured = false;
+        if (cross >= 0 &&
+            !ShipHullOutline.PointInPolygon(s_hullPoly, n, a2) &&                // 起點在輪廓內（例如站在登船口凹槽裡）→ 不繞
+            !ShipHullOutline.PointInPolygon(s_hullPoly, n, goal2) &&
+            ShipHullOutline.ShortestRoute(s_hullPoly, n, a2, goal2, s_hullRoute))
+        {
+            for (int i = 0; i <= cross; i++) { _hybridPts.Add(fixedPts[i]); _hybridLoc.Add(false); }
+            for (int r = 0; r < s_hullRoute.Count; r++) { _hybridPts.Add(hull.CornerLocal(ship, s_hullRoute[r])); _hybridLoc.Add(true); }
+            detoured = true;
+        }
+        else
+        {
+            for (int i = 0; i < fixedCount; i++) { _hybridPts.Add(fixedPts[i]); _hybridLoc.Add(false); }
+        }
+
+        _hybridPts.Add(goal);
+        _hybridLoc.Add(goalIsLocal);
+        return detoured;
+    }
+
+    /// <summary>把 _hybridPts / _hybridLoc 設為目前路徑，回傳當下的世界座標版本（新陣列，可以存起來）。</summary>
+    private Vector3[] CommitHybrid(Transform ship)
+    {
+        hybridPoints = _hybridPts.ToArray();
+        hybridLocal = _hybridLoc.ToArray();
+        lastPathHybrid = true;
+        lastPathOnShip = false;
+        lastPathGhost = System.Array.Empty<Vector3>();
+
+        var world = new Vector3[hybridPoints.Length];
+        for (int i = 0; i < world.Length; i++)
+            world[i] = hybridLocal[i] ? ship.TransformPoint(hybridPoints[i]) : hybridPoints[i];
+        return world;
+    }
+
     public Vector3 GetTargetClosestDockingLocation()
     {
         float closestDistance = Mathf.Infinity;
@@ -430,7 +675,8 @@ public class PathFinder : MonoBehaviour, IPooled
             return System.Array.Empty<Vector3>();
         }
 
-        NavMesh.CalculatePath(s.position, e.position, NavMesh.AllAreas, path);
+        using (s_CalculatePath.Auto())
+            NavMesh.CalculatePath(s.position, e.position, NavMesh.AllAreas, path);
 
         // corners 是 property，每次存取都配一個新陣列 —— 取一次，後面都用它
         Vector3[] g = path.corners;
@@ -460,7 +706,8 @@ public class PathFinder : MonoBehaviour, IPooled
             !NavMesh.SamplePosition(endWorld, out NavMeshHit e, navSampleMaxDistance, NavMesh.AllAreas))
             return System.Array.Empty<Vector3>();
 
-        NavMesh.CalculatePath(s.position, e.position, NavMesh.AllAreas, path);
+        using (s_CalculatePath.Auto())
+            NavMesh.CalculatePath(s.position, e.position, NavMesh.AllAreas, path);
 
         // corners 是 property，每次存取都配一個新陣列 —— 原本這裡存取了兩次，取一次就好
         Vector3[] corners = path.corners;
@@ -476,6 +723,7 @@ public class PathFinder : MonoBehaviour, IPooled
     /// </summary>
     private Vector3 GetDockSpreadGoal(Vector3 dockPos)
     {
+        using var _m = s_DockSpreadGoal.Auto();
         if (dockSpreadRadius <= 0f || Mathf.Abs(laneValue) < 0.001f) return dockPos;
 
         Vector3 approach = dockPos - transform.position;
@@ -502,6 +750,7 @@ public class PathFinder : MonoBehaviour, IPooled
     /// </summary>
     private Vector3[] ApplyLaneSpread(Vector3[] corners)
     {
+        using var _m = s_LaneSpread.Auto();
         if (corners == null || corners.Length < 2) return corners;
         if (laneWidth <= 0f || Mathf.Abs(laneValue) < 0.001f) return corners;
 

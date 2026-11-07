@@ -387,6 +387,7 @@ public class AttackManager : MonoBehaviour
                 outWeapon.melee.meleeOutput = ps.GetMeleeOutputForHand(isLeftHand);
                 outWeapon.melee.meleeSpeed = Mathf.Max(0.01f, ps.GetMeleeSpeedForHand(isLeftHand));
                 outWeapon.melee.reloadTime = Mathf.Max(0f, ps.GetMeleeReloadTimeForHand(isLeftHand));
+                outWeapon.melee.dashDistance = Mathf.Max(0f, ps.GetMeleeDashDistanceForHand(isLeftHand));
             }
 
             if (changedWeapon)

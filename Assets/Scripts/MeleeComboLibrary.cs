@@ -12,6 +12,25 @@ public enum MeleeDashMode
 }
 
 /// <summary>
+/// 這一段的結構。
+///   OneStage - 突進和攻擊在同一個動畫裡（長槍、多數突刺武器）。DashStart / Brake 事件決定突進。
+///   TwoStage - 先播突進動畫（由程式控制位移），到達目標或用完最大突進距離才播攻擊動畫。
+///              已經在攻擊範圍內就直接出刀。攻擊動畫上不需要 DashStart / Brake。
+/// </summary>
+public enum MeleeStepMode
+{
+    OneStage = 0,
+    TwoStage = 1,
+}
+
+/// <summary>劍風的大小怎麼決定。</summary>
+public enum MeleeSlashScaleMode
+{
+    ArcRange = 0,   // 依這一段的 Arc Range 自動縮放（劍風半徑 = 攻擊距離），Slash Scale 是額外的倍率
+    Manual = 1,     // Slash Scale 直接當作 localScale
+}
+
+/// <summary>
 /// 連段中的一段。
 ///
 /// 【時間軸不在這裡】hitbox 開關、連段窗口、突進起點、該段結束，
@@ -58,6 +77,45 @@ public class MeleeAttackStep
     [Tooltip("ToTarget 模式：距離目標多近就停下，避免穿模")]
     public float dashStopDistance = 1.5f;
 
+    [Header("Two Stage（兩段式）")]
+    [Tooltip("OneStage：突進和攻擊在同一個動畫（長槍、突刺）。\n" +
+             "TwoStage：先播突進動畫，到達目標或用完最大突進距離才播攻擊動畫（Dash Mode 為 None 時直接出刀）。")]
+    public MeleeStepMode stepMode = MeleeStepMode.OneStage;
+
+    [Tooltip("TwoStage：左手的突進動畫 State 名稱（One_Hand_Melee_Attack 層內，建議可循環）。")]
+    public string approachStateNameLeft = "";
+
+    [Tooltip("TwoStage：右手的突進動畫 State 名稱。留空則沿用左手。")]
+    public string approachStateNameRight = "";
+
+    [Tooltip("TwoStage：進入突進動畫的過渡時間（秒）。")]
+    public float approachCrossFadeTime = 0.06f;
+
+    [Tooltip("TwoStage：突進 → 攻擊動畫的過渡時間（秒）。已在範圍內直接出刀時用上面的 Cross Fade Time。")]
+    public float strikeCrossFadeTime = 0.05f;
+
+    [Tooltip("TwoStage：這一段的突進距離倍率，乘在武器的最大突進距離上（例如終結技 1.2）。")]
+    public float dashDistanceMultiplier = 1f;
+
+    /// <summary>突進動畫的 State 名稱。右手留空則退回左手。</summary>
+    public string GetApproachStateName(bool isLeftHand)
+    {
+        if (isLeftHand) return approachStateNameLeft;
+        return string.IsNullOrWhiteSpace(approachStateNameRight) ? approachStateNameLeft : approachStateNameRight;
+    }
+
+    [Header("Hit Area（MeleeHitbox 的 Arc 判定）")]
+    [Tooltip("攻擊距離（公尺）：從角色胸口量到敵人碰撞體的表面。")]
+    public float arcRange = 3.5f;
+
+    [Tooltip("水平扇形的角度（度）。橫掃 150~180，一般揮砍 120，突刺 30~50。")]
+    [Range(10f, 360f)]
+    public float arcAngle = 120f;
+
+    [Tooltip("垂直範圍的角度（度，上下各一半）。90 = 上下各 45°。")]
+    [Range(10f, 180f)]
+    public float arcPitchAngle = 90f;
+
     [Header("Flow")]
     [Tooltip("這一段能否被 Dash 取消（給玩家逃生窗口）。\n" +
              "取消時會關閉 hitbox、停止突進、並讓當前這隻手進入冷卻。")]
@@ -66,6 +124,31 @@ public class MeleeAttackStep
     [Header("VFX / Feel")]
     [Tooltip("留空則使用 MeleeWeapon.swordSlash")]
     public GameObject slashVfxOverride;
+
+    [Header("Slash VFX（劍風，HitboxOn 時播放；用 Slash Angle Editor 調）")]
+    [Tooltip("劍風的旋轉（歐拉角，角色模型座標系）。")]
+    public Vector3 slashRotation = Vector3.zero;
+
+    [Tooltip("劍風的位置（角色模型座標系，公尺）。")]
+    public Vector3 slashOffset = new Vector3(0f, 1.1f, 0.4f);
+
+    [Tooltip("ArcRange：劍風半徑自動等於 Arc Range，Slash Scale 是額外倍率（1 = 剛好）。Manual：Slash Scale 直接當 localScale。")]
+    public MeleeSlashScaleMode slashScaleMode = MeleeSlashScaleMode.ArcRange;
+
+    [Tooltip("ArcRange 模式：倍率；Manual 模式：localScale。")]
+    public float slashScale = 1f;
+
+    [Tooltip("揮擊方向反過來（左右鏡像劍風）。")]
+    public bool slashFlip = false;
+
+    [Tooltip("HitboxOn 之後延遲幾秒才播（秒）。")]
+    [Min(0f)] public float slashDelay = 0f;
+
+    [Tooltip("右手個別設定。不勾 = 右手自動用左手設定的左右鏡像。")]
+    public bool slashRightHandOverride = false;
+    public Vector3 slashRotationRight = Vector3.zero;
+    public Vector3 slashOffsetRight = new Vector3(0f, 1.1f, 0.4f);
+    public bool slashFlipRight = false;
 
     [Tooltip("命中時的頓幀時長（秒，unscaled）。0 = 不頓幀")]
     public float hitStopDuration = 0f;

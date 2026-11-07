@@ -1,0 +1,6690 @@
+{
+ "cell_size_m": 100.0,
+ "unit_height_m": 24.5,
+ "origin_blender": [
+  500.0,
+  0.0,
+  0.0
+ ],
+ "note": "rot_z：Blender 中繞 Z 軸逆時針的角度（相對模組旋轉 0 的標準朝向）。pos_unity_expected / rot_y_unity_expected 是依 FBX 匯出設定推算的 Unity 座標，請先用 README 的方法驗證一次。",
+ "pieces": [
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P1",
+   "cell": [
+    0,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    550.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P1",
+   "cell": [
+    0,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P1",
+   "cell": [
+    0,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CapCorner",
+   "group": "P1",
+   "cell": [
+    0,
+    1
+   ],
+   "unit": 4,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    150.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    98.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P1",
+   "cell": [
+    0,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    550.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P1",
+   "cell": [
+    0,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    0,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P1",
+   "cell": [
+    0,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    0,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    0,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P1",
+   "cell": [
+    0,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P1",
+   "cell": [
+    0,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 180,
+   "pos_blender": [
+    550.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P1",
+   "cell": [
+    0,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    550.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapCorner",
+   "group": "P1",
+   "cell": [
+    0,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    550.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P1",
+   "cell": [
+    1,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P1",
+   "cell": [
+    1,
+    0
+   ],
+   "unit": 1,
+   "rot_z": 90,
+   "pos_blender": [
+    650.0,
+    50.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    24.5,
+    -50.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    1
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    150.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    24.5,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    1,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P1",
+   "cell": [
+    1,
+    1
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    150.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    98.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    650.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    250.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    73.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    250.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    122.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    3
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    350.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    24.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    3
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    350.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    73.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    1,
+    3
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    350.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    122.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 180,
+   "pos_blender": [
+    650.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    650.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P1",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    650.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P1",
+   "cell": [
+    2,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P1",
+   "cell": [
+    2,
+    0
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    50.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    24.5,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P1",
+   "cell": [
+    2,
+    0
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    750.0,
+    50.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    49.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P1",
+   "cell": [
+    2,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    1
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    150.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    24.5,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    1
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    150.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    73.5,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CapCorner",
+   "group": "P1",
+   "cell": [
+    2,
+    1
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    150.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    98.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_X",
+   "group": "P1",
+   "cell": [
+    2,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    2
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    250.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    73.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    2
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    250.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    122.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P1",
+   "cell": [
+    2,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    3
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    350.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    24.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    3
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    350.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    73.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P1",
+   "cell": [
+    2,
+    3
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    350.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    122.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P1",
+   "cell": [
+    2,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P1",
+   "cell": [
+    2,
+    4
+   ],
+   "unit": 1,
+   "rot_z": 180,
+   "pos_blender": [
+    750.0,
+    450.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    24.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    2,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    750.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P1",
+   "cell": [
+    2,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    750.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P1",
+   "cell": [
+    3,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    850.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CornerHalf",
+   "group": "P1",
+   "cell": [
+    3,
+    0
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    850.0,
+    50.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    49.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    3,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P1",
+   "cell": [
+    3,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P1",
+   "cell": [
+    3,
+    1
+   ],
+   "unit": 3,
+   "rot_z": 180,
+   "pos_blender": [
+    850.0,
+    150.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    73.5,
+    -150.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P1",
+   "cell": [
+    3,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P1",
+   "cell": [
+    3,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    3,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P1",
+   "cell": [
+    3,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    850.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    3,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P1",
+   "cell": [
+    3,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P1",
+   "cell": [
+    3,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P1",
+   "cell": [
+    3,
+    3
+   ],
+   "unit": 5,
+   "rot_z": 180,
+   "pos_blender": [
+    850.0,
+    350.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    122.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P1",
+   "cell": [
+    3,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P1",
+   "cell": [
+    3,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P1",
+   "cell": [
+    3,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P2",
+   "cell": [
+    5,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1050.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P2",
+   "cell": [
+    5,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P2",
+   "cell": [
+    5,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CapCornerRound",
+   "group": "P2",
+   "cell": [
+    5,
+    1
+   ],
+   "unit": 4,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    150.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    98.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P2",
+   "cell": [
+    5,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1050.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P2",
+   "cell": [
+    5,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    5,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P2",
+   "cell": [
+    5,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    5,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    5,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P2",
+   "cell": [
+    5,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P2",
+   "cell": [
+    5,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 180,
+   "pos_blender": [
+    1050.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P2",
+   "cell": [
+    5,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    1050.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapCornerRound",
+   "group": "P2",
+   "cell": [
+    5,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    1050.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P2",
+   "cell": [
+    6,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    6,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    6,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P2",
+   "cell": [
+    6,
+    1
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    150.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    98.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P2",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    73.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    122.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    3
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    350.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    24.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    3
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    350.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    73.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    6,
+    3
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    350.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    122.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    6,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    6,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P2",
+   "cell": [
+    6,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P2",
+   "cell": [
+    7,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P2",
+   "cell": [
+    7,
+    0
+   ],
+   "unit": 1,
+   "rot_z": 90,
+   "pos_blender": [
+    1250.0,
+    50.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    24.5,
+    -50.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P2",
+   "cell": [
+    7,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    1
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    150.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    24.5,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    7,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P2",
+   "cell": [
+    7,
+    1
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    150.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    98.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_X",
+   "group": "P2",
+   "cell": [
+    7,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    2
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    250.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    73.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    2
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    250.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    122.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P2",
+   "cell": [
+    7,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    3
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    350.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    24.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    3
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    350.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    73.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    7,
+    3
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    350.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    122.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P2",
+   "cell": [
+    7,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1250.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P2",
+   "cell": [
+    7,
+    4
+   ],
+   "unit": 1,
+   "rot_z": 180,
+   "pos_blender": [
+    1250.0,
+    450.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    24.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    7,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    1250.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P2",
+   "cell": [
+    7,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    1250.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    8,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P2",
+   "cell": [
+    8,
+    0
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    1350.0,
+    50.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    49.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    1
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    150.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    24.5,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    1
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    150.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    73.5,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CapCornerRound",
+   "group": "P2",
+   "cell": [
+    8,
+    1
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    150.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    98.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P2",
+   "cell": [
+    8,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1350.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    2
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    250.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    73.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    2
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    250.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    122.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    3
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    350.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    24.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    3
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    350.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    73.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P2",
+   "cell": [
+    8,
+    3
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    350.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    122.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 180,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P2",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Corner",
+   "group": "P2",
+   "cell": [
+    9,
+    0
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1450.0,
+    50.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    0.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CornerHalf",
+   "group": "P2",
+   "cell": [
+    9,
+    0
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1450.0,
+    50.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    49.0,
+    -50.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    9,
+    1
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    150.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    0.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P2",
+   "cell": [
+    9,
+    1
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    150.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    49.0,
+    -150.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P2",
+   "cell": [
+    9,
+    1
+   ],
+   "unit": 3,
+   "rot_z": 180,
+   "pos_blender": [
+    1450.0,
+    150.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    73.5,
+    -150.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P2",
+   "cell": [
+    9,
+    2
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    250.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    0.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P2",
+   "cell": [
+    9,
+    2
+   ],
+   "unit": 1,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    250.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    24.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    9,
+    2
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    250.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    49.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P2",
+   "cell": [
+    9,
+    2
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    1450.0,
+    250.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    98.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    9,
+    3
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    350.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    0.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P2",
+   "cell": [
+    9,
+    3
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    350.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    49.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P2",
+   "cell": [
+    9,
+    3
+   ],
+   "unit": 4,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    350.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    98.0,
+    -350.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P2",
+   "cell": [
+    9,
+    3
+   ],
+   "unit": 5,
+   "rot_z": 180,
+   "pos_blender": [
+    1450.0,
+    350.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    122.5,
+    -350.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P2",
+   "cell": [
+    9,
+    4
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    450.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    0.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P2",
+   "cell": [
+    9,
+    4
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    450.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    49.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P2",
+   "cell": [
+    9,
+    4
+   ],
+   "unit": 4,
+   "rot_z": 90,
+   "pos_blender": [
+    1450.0,
+    450.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1450.0,
+    98.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P3",
+   "cell": [
+    0,
+    6
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    550.0,
+    650.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -650.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P3",
+   "cell": [
+    0,
+    7
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    550.0,
+    750.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_CornerHalf",
+   "group": "P3",
+   "cell": [
+    0,
+    7
+   ],
+   "unit": 1,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    750.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    24.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CapCorner",
+   "group": "P3",
+   "cell": [
+    0,
+    7
+   ],
+   "unit": 2,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    750.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    49.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P3",
+   "cell": [
+    0,
+    8
+   ],
+   "unit": 0,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    850.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P3",
+   "cell": [
+    0,
+    8
+   ],
+   "unit": 2,
+   "rot_z": 270,
+   "pos_blender": [
+    550.0,
+    850.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    49.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P3",
+   "cell": [
+    0,
+    9
+   ],
+   "unit": 0,
+   "rot_z": 180,
+   "pos_blender": [
+    550.0,
+    950.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    0.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapCornerRound",
+   "group": "P3",
+   "cell": [
+    0,
+    9
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    550.0,
+    950.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -550.0,
+    49.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P3",
+   "cell": [
+    1,
+    6
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    650.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -650.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_X",
+   "group": "P3",
+   "cell": [
+    1,
+    7
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    750.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P3",
+   "cell": [
+    1,
+    7
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    750.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    24.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P3",
+   "cell": [
+    1,
+    7
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    750.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    49.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P3",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P3",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    24.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P3",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    49.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P3",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    73.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P3",
+   "cell": [
+    1,
+    9
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    950.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    0.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P3",
+   "cell": [
+    1,
+    9
+   ],
+   "unit": 1,
+   "rot_z": 180,
+   "pos_blender": [
+    650.0,
+    950.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    24.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P3",
+   "cell": [
+    1,
+    9
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    650.0,
+    950.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    49.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P3",
+   "cell": [
+    2,
+    6
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    650.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -650.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P3",
+   "cell": [
+    2,
+    6
+   ],
+   "unit": 1,
+   "rot_z": 90,
+   "pos_blender": [
+    750.0,
+    650.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    24.5,
+    -650.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P3",
+   "cell": [
+    2,
+    7
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    750.0,
+    750.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P3",
+   "cell": [
+    2,
+    7
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    750.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    24.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_CapCornerRound",
+   "group": "P3",
+   "cell": [
+    2,
+    7
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    750.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    49.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P3",
+   "cell": [
+    2,
+    8
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    850.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P3",
+   "cell": [
+    2,
+    8
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    850.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    24.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P3",
+   "cell": [
+    2,
+    8
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    850.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    49.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Fill",
+   "group": "P3",
+   "cell": [
+    2,
+    8
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    750.0,
+    850.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    73.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P3",
+   "cell": [
+    2,
+    9
+   ],
+   "unit": 0,
+   "rot_z": 180,
+   "pos_blender": [
+    750.0,
+    950.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    0.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CapEdge",
+   "group": "P3",
+   "cell": [
+    2,
+    9
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    750.0,
+    950.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    49.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P3",
+   "cell": [
+    3,
+    6
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    850.0,
+    650.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -650.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_POD_Gate_I",
+   "group": "P3",
+   "cell": [
+    3,
+    7
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    750.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P3",
+   "cell": [
+    3,
+    7
+   ],
+   "unit": 1,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    750.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    24.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P3",
+   "cell": [
+    3,
+    7
+   ],
+   "unit": 2,
+   "rot_z": 180,
+   "pos_blender": [
+    850.0,
+    750.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    49.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_Edge",
+   "group": "P3",
+   "cell": [
+    3,
+    8
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    850.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_EdgeHalf",
+   "group": "P3",
+   "cell": [
+    3,
+    8
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    850.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    49.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_Ramp",
+   "group": "P3",
+   "cell": [
+    3,
+    8
+   ],
+   "unit": 3,
+   "rot_z": 180,
+   "pos_blender": [
+    850.0,
+    850.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    73.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P3",
+   "cell": [
+    3,
+    9
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    950.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    0.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_POD_CornerRound",
+   "group": "P3",
+   "cell": [
+    3,
+    9
+   ],
+   "unit": 2,
+   "rot_z": 90,
+   "pos_blender": [
+    850.0,
+    950.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    49.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_BASE_N_GateX",
+   "group": "T1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 6,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    250.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    147.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Start",
+   "group": "T1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 7,
+   "rot_z": 270,
+   "pos_blender": [
+    650.0,
+    250.0,
+    171.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    171.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 8,
+   "rot_z": 270,
+   "pos_blender": [
+    650.0,
+    250.0,
+    196.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    196.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_FLR_N_Silo_End",
+   "group": "T1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 9,
+   "rot_z": 270,
+   "pos_blender": [
+    650.0,
+    250.0,
+    220.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    220.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 10,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    250.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    245.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 11,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    250.0,
+    269.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    269.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_TOP_N_Tower",
+   "group": "T1",
+   "cell": [
+    1,
+    2
+   ],
+   "unit": 12,
+   "rot_z": 270,
+   "pos_blender": [
+    650.0,
+    250.0,
+    294.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    294.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_BASE_W",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 6,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    450.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    147.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 8,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    450.0,
+    196.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    196.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_ToN",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 9,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    450.0,
+    220.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    220.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 10,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    450.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    245.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 11,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    450.0,
+    269.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    269.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 12,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    450.0,
+    294.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    294.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    450.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    318.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 14,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    450.0,
+    343.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    343.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_TOP_N_Tower",
+   "group": "T2",
+   "cell": [
+    1,
+    4
+   ],
+   "unit": 15,
+   "rot_z": 180,
+   "pos_blender": [
+    650.0,
+    450.0,
+    367.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    367.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_BASE_W_GateI",
+   "group": "T3",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 6,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    147.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_ToN",
+   "group": "T3",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 7,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    171.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    171.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T3",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 8,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    196.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    196.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T3",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 9,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    220.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    220.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T3",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 10,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    245.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T3",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 11,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    269.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    269.5,
+    -250.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_TOP_N_Tower",
+   "group": "T3",
+   "cell": [
+    6,
+    2
+   ],
+   "unit": 12,
+   "rot_z": 270,
+   "pos_blender": [
+    1150.0,
+    250.0,
+    294.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    294.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_BASE_W_GateI",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 6,
+   "rot_z": 270,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    147.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_FLR_W_ToN",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 7,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    171.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    171.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 8,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    196.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    196.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_FromN",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 9,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    220.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    220.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 10,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    245.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 11,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    269.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    269.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_ToN",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 12,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    294.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    294.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    318.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 14,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    343.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    343.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_FromN",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 15,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    367.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    367.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 16,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    392.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    392.0,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_TOP_W_Cap",
+   "group": "T4",
+   "cell": [
+    8,
+    4
+   ],
+   "unit": 17,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    450.0,
+    416.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    416.5,
+    -450.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_BASE_W_GateL",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 4,
+   "rot_z": 180,
+   "pos_blender": [
+    650.0,
+    850.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    98.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    122.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 6,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    147.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 7,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    171.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    171.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 8,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    196.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    196.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_ToN",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 9,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    220.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    220.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 10,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    245.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 11,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    269.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    269.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 12,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    294.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    294.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    318.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 14,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    850.0,
+    343.0
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    343.0,
+    -850.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_TOP_N_Tower",
+   "group": "T5",
+   "cell": [
+    1,
+    8
+   ],
+   "unit": 15,
+   "rot_z": 180,
+   "pos_blender": [
+    650.0,
+    850.0,
+    367.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    367.5,
+    -850.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_BASE_N_GateX",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 0,
+   "rot_z": 270,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    0.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    24.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    49.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    73.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    98.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_FromN",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    122.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 6,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    147.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 7,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    171.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    171.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_ToN",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 8,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    196.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    196.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Start",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 9,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    220.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    220.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 10,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    245.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 11,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    269.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    269.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Silo_End",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 12,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    294.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    294.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    318.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_TOP_N_Tower",
+   "group": "T6",
+   "cell": [
+    6,
+    7
+   ],
+   "unit": 14,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    750.0,
+    343.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    343.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_BASE_N_GateX",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 0,
+   "rot_z": 180,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    0.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    24.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    49.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    73.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    98.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Start",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    122.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 6,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    147.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_End",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 7,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    171.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    171.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 8,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    196.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    196.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Start",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 9,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    220.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    220.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 10,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    245.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 11,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    269.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    269.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_End",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 12,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    294.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    294.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    318.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 14,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    343.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    343.0,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_TOP_N_Tower",
+   "group": "T7",
+   "cell": [
+    8,
+    7
+   ],
+   "unit": 15,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    750.0,
+    367.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    367.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_BASE_W_GateI",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 0,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    0.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_ToN",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    24.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    49.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 3,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    73.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 4,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    98.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 5,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    122.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 6,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    147.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 7,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    171.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    171.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Start",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 8,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    196.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    196.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 9,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    220.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    220.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 10,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    245.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 11,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    269.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    269.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Silo_End",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 12,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    294.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    294.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    318.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Plain",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 14,
+   "rot_z": 0,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    343.0
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    343.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_TOP_N_Tower",
+   "group": "T8",
+   "cell": [
+    6,
+    9
+   ],
+   "unit": 15,
+   "rot_z": 180,
+   "pos_blender": [
+    1150.0,
+    950.0,
+    367.5
+   ],
+   "pos_unity_expected": [
+    -1150.0,
+    367.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 180
+  },
+  {
+   "module": "BLD_BASE_W_GateI",
+   "group": "T9",
+   "cell": [
+    8,
+    9
+   ],
+   "unit": 0,
+   "rot_z": 90,
+   "pos_blender": [
+    1350.0,
+    950.0,
+    0.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    0.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_FLR_W_Plain",
+   "group": "T9",
+   "cell": [
+    8,
+    9
+   ],
+   "unit": 1,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    950.0,
+    24.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    24.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_W_ToN",
+   "group": "T9",
+   "cell": [
+    8,
+    9
+   ],
+   "unit": 2,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    950.0,
+    49.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    49.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Start",
+   "group": "T9",
+   "cell": [
+    8,
+    9
+   ],
+   "unit": 3,
+   "rot_z": 90,
+   "pos_blender": [
+    1350.0,
+    950.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    73.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_FLR_N_Silo_Mid",
+   "group": "T9",
+   "cell": [
+    8,
+    9
+   ],
+   "unit": 4,
+   "rot_z": 90,
+   "pos_blender": [
+    1350.0,
+    950.0,
+    98.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    98.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_FLR_N_Silo_End",
+   "group": "T9",
+   "cell": [
+    8,
+    9
+   ],
+   "unit": 5,
+   "rot_z": 90,
+   "pos_blender": [
+    1350.0,
+    950.0,
+    122.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    122.5,
+    -950.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_TOP_N_Tower",
+   "group": "T9",
+   "cell": [
+    8,
+    9
+   ],
+   "unit": 6,
+   "rot_z": 90,
+   "pos_blender": [
+    1350.0,
+    950.0,
+    147.0
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    147.0,
+    -950.0
+   ],
+   "rot_y_unity_expected": 270
+  },
+  {
+   "module": "BLD_BRG_End",
+   "group": "Bridges",
+   "cell": [
+    2,
+    2
+   ],
+   "unit": 10,
+   "rot_z": 270,
+   "pos_blender": [
+    750.0,
+    250.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -750.0,
+    245.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_BRG_Span",
+   "group": "Bridges",
+   "cell": [
+    3,
+    2
+   ],
+   "unit": 10,
+   "rot_z": 270,
+   "pos_blender": [
+    850.0,
+    250.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -850.0,
+    245.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_BRG_Span",
+   "group": "Bridges",
+   "cell": [
+    4,
+    2
+   ],
+   "unit": 10,
+   "rot_z": 270,
+   "pos_blender": [
+    950.0,
+    250.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -950.0,
+    245.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_BRG_Span",
+   "group": "Bridges",
+   "cell": [
+    5,
+    2
+   ],
+   "unit": 10,
+   "rot_z": 270,
+   "pos_blender": [
+    1050.0,
+    250.0,
+    245.0
+   ],
+   "pos_unity_expected": [
+    -1050.0,
+    245.0,
+    -250.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_BRG_End",
+   "group": "Bridges",
+   "cell": [
+    1,
+    5
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    550.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    318.5,
+    -550.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_BRG_Span",
+   "group": "Bridges",
+   "cell": [
+    1,
+    6
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    650.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    318.5,
+    -650.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_BRG_Span",
+   "group": "Bridges",
+   "cell": [
+    1,
+    7
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    650.0,
+    750.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -650.0,
+    318.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_BRG_End",
+   "group": "Bridges",
+   "cell": [
+    7,
+    7
+   ],
+   "unit": 3,
+   "rot_z": 270,
+   "pos_blender": [
+    1250.0,
+    750.0,
+    73.5
+   ],
+   "pos_unity_expected": [
+    -1250.0,
+    73.5,
+    -750.0
+   ],
+   "rot_y_unity_expected": 90
+  },
+  {
+   "module": "BLD_BRG_End",
+   "group": "Bridges",
+   "cell": [
+    8,
+    5
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    550.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    318.5,
+    -550.0
+   ],
+   "rot_y_unity_expected": 0
+  },
+  {
+   "module": "BLD_BRG_Span",
+   "group": "Bridges",
+   "cell": [
+    8,
+    6
+   ],
+   "unit": 13,
+   "rot_z": 0,
+   "pos_blender": [
+    1350.0,
+    650.0,
+    318.5
+   ],
+   "pos_unity_expected": [
+    -1350.0,
+    318.5,
+    -650.0
+   ],
+   "rot_y_unity_expected": 0
+  }
+ ]
+}

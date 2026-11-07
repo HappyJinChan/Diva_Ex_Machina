@@ -71,8 +71,22 @@ public class MeleeAttackController : MonoBehaviour
              "取消＝保留：冷卻一結束立刻開新的一串連段，攻擊壓力更大但比較難停手。")]
     [SerializeField] private bool dropBufferDuringFinisher = true;
 
+    [Header("Slash VFX")]
+    [Tooltip("播放劍風的元件。留空會在角色模型（PlayerAnimation 的物件）上找，沒有就自動加一個。")]
+    [SerializeField] private MeleeSlashVfx slashVfx;
+
+    [Header("Two Stage")]
+    [Tooltip("武器沒有最大突進距離（Melee Dash Range = 0）時使用的預設值（公尺）。")]
+    [SerializeField] private float defaultDashDistance = 15f;
+
+    [Tooltip("突進階段的保險絲：預估時間（距離 ÷ 速度）再多等這麼久還沒到達，就直接出刀。")]
+    [SerializeField] private float approachTimeoutPadding = 0.4f;
+
     [Header("Debug")]
     [SerializeField] private bool logStateChanges = false;
+
+    [Tooltip("攻擊不是照 StepEnd 正常結束時（Dash / 突擊推進取消、保險絲、突進逾時），在 Console 印出原因。")]
+    [SerializeField] private bool logAbnormalEnds = true;
 
     // ───── 連段狀態（單一實例，因為同時只有一隻手在揮）─────
 
@@ -89,19 +103,28 @@ public class MeleeAttackController : MonoBehaviour
     private bool _dashEnergyResolved;
     private bool _dashEmpowered;           // true = 有能量的強化模式
 
-    // 彈藥條：這一段開始與結束時的 fill 值，段內依動畫進度插值
-    private float _barFillFrom = 1f;
-    private float _barFillTo = 1f;
-    private int _activeStateHash;
-
     private float _stepDeadline;           // maxStepDuration 保險絲的到期時刻
     private float _leftCooldownUntil;      // 左手冷卻到什麼時候
     private float _rightCooldownUntil;
 
     private int _meleeLayerIndex = -1;
 
+    // 兩段式：突進階段中（突進動畫播放、還沒出刀）
+    private bool _approaching;
+    private float _approachDeadline;
+
+    // 目前這一段正在播的 State（攻擊 / 突進）。只接受這兩個 State 發出的 Animation Event
+    private int _activeStateHash;
+    private int _approachStateHash;
+
     public bool IsAttacking => _attacking;
+
+    /// <summary>兩段式的突進階段中（還沒出刀）。</summary>
+    public bool IsApproaching => _approaching;
     public int ComboIndex => _comboIndex;
+
+    /// <summary>正在揮擊的那把武器的 hitbox（沒有在攻擊 = null）。給 AttackEffectGate 判斷「是不是這把武器在揮」。</summary>
+    public MeleeHitbox ActiveHitbox => (_attacking && _activeWeapon != null) ? _activeWeapon.melee.hitbox : null;
 
     /// <summary>
     /// 這個緩衝中的輸入在當前狀態下是否「永遠等不到」被消耗的機會。
@@ -142,6 +165,12 @@ public class MeleeAttackController : MonoBehaviour
         if (playerMovement == null)
             playerMovement = FindAnyObjectByType<PlayerMovement>();
 
+        if (slashVfx == null && playerAnimation != null)
+        {
+            slashVfx = playerAnimation.GetComponent<MeleeSlashVfx>();
+            if (slashVfx == null) slashVfx = playerAnimation.gameObject.AddComponent<MeleeSlashVfx>();
+        }
+
         if (playerAnimation != null && playerAnimation.anim != null)
         {
             _meleeLayerIndex = playerAnimation.anim.GetLayerIndex(meleeLayerName);
@@ -162,10 +191,19 @@ public class MeleeAttackController : MonoBehaviour
         {
             Debug.LogWarning($"[MeleeAttackController] '{GetActiveStateName()}' 超過 maxStepDuration 才結束。" +
                              $"檢查這個 clip 上有沒有放 AnimEvent_MeleeStepEnd。", this);
-            OnStepEnd();
+            EndStep("保險絲（Max Step Duration）");
         }
 
-        UpdateActiveBarFill();
+        // 兩段式保險絲：突進太久還沒到達（例如被擋住）→ 直接出刀
+        if (_approaching && Time.time >= _approachDeadline)
+        {
+            if (logAbnormalEnds)
+                Debug.Log($"[Melee] 突進逾時，直接出刀：'{GetActiveStateName()}'" +
+                          (playerMovement != null && !playerMovement.IsMeleeDashing ? "（突進已被外部停掉，例如換裝硬直）" : "（被擋住或追不上）"), this);
+            if (playerMovement != null) playerMovement.StopMeleeDash("ApproachTimeout");
+            OnApproachArrived();
+        }
+
         PushCooldownToUI();
 
         if (attackManager != null) attackManager.PushAmmoUI();
@@ -248,12 +286,11 @@ public class MeleeAttackController : MonoBehaviour
         w.meleeRuntime.attacking = true;
         w.meleeRuntime.comboIndex = playedIndex;
 
-        // 彈藥條：剩餘段數 / 總段數。
-        // 接手的瞬間直接跳到 From —— 換手時共用計數器已經走了很遠，
-        // 這個跳動正是在告訴玩家「你接的是第幾段」。
-        _barFillFrom = (float)(stepCount - playedIndex) / stepCount;
-        _barFillTo = (float)(stepCount - playedIndex - 1) / stepCount;
-        w.meleeRuntime.barFill = _barFillFrom;
+        // 彈藥條：像子彈一樣，這一段一觸發就立刻扣掉一格 → 剩餘段數 / 總段數。
+        // 換手時共用計數器已經走了很遠，會直接跳到對應的格數 —— 這個跳動正是在告訴玩家「你接的是第幾段」。
+        // 終結技一定是最後一段，所以直接扣到 0（這一串結束了）。
+        // 斷招 / 被 Dash 取消：已經扣掉的不退回，BeginCooldown 會把剩下的歸零再填回。
+        w.meleeRuntime.barFill = (float)(stepCount - playedIndex - 1) / stepCount;
 
         // 上一段的 hitbox 可能還開著（連段接得很快時），先關掉
         CloseAllHitboxes();
@@ -263,11 +300,17 @@ public class MeleeAttackController : MonoBehaviour
             playerMovement.StopMeleeDash("NextComboStep");
 
         float speed = Mathf.Max(0.01f, w.melee.meleeSpeed);
-        _stepDeadline = (step.maxStepDuration > 0f)
-            ? Time.time + (step.maxStepDuration / speed)
-            : 0f;
+        _approaching = false;
 
-        PlayAnimation(step, isLeft, speed);
+        if (IsTwoStage(step))
+        {
+            BeginApproach(w, step, isLeft);
+        }
+        else
+        {
+            SetStepDeadline(step);
+            PlayAnimation(step, isLeft, speed);
+        }
 
         if (logStateChanges)
         {
@@ -277,7 +320,128 @@ public class MeleeAttackController : MonoBehaviour
         }
     }
 
-    private void PlayAnimation(MeleeAttackStep step, bool isLeft, float speed)
+    // ────────────────────────────────────────────────
+    //  兩段式：突進 → 到達 → 出刀
+    // ────────────────────────────────────────────────
+
+    private static bool IsTwoStage(MeleeAttackStep step) =>
+        step != null && step.stepMode == MeleeStepMode.TwoStage && step.dashMode != MeleeDashMode.None;
+
+    private void SetStepDeadline(MeleeAttackStep step)
+    {
+        float speed = (_activeWeapon != null) ? Mathf.Max(0.01f, _activeWeapon.melee.meleeSpeed) : 1f;
+        _stepDeadline = (step.maxStepDuration > 0f) ? Time.time + (step.maxStepDuration / speed) : 0f;
+    }
+
+    private float GetMaxDashDistance(Weapon w, MeleeAttackStep step)
+    {
+        float baseDist = (w != null && w.melee.dashDistance > 0f) ? w.melee.dashDistance : defaultDashDistance;
+        return baseDist * Mathf.Max(0f, step.dashDistanceMultiplier);
+    }
+
+    /// <summary>
+    /// 開始突進階段。已在攻擊範圍內 → 直接出刀；否則播突進動畫，由 PlayerMovement 衝到
+    /// 目標（停止距離）或用完最大突進距離，再回呼 OnApproachArrived 出刀。
+    /// 沒有目標時沿面向衝滿最大突進距離。
+    /// </summary>
+    private void BeginApproach(Weapon w, MeleeAttackStep step, bool isLeft)
+    {
+        Rigidbody target = (step.dashMode == MeleeDashMode.ToTarget) ? ResolveMeleeTarget() : null;
+
+        if (playerMovement == null ||
+            (target != null && playerMovement.IsWithinMeleeStopDistance(target, step.dashStopDistance)))
+        {
+            PlayStrike(step, isLeft, fromApproach: false);
+            return;
+        }
+
+        float dashSpeed = ResolveDashSpeed();
+        float maxDist = GetMaxDashDistance(w, step);
+        if (dashSpeed <= 0f || maxDist <= 0f)
+        {
+            PlayStrike(step, isLeft, fromApproach: false);
+            return;
+        }
+
+        Vector3 dir = (target != null)
+            ? (target.position - playerMovement.transform.position)
+            : GetFacingDirection();
+
+        _approaching = true;
+        _stepDeadline = 0f;   // 保險絲從出刀才開始算
+        _activeStateHash = 0; // 上一段攻擊動畫的事件一律不接受
+        _approachDeadline = Time.time + maxDist / dashSpeed + approachTimeoutPadding;
+
+        PlayApproachAnimation(step, isLeft);
+
+        if (logStateChanges)
+            Debug.Log($"[Melee] approach start: target={(target != null ? target.name : "none")} " +
+                      $"maxDist={maxDist:F1} speed={dashSpeed:F1}", this);
+
+        // 到達時 PlayerMovement 會呼叫 OnApproachArrived（可能就在這一行裡面，例如方向無效時）
+        playerMovement.BeginMeleeDash(dir, dashSpeed, target, step.dashStopDistance, maxDist, OnApproachArrived);
+    }
+
+    /// <summary>到達 / 距離用完 / 目標消失 / 保險絲：結束突進階段，出刀。</summary>
+    private void OnApproachArrived()
+    {
+        if (!_approaching || !_attacking || _activeStep == null) return;
+        _approaching = false;
+
+        if (logStateChanges) Debug.Log("[Melee] approach arrived → strike", this);
+
+        PlayStrike(_activeStep, _activeIsLeft, fromApproach: true);
+    }
+
+    private void PlayStrike(MeleeAttackStep step, bool isLeft, bool fromApproach)
+    {
+        SetStepDeadline(step);
+        float speed = (_activeWeapon != null) ? Mathf.Max(0.01f, _activeWeapon.melee.meleeSpeed) : 1f;
+        PlayAnimation(step, isLeft, speed, fromApproach ? step.strikeCrossFadeTime : step.crossFadeTime);
+    }
+
+    private void PlayApproachAnimation(MeleeAttackStep step, bool isLeft)
+    {
+        if (playerAnimation == null || playerAnimation.anim == null || _meleeLayerIndex < 0) return;
+
+        string stateName = step.GetApproachStateName(isLeft);
+        if (string.IsNullOrWhiteSpace(stateName))
+        {
+            Debug.LogWarning($"[MeleeAttackController] TwoStage 的段沒有設定 Approach State Name，突進時不會換動畫。", this);
+            return;
+        }
+
+        _approachStateHash = Animator.StringToHash(stateName);
+        playerAnimation.SetToAttackLayer();
+        playerAnimation.anim.CrossFade(stateName, step.approachCrossFadeTime, _meleeLayerIndex, 0f);
+    }
+
+    /// <summary>
+    /// 這一段的突進速度。能量在「這一串連段第一個真正突進的段」結算一次：
+    ///   夠 → 扣能量，使用 dashSpeed；不夠 → 不扣，退化成 sprintSpeed。
+    /// 之後同一串的突進段沿用第一次的結果。
+    /// </summary>
+    private float ResolveDashSpeed()
+    {
+        var ps = PlayerStats.Instance;
+        if (ps == null) return 0f;
+
+        if (!_dashEnergyResolved)
+        {
+            _dashEmpowered = (ps.currentEnergy >= ps.dashEnergyCost);
+            if (_dashEmpowered)
+                ps.currentEnergy -= ps.dashEnergyCost;
+
+            _dashEnergyResolved = true;
+
+            if (logStateChanges)
+                Debug.Log($"[Melee] dash energy resolved: {(_dashEmpowered ? "EMPOWERED" : "WEAKENED")}", this);
+        }
+
+        return _dashEmpowered ? ps.dashSpeed : ps.sprintSpeed;
+    }
+
+    private void PlayAnimation(MeleeAttackStep step, bool isLeft, float speed, float crossFade = -1f)
     {
         if (playerAnimation == null || playerAnimation.anim == null) return;
         if (_meleeLayerIndex < 0) return;
@@ -290,7 +454,7 @@ public class MeleeAttackController : MonoBehaviour
         // 等基本連段跑通再處理。
         string stateName = step.GetStateName(isLeft);
         _activeStateHash = Animator.StringToHash(stateName);
-        playerAnimation.anim.CrossFade(stateName, step.crossFadeTime, _meleeLayerIndex, 0f);
+        playerAnimation.anim.CrossFade(stateName, crossFade >= 0f ? crossFade : step.crossFadeTime, _meleeLayerIndex, 0f);
     }
 
     // ────────────────────────────────────────────────
@@ -301,6 +465,13 @@ public class MeleeAttackController : MonoBehaviour
     public void OnHitboxOn()
     {
         if (!_attacking || _activeWeapon == null || _activeStep == null) return;
+
+        // 劍風：這一段有設定就用這一段的，否則用武器的（MeleeWeapon.swordSlash）
+        if (slashVfx != null)
+        {
+            GameObject slashPrefab = _activeStep.slashVfxOverride != null ? _activeStep.slashVfxOverride : _activeWeapon.melee.slashVfx;
+            slashVfx.Play(slashPrefab, _activeStep, _activeIsLeft);
+        }
 
         var hitbox = _activeWeapon.melee.hitbox;
         if (hitbox == null)
@@ -325,6 +496,11 @@ public class MeleeAttackController : MonoBehaviour
             criticalMultiplier = _activeWeapon.damage.criticalMultiplier,
             knockback = _activeStep.knockback,
             hittableLayers = hittableLayers,
+            // Arc 判定：扇形的原點與面向跟著角色模型，形狀來自這一段
+            facing = (playerAnimation != null) ? playerAnimation.transform : null,
+            arcRange = _activeStep.arcRange,
+            arcAngle = _activeStep.arcAngle,
+            arcPitchAngle = _activeStep.arcPitchAngle,
         });
 
         // 訂閱命中事件。先退訂再訂閱，避免同一個 hitbox 被重複掛上
@@ -337,9 +513,9 @@ public class MeleeAttackController : MonoBehaviour
         // 方案 B：命中判定開始時錨定到目標，繼承其部分速度。
         // 高速交戰下，不錨定的話 dashStopDistance 只夠撐不到一個物理幀，
         // 打中了也會立刻滑開、接不上下一段。
-        if (playerMovement != null && PlayerAiming.Instance != null)
+        if (playerMovement != null)
         {
-            var targetRb = PlayerAiming.Instance.GetTargetRigidbody();
+            var targetRb = ResolveMeleeTarget();
             if (targetRb != null)
                 playerMovement.BeginMeleeAnchor(targetRb);
         }
@@ -361,39 +537,46 @@ public class MeleeAttackController : MonoBehaviour
         if (_activeStep.dashMode == MeleeDashMode.None) return;
         if (playerMovement == null) return;
 
-        var ps = PlayerStats.Instance;
-        if (ps == null) return;
+        // 兩段式的突進由 BeginApproach 負責；攻擊動畫上殘留的 DashStart 不要再衝一次
+        if (IsTwoStage(_activeStep)) return;
 
-        // 一串連段只結算一次能量
-        if (!_dashEnergyResolved)
-        {
-            _dashEmpowered = (ps.currentEnergy >= ps.dashEnergyCost);
-            if (_dashEmpowered)
-                ps.currentEnergy -= ps.dashEnergyCost;
+        // 突進由動畫時間窗（DashStart → Brake）控制，另外再用最大突進距離（MeleeDashDistance × 倍率）當硬上限：
+        // 先到哪個就停哪個。有能量時用 dashSpeed；能量不足時用 sprintSpeed。
+        float speed = ResolveDashSpeed();
+        if (speed <= 0f) return;
 
-            _dashEnergyResolved = true;
-
-            if (logStateChanges)
-                Debug.Log($"[Melee] dash energy resolved: {(_dashEmpowered ? "EMPOWERED" : "WEAKENED")}", this);
-        }
-
-        // 突進距離完全交給動畫時間窗控制。
-        // 有能量時用 dashSpeed；能量不足時用 sprintSpeed，所以同一段動畫自然會衝得較短。
-        float speed = _dashEmpowered ? ps.dashSpeed : ps.sprintSpeed;
-
-        // ToTarget：用 PlayerAiming 的鎖定目標。它只在 lockOnRange 圈內才會鎖定，
-        // 所以「圈外不追」是自動成立的，不需要額外的角度判定。
+        // ToTarget：目標見 ResolveMeleeTarget（鎖定圈內的目標，或 AutoAim 中的目標）。
         // 傳 Rigidbody 而不是 Transform —— PlayerMovement 需要目標速度來算攔截點。
-        Rigidbody target = null;
-        if (_activeStep.dashMode == MeleeDashMode.ToTarget && PlayerAiming.Instance != null)
-            target = PlayerAiming.Instance.GetTargetRigidbody();
+        Rigidbody target = (_activeStep.dashMode == MeleeDashMode.ToTarget) ? ResolveMeleeTarget() : null;
 
         // 沒有目標（或 Forward 模式）→ 沿角色當前面向
         Vector3 dir = (target != null)
             ? (target.position - playerMovement.transform.position)
             : GetFacingDirection();
 
-        playerMovement.BeginMeleeDash(dir, speed, target, _activeStep.dashStopDistance);
+        float maxDist = GetMaxDashDistance(_activeWeapon, _activeStep);
+        playerMovement.BeginMeleeDash(dir, speed, target, _activeStep.dashStopDistance, maxDist);
+    }
+
+    /// <summary>
+    /// 近戰的目標：
+    ///   1. 螢幕鎖定圈裡的目標（PlayerAiming.GetTargetRigidbody）
+    ///   2. 圈裡沒有時，AutoAim（中鍵鎖定）中的目標 —— 它跑出鎖定圈（例如突進穿過它、跑到身後）也照樣追
+    ///   3. 都沒有 → null（沿面向突進）
+    /// 沒有 AutoAim 時行為跟以前一樣：只追圈內的目標。
+    /// </summary>
+    private static Rigidbody ResolveMeleeTarget()
+    {
+        PlayerAiming aim = PlayerAiming.Instance;
+        if (aim == null) return null;
+
+        Rigidbody rb = aim.GetTargetRigidbody();
+        if (rb != null) return rb;
+
+        if (aim.TryGetAutoAimTarget(out _, out _, out Rigidbody autoRb) && autoRb != null)
+            return autoRb;
+
+        return null;
     }
 
     private Vector3 GetFacingDirection()
@@ -414,15 +597,31 @@ public class MeleeAttackController : MonoBehaviour
     /// 揮擊被 Dash 取消。由 PlayerMovement.DashAction 成功時呼叫。
     /// 跟 OnStepEnd 一樣收尾：關 hitbox、停突進、當前手進冷卻、reset。
     /// </summary>
-    public void CancelByDash()
+    public void CancelByDash(string source = "Dash")
     {
         if (!_attacking) return;
-
-        if (logStateChanges)
-            Debug.Log("[Melee] cancelled by dash", this);
-
-        OnStepEnd();
+        EndStep($"被 {source} 取消");
     }
+
+    /// <summary>
+    /// 這個 Animation Event 是不是「目前這一段」的 State 發出的（PlayerAnimation 轉發前呼叫）。
+    /// 不在攻擊中時一律放行（各回呼自己有守衛）。
+    /// </summary>
+    public bool AcceptsAnimEvent(AnimationEvent e, string eventName)
+    {
+        if (!_attacking || e == null) return true;
+
+        AnimatorStateInfo st = e.animatorStateInfo;
+        bool match = Matches(st, _activeStateHash) || (_approaching && Matches(st, _approachStateHash));
+
+        if (!match && logStateChanges)
+            Debug.Log($"[Melee] 忽略上一段殘留的事件 {eventName}（目前：'{GetActiveStateName()}'{(_approaching ? "，突進中" : "")}）", this);
+        return match;
+    }
+
+    // State 名稱可能填短名或完整路徑，兩種都比對
+    private static bool Matches(AnimatorStateInfo st, int hash) =>
+        hash != 0 && (st.shortNameHash == hash || st.fullPathHash == hash);
 
     /// <summary>
     /// 煞停突進動量。由 clip 上的 AnimEvent_MeleeBrake 觸發。
@@ -485,9 +684,19 @@ public class MeleeAttackController : MonoBehaviour
     /// PlayStep 覆蓋掉狀態，這個 event 對舊的那一段就不再有意義）。
     /// 所以無論是終結技播完還是中途斷掉，處理方式相同：收招 + 進冷卻。
     /// </summary>
-    public void OnStepEnd()
+    public void OnStepEnd() => EndStep(null);
+
+    /// <summary>結束這一段。reason = null 表示正常結束（AnimEvent_MeleeStepEnd）。</summary>
+    private void EndStep(string reason)
     {
         if (!_attacking) return;
+
+        if (reason != null && slashVfx != null) slashVfx.CancelPending();   // 被取消時，還沒播的延遲劍風不要再冒出來
+
+        if (reason != null && logAbnormalEnds)
+            Debug.Log($"[Melee] 攻擊中途結束：{reason}（'{GetActiveStateName()}'{(_approaching ? "，突進中" : "")}）", this);
+        else if (reason == null && logStateChanges)
+            Debug.Log($"[Melee] step end（'{GetActiveStateName()}'）", this);
 
         CloseAllHitboxes();
 
@@ -526,6 +735,9 @@ public class MeleeAttackController : MonoBehaviour
 
         _comboIndex = -1;
         _attacking = false;
+        _approaching = false;
+        _activeStateHash = 0;
+        _approachStateHash = 0;
         _windowOpen = false;
         _activeWeapon = null;
         _activeStep = null;
@@ -586,23 +798,6 @@ public class MeleeAttackController : MonoBehaviour
     }
 
     private void OnDisable() => CloseAllHitboxes();
-
-    // 正在揮的那隻手：在這一段內平滑下降。
-    // 進度取自 Animator 的 normalizedTime，所以之後把 meleeSpeed 接到
-    // Speed Multiplier 之後，條的下降速度會自動跟著動畫同步。
-    private void UpdateActiveBarFill()
-    {
-        if (!_attacking || _activeWeapon == null) return;
-        if (playerAnimation == null || playerAnimation.anim == null || _meleeLayerIndex < 0) return;
-
-        var st = playerAnimation.anim.GetCurrentAnimatorStateInfo(_meleeLayerIndex);
-
-        // CrossFade 期間可能還回傳上一個 State，那幾幀維持現值不動
-        if (st.shortNameHash != _activeStateHash) return;
-
-        float p = Mathf.Clamp01(st.normalizedTime);
-        _activeWeapon.meleeRuntime.barFill = Mathf.Lerp(_barFillFrom, _barFillTo, p);
-    }
 
     // 把冷卻進度餵給彈藥環（CalcAmmoBarFill 會讀 cooldownNormalized）
     private void PushCooldownToUI()

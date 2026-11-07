@@ -22,9 +22,28 @@ MonoBehaviour:
         damageMultiplier: 1
         knockback: 1
         dashMode: 2
-        dashStopDistance: 1.5
+        dashStopDistance: 0.5
+        stepMode: 1
+        approachStateNameLeft: LongSword_1H_R_01_Dash
+        approachStateNameRight: LongSword_1H_R_01_Dash
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 1
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 60
         cancellableByDash: 1
-        slashVfxOverride: {fileID: 0}
+        slashVfxOverride: {fileID: 5545173171955001552, guid: 7ac879c2caac1ca41b6c438e77d8b25d, type: 3}
+        slashRotation: {x: 30, y: 45, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 1
+        slashDelay: 0
+        slashRightHandOverride: 1
+        slashRotationRight: {x: -20, y: 90, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0.05
         maxStepDuration: 3
       - animStateNameLeft: LongSword_1H_L_02
@@ -33,20 +52,58 @@ MonoBehaviour:
         damageMultiplier: 1.2
         knockback: 1
         dashMode: 2
-        dashStopDistance: 1.5
+        dashStopDistance: 0.5
+        stepMode: 1
+        approachStateNameLeft: LongSword_1H_R_02_Dash
+        approachStateNameRight: LongSword_1H_R_02_Dash
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 0.5
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 1
-        slashVfxOverride: {fileID: 0}
-        hitStopDuration: 0.05
+        slashVfxOverride: {fileID: 5545173171955001552, guid: 7ac879c2caac1ca41b6c438e77d8b25d, type: 3}
+        slashRotation: {x: 0, y: 0, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 0
+        slashDelay: 0
+        slashRightHandOverride: 1
+        slashRotationRight: {x: -30, y: -60, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 1
+        hitStopDuration: 0.3
         maxStepDuration: 3
       - animStateNameLeft: LongSword_1H_L_03
         animStateNameRight: LongSword_1H_R_03
-        crossFadeTime: 0.04
+        crossFadeTime: 0.1
         damageMultiplier: 1.5
         knockback: 0
         dashMode: 2
         dashStopDistance: 0.2
+        stepMode: 1
+        approachStateNameLeft: LongSword_1H_R_03_Dash
+        approachStateNameRight: LongSword_1H_R_03_Dash
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 0.3
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 1
-        slashVfxOverride: {fileID: 0}
+        slashVfxOverride: {fileID: 5545173171955001552, guid: 7ac879c2caac1ca41b6c438e77d8b25d, type: 3}
+        slashRotation: {x: 0, y: 0, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 1
+        slashDelay: 0
+        slashRightHandOverride: 1
+        slashRotationRight: {x: -30, y: 90, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0.05
         maxStepDuration: 10
       loopCombo: 0
@@ -59,8 +116,27 @@ MonoBehaviour:
         knockback: 0
         dashMode: 2
         dashStopDistance: 0.2
+        stepMode: 0
+        approachStateNameLeft: 
+        approachStateNameRight: 
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 1
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 1
         slashVfxOverride: {fileID: 0}
+        slashRotation: {x: 0, y: -90, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 1
+        slashDelay: 0
+        slashRightHandOverride: 0
+        slashRotationRight: {x: 0, y: 0, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0
         maxStepDuration: 1
       - animStateNameLeft: LongSword_1H_L_02
@@ -70,8 +146,27 @@ MonoBehaviour:
         knockback: 0
         dashMode: 1
         dashStopDistance: 0.2
+        stepMode: 0
+        approachStateNameLeft: 
+        approachStateNameRight: 
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 1
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 0
         slashVfxOverride: {fileID: 0}
+        slashRotation: {x: 0, y: 71.55, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 0
+        slashDelay: 0
+        slashRightHandOverride: 0
+        slashRotationRight: {x: 0, y: 0, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0
         maxStepDuration: 1
       - animStateNameLeft: LongSword_1H_L_03
@@ -81,8 +176,27 @@ MonoBehaviour:
         knockback: 0
         dashMode: 2
         dashStopDistance: 0.2
+        stepMode: 0
+        approachStateNameLeft: 
+        approachStateNameRight: 
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 1
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 1
         slashVfxOverride: {fileID: 0}
+        slashRotation: {x: 0, y: 0, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 0
+        slashDelay: 0
+        slashRightHandOverride: 0
+        slashRotationRight: {x: 0, y: 0, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0
         maxStepDuration: 1
       loopCombo: 0
@@ -96,8 +210,27 @@ MonoBehaviour:
         knockback: 0
         dashMode: 2
         dashStopDistance: 0.2
+        stepMode: 0
+        approachStateNameLeft: 
+        approachStateNameRight: 
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 1
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 1
         slashVfxOverride: {fileID: 0}
+        slashRotation: {x: 0, y: 0, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 0
+        slashDelay: 0
+        slashRightHandOverride: 0
+        slashRotationRight: {x: 0, y: 0, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0
         maxStepDuration: 1
       - animStateNameLeft: Lance_1H_L_01
@@ -107,8 +240,27 @@ MonoBehaviour:
         knockback: 0
         dashMode: 1
         dashStopDistance: 0.2
+        stepMode: 0
+        approachStateNameLeft: 
+        approachStateNameRight: 
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 1
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 0
         slashVfxOverride: {fileID: 0}
+        slashRotation: {x: 0, y: 0, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 0
+        slashDelay: 0
+        slashRightHandOverride: 0
+        slashRotationRight: {x: 0, y: 0, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0
         maxStepDuration: 1
       loopCombo: 0
@@ -121,8 +273,27 @@ MonoBehaviour:
         knockback: 0
         dashMode: 2
         dashStopDistance: 0.2
+        stepMode: 0
+        approachStateNameLeft: 
+        approachStateNameRight: 
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 1
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 1
         slashVfxOverride: {fileID: 0}
+        slashRotation: {x: 0, y: 0, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 0
+        slashDelay: 0
+        slashRightHandOverride: 0
+        slashRotationRight: {x: 0, y: 0, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0
         maxStepDuration: 1
       - animStateNameLeft: Lance_1H_L_01
@@ -132,8 +303,27 @@ MonoBehaviour:
         knockback: 0
         dashMode: 1
         dashStopDistance: 0.2
+        stepMode: 0
+        approachStateNameLeft: 
+        approachStateNameRight: 
+        approachCrossFadeTime: 0.06
+        strikeCrossFadeTime: 0.05
+        dashDistanceMultiplier: 1
+        arcRange: 3.5
+        arcAngle: 120
+        arcPitchAngle: 90
         cancellableByDash: 0
         slashVfxOverride: {fileID: 0}
+        slashRotation: {x: 0, y: 0, z: 0}
+        slashOffset: {x: 0, y: 1.1, z: 0.4}
+        slashScaleMode: 0
+        slashScale: 1
+        slashFlip: 0
+        slashDelay: 0
+        slashRightHandOverride: 0
+        slashRotationRight: {x: 0, y: 0, z: 0}
+        slashOffsetRight: {x: 0, y: 1.1, z: 0.4}
+        slashFlipRight: 0
         hitStopDuration: 0
         maxStepDuration: 1
       loopCombo: 0

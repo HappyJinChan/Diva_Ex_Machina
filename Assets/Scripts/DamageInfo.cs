@@ -21,6 +21,9 @@ public struct DamageInfo
     // 攻擊類型。預設 Normal；近戰的發出端（敵人的 MeleeManager、玩家的 MeleeHitbox）設成 Melee。
     public DamageKind kind;
 
+    // 這一擊是不是暴擊。由攻擊方（Bullet、MeleeHitbox）在結算暴擊時設定，受擊方用來播暴擊專用的回饋（較大、不同顏色的傷害數字）。
+    public bool isCritical;
+
     public DamageInfo(float physical, float explosion, float energy, float cold)
     {
         this.physical = physical;
@@ -29,6 +32,7 @@ public struct DamageInfo
         this.cold = cold;
         this.impact = 0f;
         this.kind = DamageKind.Normal;
+        this.isCritical = false;
     }
 
     public DamageInfo(float physical, float explosion, float energy, float cold, float impact)
@@ -39,6 +43,7 @@ public struct DamageInfo
         this.cold = cold;
         this.impact = impact;
         this.kind = DamageKind.Normal;
+        this.isCritical = false;
     }
 }
 

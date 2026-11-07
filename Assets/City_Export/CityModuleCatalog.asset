@@ -1,0 +1,287 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8651b7284d243bc4c856be709baa91ae, type: 3}
+  m_Name: CityModuleCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::DivaExMachina.City.CityModuleCatalog
+  cellSize: 100
+  unitHeight: 24.5
+  blenderXToGrid: {x: 1, y: 0}
+  blenderYToGrid: {x: 0, y: 1}
+  calibrationError: 0.0011092155
+  entries:
+  - name: BLD_BASE_W
+    prefab: {fileID: 919132149155446097, guid: 48c0c33703d8c6442acc394c1dacf608, type: 3}
+    heightUnits: 2
+    profile: W
+    category: tower_base
+    gateOpenBlender: []
+    boundsMin: {x: -63.095898, y: 0, z: -63.095898}
+    boundsMax: {x: 63.095905, y: 48.99999, z: 63.095905}
+  - name: BLD_POD_Fill
+    prefab: {fileID: 919132149155446097, guid: e88639471ce7ea9498a3706f5d115bd8, type: 3}
+    heightUnits: 1
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: -0.0000019073486, z: -50.000004}
+    boundsMax: {x: 50.000004, y: 24.499996, z: 50.000004}
+  - name: BLD_POD_Corner
+    prefab: {fileID: 919132149155446097, guid: 8ff4fa5ca2c60d644baea8aedf13495c, type: 3}
+    heightUnits: 2
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: 0, z: -57.500004}
+    boundsMax: {x: 57.500004, y: 48.99999, z: 50.000004}
+  - name: BLD_POD_Edge
+    prefab: {fileID: 919132149155446097, guid: 9126c1d3ba2666745bf3a31a20ca7cdf, type: 3}
+    heightUnits: 2
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000008, y: 0, z: -63.09591}
+    boundsMax: {x: 50.000008, y: 48.99999, z: 50.000008}
+  - name: BLD_POD_CapEdge
+    prefab: {fileID: 919132149155446097, guid: 11db62a30ad42aa42a06f21aa68340c5, type: 3}
+    heightUnits: 2
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000008, y: 0, z: -63.09591}
+    boundsMax: {x: 50.000008, y: 48.99999, z: 50.000008}
+  - name: BLD_POD_CapCorner
+    prefab: {fileID: 919132149155446097, guid: 9a3dc3555259b4745879d63015fe4327, type: 3}
+    heightUnits: 2
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: 0, z: -57.500004}
+    boundsMax: {x: 57.500004, y: 48.99999, z: 50.000004}
+  - name: BLD_POD_CornerHalf
+    prefab: {fileID: 919132149155446097, guid: a4115e5dbb55ee546a77848803ba573c, type: 3}
+    heightUnits: 1
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: -0.0000019073486, z: -57.500004}
+    boundsMax: {x: 57.500004, y: 24.499994, z: 50.000004}
+  - name: BLD_POD_CornerRound
+    prefab: {fileID: 919132149155446097, guid: de5ac6a4e9b46df43a15529923a6ff07, type: 3}
+    heightUnits: 2
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: 0, z: -50.000004}
+    boundsMax: {x: 50.000004, y: 48.99999, z: 50.000004}
+  - name: BLD_POD_CapCornerRound
+    prefab: {fileID: 919132149155446097, guid: a8c4564c4f8569b40bf43ec76553a8ad, type: 3}
+    heightUnits: 2
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: 0, z: -55.000603}
+    boundsMax: {x: 55.000004, y: 48.99999, z: 50.000008}
+  - name: BLD_BRG_End
+    prefab: {fileID: 919132149155446097, guid: eb826d53dc9d7364ba072e8d942d9bf2, type: 3}
+    heightUnits: 2
+    profile: 
+    category: bridge
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: 0, z: -50}
+    boundsMax: {x: 50.000004, y: 48.99999, z: 50}
+  - name: BLD_BRG_Span
+    prefab: {fileID: 919132149155446097, guid: ddcf02eec61ce0c4f8c5d12af102de78, type: 3}
+    heightUnits: 2
+    profile: 
+    category: bridge
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: 24.499996, z: -50.000004}
+    boundsMax: {x: 50.000004, y: 48.99999, z: 49.999996}
+  - name: BLD_FLR_W_Plain
+    prefab: {fileID: 919132149155446097, guid: f01863162a355df45a2b521ed5448bef, type: 3}
+    heightUnits: 1
+    profile: W
+    category: tower_floor
+    gateOpenBlender: []
+    boundsMin: {x: -63.095898, y: -0.0000019073486, z: -63.095898}
+    boundsMax: {x: 63.095905, y: 24.499996, z: 63.095905}
+  - name: BLD_FLR_W_ToN
+    prefab: {fileID: 919132149155446097, guid: dbf6f999225138d4b8d7e6eeebc66af3, type: 3}
+    heightUnits: 1
+    profile: W
+    category: tower_floor
+    gateOpenBlender: []
+    boundsMin: {x: -63.095898, y: -0.0000019073486, z: -63.095898}
+    boundsMax: {x: 63.095905, y: 24.499996, z: 63.095905}
+  - name: BLD_FLR_N_Silo_Mid
+    prefab: {fileID: 919132149155446097, guid: 968b2067f6b4edd43a83874834ed9dfb, type: 3}
+    heightUnits: 1
+    profile: N
+    category: tower_floor
+    gateOpenBlender: []
+    boundsMin: {x: -57.500008, y: -0.0000019073486, z: -57.500004}
+    boundsMax: {x: 78.85819, y: 24.499996, z: 57.500004}
+  - name: BLD_FLR_N_Silo_End
+    prefab: {fileID: 919132149155446097, guid: 9d902390fbfe39943b355d517aae86d4, type: 3}
+    heightUnits: 1
+    profile: N
+    category: tower_floor
+    gateOpenBlender: []
+    boundsMin: {x: -57.500008, y: -0.000005722046, z: -57.500004}
+    boundsMax: {x: 78.85819, y: 24.499992, z: 57.500004}
+  - name: BLD_FLR_W_FlatSide
+    prefab: {fileID: 919132149155446097, guid: f53a8dd5b9aae0a4eb816abe6fe0fb0a, type: 3}
+    heightUnits: 1
+    profile: W
+    category: tower_floor
+    gateOpenBlender: []
+    boundsMin: {x: -63.095898, y: -0.0000019073486, z: -63.095898}
+    boundsMax: {x: 63.095905, y: 24.499996, z: 57.500004}
+  - name: BLD_FLR_N_Plain
+    prefab: {fileID: 919132149155446097, guid: b07ce5c2aec2a9940a5604997ff6851e, type: 3}
+    heightUnits: 1
+    profile: N
+    category: tower_floor
+    gateOpenBlender: []
+    boundsMin: {x: -57.500004, y: -0.0000019073486, z: -57.500004}
+    boundsMax: {x: 57.500004, y: 24.499996, z: 57.500004}
+  - name: BLD_FLR_N_Silo_Start
+    prefab: {fileID: 919132149155446097, guid: 3d999eb6f554de245ae191492255fcf9, type: 3}
+    heightUnits: 1
+    profile: N
+    category: tower_floor
+    gateOpenBlender: []
+    boundsMin: {x: -57.500008, y: -0.0000019073486, z: -57.500004}
+    boundsMax: {x: 78.85819, y: 24.499996, z: 57.500004}
+  - name: BLD_FLR_W_FromN
+    prefab: {fileID: 919132149155446097, guid: 2999c88fd4bfd094e8a028140e2ecbb3, type: 3}
+    heightUnits: 1
+    profile: W
+    category: tower_floor
+    gateOpenBlender: []
+    boundsMin: {x: -63.0959, y: -0.000005722046, z: -63.095898}
+    boundsMax: {x: 63.0959, y: 24.5, z: 63.095905}
+  - name: BLD_POD_EdgeHalf
+    prefab: {fileID: 919132149155446097, guid: d59c6386da6e6da458cb10ec9144d831, type: 3}
+    heightUnits: 1
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000008, y: -0.0000019073486, z: -63.09591}
+    boundsMax: {x: 50.000008, y: 24.499994, z: 50.000008}
+  - name: BLD_BASE_W_GateI
+    prefab: {fileID: 919132149155446097, guid: 6736543fe0621e44cba8889631e4cdb4, type: 3}
+    heightUnits: 1
+    profile: W
+    category: tower_base
+    gateOpenBlender:
+    - +Y
+    - -Y
+    boundsMin: {x: -63.095898, y: -0.0000019073486, z: -57.500004}
+    boundsMax: {x: 63.095905, y: 24.499996, z: 57.500004}
+  - name: BLD_BASE_W_GateL
+    prefab: {fileID: 919132149155446097, guid: 798084395b1f4894596aeb3d99cba3e1, type: 3}
+    heightUnits: 1
+    profile: W
+    category: tower_base
+    gateOpenBlender:
+    - +X
+    - +Y
+    boundsMin: {x: -63.095898, y: -0.0000019073486, z: -63.095898}
+    boundsMax: {x: 57.500004, y: 24.499996, z: 57.500004}
+  - name: BLD_BASE_N_GateX
+    prefab: {fileID: 919132149155446097, guid: 07ca301629ba5aa40adb787f2cf497b2, type: 3}
+    heightUnits: 1
+    profile: N
+    category: tower_base
+    gateOpenBlender:
+    - +X
+    - +Y
+    - -X
+    - -Y
+    boundsMin: {x: -57.500004, y: -0.0000019073486, z: -57.500004}
+    boundsMax: {x: 57.500004, y: 24.499996, z: 57.500004}
+  - name: BLD_POD_Gate_I
+    prefab: {fileID: 919132149155446097, guid: 99aaba3965112ad438510cbe06c57386, type: 3}
+    heightUnits: 1
+    profile: 
+    category: podium
+    gateOpenBlender:
+    - +Y
+    - -Y
+    boundsMin: {x: -50.000004, y: -0.0000019073486, z: -50.000004}
+    boundsMax: {x: 50.000004, y: 24.499996, z: 50.000004}
+  - name: BLD_POD_Gate_X
+    prefab: {fileID: 919132149155446097, guid: 8445c9ba5e4ee5f44866b54ffb44c1a0, type: 3}
+    heightUnits: 1
+    profile: 
+    category: podium
+    gateOpenBlender:
+    - +X
+    - +Y
+    - -X
+    - -Y
+    boundsMin: {x: -50.000004, y: -0.0000019073486, z: -50.000004}
+    boundsMax: {x: 50.000004, y: 24.499996, z: 50.000004}
+  - name: BLD_POD_Gate_L
+    prefab: {fileID: 919132149155446097, guid: ff08d273199668b48be610f6dbb14289, type: 3}
+    heightUnits: 1
+    profile: 
+    category: podium
+    gateOpenBlender:
+    - +X
+    - +Y
+    boundsMin: {x: -50.000004, y: -0.0000019073486, z: -50.000004}
+    boundsMax: {x: 50.000004, y: 24.499996, z: 50.000004}
+  - name: BLD_POD_Gate_T
+    prefab: {fileID: 919132149155446097, guid: 0d0f43544daa6504e8e9f86f66d36447, type: 3}
+    heightUnits: 1
+    profile: 
+    category: podium
+    gateOpenBlender:
+    - +X
+    - +Y
+    - -Y
+    boundsMin: {x: -50.000004, y: -0.0000019073486, z: -50.000004}
+    boundsMax: {x: 50.000004, y: 24.499996, z: 50.000004}
+  - name: BLD_POD_Ramp
+    prefab: {fileID: 919132149155446097, guid: 959701c77137cda4d8420a5ef8523861, type: 3}
+    heightUnits: 1
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.000004, y: -0.0000019073486, z: -50.000004}
+    boundsMax: {x: 50.000004, y: 24.499996, z: 50.000004}
+  - name: BLD_TOP_W_Cap
+    prefab: {fileID: 919132149155446097, guid: 7054b2d4d5d153d4486361f9e3522681, type: 3}
+    heightUnits: 2
+    profile: W
+    category: tower_top
+    gateOpenBlender: []
+    boundsMin: {x: -63.095898, y: 0, z: -63.095898}
+    boundsMax: {x: 63.095905, y: 48.99999, z: 63.095905}
+  - name: BLD_TOP_N_Tower
+    prefab: {fileID: 919132149155446097, guid: 11fb5e9951b5f6147b145122f93e5c8e, type: 3}
+    heightUnits: 6
+    profile: N
+    category: tower_top
+    gateOpenBlender: []
+    boundsMin: {x: -57.500008, y: 0, z: -57.500004}
+    boundsMax: {x: 113.09588, y: 146.99998, z: 57.500004}
+  - name: BLD_POD_CapEdge2
+    prefab: {fileID: 919132149155446097, guid: 3db54ddc59904554c8dc7aa6c35ccb33, type: 3}
+    heightUnits: 2
+    profile: 
+    category: podium
+    gateOpenBlender: []
+    boundsMin: {x: -50.00001, y: 0, z: -63.095905}
+    boundsMax: {x: 50.00001, y: 48.99999, z: 50.00001}

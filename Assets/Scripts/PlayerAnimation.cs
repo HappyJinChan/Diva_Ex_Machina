@@ -697,17 +697,33 @@ public class PlayerAnimation : MonoBehaviour
     //    只能靠 MeleeAttackStep.maxStepDuration 兜底（會有明顯卡頓）。
     // ────────────────────────────────────────────────
 
-    public void AnimEvent_MeleeDashStart() => meleeController?.OnDashStart();
+    //  參數是 AnimationEvent：Unity 會自動把「是哪個 State 發出的」傳進來，動畫片段上的事件設定不用改。
+    //  CrossFade 接下一段時，上一段的動畫還在播，它的事件照樣會觸發（不管權重）——
+    //  例如上一刀的 StepEnd 落在過渡期間，會把剛開始的這一刀（或兩段式的突進）整個結束掉。
+    //  所以只轉發「目前這一段的 State」發出的事件，其他的丟掉。
 
-    public void AnimEvent_MeleeHitboxOn() => meleeController?.OnHitboxOn();
+    public void AnimEvent_MeleeDashStart(AnimationEvent e)
+    { if (AcceptMeleeEvent(e, "DashStart")) meleeController.OnDashStart(); }
 
-    public void AnimEvent_MeleeHitboxOff() => meleeController?.OnHitboxOff();
+    public void AnimEvent_MeleeHitboxOn(AnimationEvent e)
+    { if (AcceptMeleeEvent(e, "HitboxOn")) meleeController.OnHitboxOn(); }
 
-    public void AnimEvent_MeleeBrake() => meleeController?.OnBrake();
+    public void AnimEvent_MeleeHitboxOff(AnimationEvent e)
+    { if (AcceptMeleeEvent(e, "HitboxOff")) meleeController.OnHitboxOff(); }
 
-    public void AnimEvent_MeleeComboWindow() => meleeController?.OnComboWindow();
+    public void AnimEvent_MeleeBrake(AnimationEvent e)
+    { if (AcceptMeleeEvent(e, "Brake")) meleeController.OnBrake(); }
 
-    public void AnimEvent_MeleeStepEnd() => meleeController?.OnStepEnd();
+    public void AnimEvent_MeleeComboWindow(AnimationEvent e)
+    { if (AcceptMeleeEvent(e, "ComboWindow")) meleeController.OnComboWindow(); }
+
+    public void AnimEvent_MeleeStepEnd(AnimationEvent e)
+    { if (AcceptMeleeEvent(e, "StepEnd")) meleeController.OnStepEnd(); }
+
+    private bool AcceptMeleeEvent(AnimationEvent e, string eventName)
+    {
+        return meleeController != null && meleeController.AcceptsAnimEvent(e, eventName);
+    }
 
     // ────────────────────────────────────────────────
     //  突擊推進踢（Assault Boost Kick）的動畫事件 → PlayerMovement
