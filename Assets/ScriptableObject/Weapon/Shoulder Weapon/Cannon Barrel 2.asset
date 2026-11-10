@@ -29,15 +29,18 @@ MonoBehaviour:
     value: -5
   - attribute: 0
     mode: 1
-    value: -0.9
+    value: -0.95
   - attribute: 13
     mode: 1
     value: 2
   - attribute: 14
     mode: 1
-    value: 9
+    value: 2
   - attribute: 15
     mode: 1
     value: 0.5
+  - attribute: 43
+    mode: 1
+    value: -0.9
   randomBuffs: []
   meshRenderer: {fileID: -7511558181221131132, guid: 13b4a21a013619747a1dc8a865b62214, type: 3}

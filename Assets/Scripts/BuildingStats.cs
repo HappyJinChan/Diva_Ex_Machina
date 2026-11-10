@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -82,7 +82,8 @@ public class BuildingStats : MonoBehaviour, IDamageable
         // 先扣血、先判死，回饋放後面 —— 回饋出錯也不會讓建築變成不死
         if (health <= 0f) Die();
 
-        if (effectManager != null && effectManager.damageFeedback != null)
+        // 傷害數字和閃光各自可以留空，由 PlayDamageFeedback 自己判斷
+        if (effectManager != null)
             effectManager.PlayDamageFeedback(amount);
 
         Damaged?.Invoke(amount, attacker);

@@ -743,6 +743,22 @@ public class InventoryManager : MonoBehaviour
         AddToInventory(new ItemInstance { item = item, amount = 1 });
     }
 
+    /// <summary>
+    /// 背包裡某種物品的總數量（只算可堆疊的一般物品，例如素材；跟 DeductItem 的算法一致）。
+    /// </summary>
+    public int GetItemCount(ItemObject item)
+    {
+        if (item == null || inventory == null) return 0;
+        int total = 0;
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            var inst = inventory[i];
+            if (inst == null || inst.item != item || inst.GetType() != typeof(ItemInstance)) continue;
+            total += Mathf.Max(0, inst.amount);
+        }
+        return total;
+    }
+
     public void RemoveItemFromInventory(ItemInstance itemInstance)
     {
         if (itemInstance == null) return;

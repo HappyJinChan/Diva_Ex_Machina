@@ -65,6 +65,7 @@ public class DirewolfBrain : ModularEntityBrain
     private void TryLaunchMissiles()
     {
         if (missileLaunchers == null || missileLaunchers.Length == 0) return;
+        if (IsUsingAbility) return;   // 能力（例如 Sentry）發動中由能力自己控制飛彈
         if (Time.time < _nextMissileTime) return;
         if (modularEntityMovement != null && modularEntityMovement.IsStaggered) return;   // 失衡中不發射
 

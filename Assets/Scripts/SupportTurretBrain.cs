@@ -45,6 +45,9 @@ public class SupportTurretBrain : MonoBehaviour
     [Tooltip("瞄準超過這個秒數還沒射出就放棄（例如目標一直在頭頂盲區）。")]
     [SerializeField, Min(1f)] private float aimTimeout = 15f;
 
+    [Tooltip("換裝射出的冷卻（秒），從支援艙射出的那一刻開始算。冷卻中按 Set1～3 不會射。")]
+    [SerializeField, Min(0f)] private float cooldown = 30f;
+
     [Header("Test")]
     [SerializeField] private Transform testTarget;
     [SerializeField] private Key testKey = Key.L;
@@ -57,6 +60,17 @@ public class SupportTurretBrain : MonoBehaviour
 
     /// <summary>空中有艙（還沒命中 / 消失）。</summary>
     public bool HasPodInFlight => _inFlightPod != null;
+
+    /// <summary>冷卻剩餘秒數。</summary>
+    public float CooldownRemaining => Mathf.Max(0f, _cooldownUntil - Time.time);
+
+    /// <summary>冷卻總長（秒）。UI 算進度用。</summary>
+    public float CooldownDuration => cooldown;
+
+    /// <summary>正在瞄準、或支援艙還在空中（這時也不接受新的請求）。</summary>
+    public bool IsBusy => _state != State.Idle || HasPodInFlight;
+
+    private float _cooldownUntil;
 
     private State _state = State.Idle;
     private Transform _target;
@@ -130,6 +144,11 @@ public class SupportTurretBrain : MonoBehaviour
     {
         if (turret == null || target == null) return false;
 
+        if (Time.time < _cooldownUntil)
+        {
+            Debug.Log($"SupportTurretBrain: 換裝射出冷卻中，還有 {CooldownRemaining:0.0} 秒", this);
+            return false;
+        }
         if (_state != State.Idle || HasPodInFlight)
         {
             Debug.Log("SupportTurretBrain: 砲塔正在瞄準或已有支援艙在空中，這次不接受", this);
@@ -219,6 +238,7 @@ public class SupportTurretBrain : MonoBehaviour
         turret.Shoot();
         if (turret.AmmoInMagazine < ammoBefore)
         {
+            _cooldownUntil = Time.time + cooldown;   // 冷卻從射出開始算
             OnLaunched?.Invoke(_target, flightTime);
             CancelRequest();
         }

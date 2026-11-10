@@ -32,6 +32,14 @@ public class AimPoint : MonoBehaviour
     public static Vector3 PositionOf(Transform target)
     {
         if (target == null) return Vector3.zero;
+        return TryGetPosition(target, out Vector3 p) ? p : target.position;
+    }
+
+    /// <summary>目標底下有 AimPoint 就回傳它的位置（true）；沒有回傳 false。同樣依 target 快取。</summary>
+    public static bool TryGetPosition(Transform target, out Vector3 position)
+    {
+        position = default;
+        if (target == null) return false;
 
         if (!_cache.TryGetValue(target, out AimPoint ap))
         {
@@ -41,7 +49,9 @@ public class AimPoint : MonoBehaviour
             _cache[target] = ap;   // 找不到也記下 null
         }
 
-        return ap != null ? ap.transform.position : target.position;
+        if (ap == null) return false;
+        position = ap.transform.position;
+        return true;
     }
 
     private void OnDrawGizmos()

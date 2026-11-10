@@ -95,6 +95,9 @@ public class SupplyManager : MonoBehaviour
     public bool IsBarrageActive => _barrage != null;
     public float CooldownRemaining => Mathf.Max(0f, _cooldownUntil - Time.time);
 
+    /// <summary>冷卻總長（秒）。UI 算進度用：1 − CooldownRemaining ÷ CooldownDuration。</summary>
+    public float CooldownDuration => cooldown;
+
     /// <summary>目前的鎖定模式狀態。</summary>
     public MortarMode Mode { get; private set; } = MortarMode.Off;
 
@@ -354,6 +357,7 @@ public class SupplyManager : MonoBehaviour
         Mode = MortarMode.Ready;
         _locks.Clear();
         _areaSpot = null;
+        PlayerAiming.Instance?.CancelAutoAim();   // 進入模式時解除中鍵鎖定（模式中也不能再鎖，見 PlayerController）
         OnTargetingModeChanged?.Invoke(true);
     }
 
@@ -457,9 +461,33 @@ public class SupplyManager : MonoBehaviour
         if (pa == null) { _areaSpot = null; return; }
 
         int mask = targetRayMask.value != 0 ? targetRayMask.value : ~pa.ignoreLayer.value;
-        _areaSpot = Physics.Raycast(pa.GetRay(), out RaycastHit hit, maxTargetDistance, mask, QueryTriggerInteraction.Ignore)
+        _areaSpot = RaycastIgnoringEntities(pa.GetRay(), mask, out RaycastHit hit)
             ? AimSpot.FromHit(hit)
             : null;
+    }
+
+    private readonly RaycastHit[] _areaHits = new RaycastHit[16];
+
+    /// <summary>
+    /// 範圍炮擊用的準星射線：穿過敵人（ModularEntityStats 底下的 Collider），只取後面的地面 / 建築 / 甲板。
+    /// 否則射線打到敵人時，AimSpot.FromHit 會黏在敵人的 Rigidbody 上，圓圈和砲彈都會跟著那隻敵人跑。
+    /// </summary>
+    private bool RaycastIgnoringEntities(Ray ray, int mask, out RaycastHit result)
+    {
+        result = default;
+        int n = Physics.RaycastNonAlloc(ray, _areaHits, maxTargetDistance, mask, QueryTriggerInteraction.Ignore);
+        float best = float.MaxValue;
+        bool found = false;
+        for (int i = 0; i < n; i++)
+        {
+            RaycastHit h = _areaHits[i];
+            if (h.distance >= best) continue;
+            if (h.collider.GetComponentInParent<ModularEntityStats>() != null) continue;   // 敵人
+            best = h.distance;
+            result = h;
+            found = true;
+        }
+        return found;
     }
 
     private void ReleaseAreaAim()
@@ -606,9 +634,10 @@ public class SupplyManager : MonoBehaviour
             if (plan.Count > 0) return;
         }
 
-        if (Mode == MortarMode.AimingArea && _areaSpot != null)
+        if (Mode == MortarMode.AimingArea)
         {
-            plan.Add(BarrageAim.ForSpot(_areaSpot));
+            // 範圍瞄準中：只瞄圓圈。準星沒打到地面時不要退回去瞄武器鎖定的敵人
+            if (_areaSpot != null) plan.Add(BarrageAim.ForSpot(_areaSpot));
             return;
         }
 
@@ -635,7 +664,11 @@ public class SupplyManager : MonoBehaviour
         }
 
         int mask = targetRayMask.value != 0 ? targetRayMask.value : ~pa.ignoreLayer.value;
-        if (Physics.Raycast(pa.GetRay(), out RaycastHit hit, maxTargetDistance, mask, QueryTriggerInteraction.Ignore))
+        // 鎖定模式中預瞄只看準星落點：穿過敵人，不要黏在敵人身上
+        bool hasHit = IsMortarTargeting
+            ? RaycastIgnoringEntities(pa.GetRay(), mask, out RaycastHit hit)
+            : Physics.Raycast(pa.GetRay(), out hit, maxTargetDistance, mask, QueryTriggerInteraction.Ignore);
+        if (hasHit)
         {
             spot = AimSpot.FromHit(hit);
             return true;

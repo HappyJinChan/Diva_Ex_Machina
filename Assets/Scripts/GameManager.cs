@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
@@ -144,6 +144,11 @@ public class GameManager : MonoBehaviour
         HashSet<ModularEntityBrain> set = GetOrCreateSet(target);
 
         if (set.Contains(brain)) return true;   // already has a slot on this target
+
+        // 中型以上的敵人不跟其他敵人搶名額：直接放行，也不登記（不佔小型敵人的額度）。
+        // Brain 拿到 true 之後會自己記住「已持有」，同一個目標不會再來問，所以這裡不是每次思考都跑。
+        if (brain.TryGetComponent(out ModularEntityStats stats) && stats.entitySize >= EntitySize.Medium)
+            return true;
 
         int cap = Mathf.Max(0, maxAttackersPerTarget);
 

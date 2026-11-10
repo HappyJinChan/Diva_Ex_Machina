@@ -82,8 +82,9 @@ public class PlayerController : MonoBehaviour
             playerMovement.AssaultBoostAction();
         }
 
-        // Auto Aim toggle (Middle Mouse)
-        if (playerControls.Player.AutoAim.WasPressedThisFrame())
+        // Auto Aim toggle (Middle Mouse)。迫擊砲鎖定模式中不能鎖定（進入模式時已經解除）
+        if (playerControls.Player.AutoAim.WasPressedThisFrame() &&
+            !(SupplyManager.Instance != null && SupplyManager.Instance.IsMortarTargeting))
         {
             if (PlayerAiming.Instance != null)
                 PlayerAiming.Instance.ToggleAutoAim();

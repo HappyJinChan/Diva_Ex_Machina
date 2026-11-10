@@ -1704,7 +1704,7 @@ MonoBehaviour:
   - {fileID: 8151712568917230304}
   launchInterval: 0.07
   missileLanchSpeed: 45
-  missilePrefab: {fileID: 866744843915441565, guid: 74c53ff241cb8064386588783d6a08b4, type: 3}
+  missilePrefab: {fileID: 866744843915441565, guid: 4f1a05088f01e0d40b0d27e55cb2b7e5, type: 3}
   launchStraightUp: 0
   attacker: {fileID: 7283447650030811870}
 --- !u!1 &7283447650030811870
@@ -1725,6 +1725,7 @@ GameObject:
   - component: {fileID: 6744390417566336108}
   - component: {fileID: 7897646302885439734}
   - component: {fileID: 8430547879345299795}
+  - component: {fileID: 1902126331489061861}
   m_Layer: 9
   m_Name: Falcon
   m_TagString: Enemy
@@ -1833,6 +1834,8 @@ MonoBehaviour:
   modularEntityMovement: {fileID: 1210925689521360155}
   turrets:
   - {fileID: 172419259747314002}
+  abilities: []
+  abilityThinkInterval: {x: 2, y: 3}
   sensors: []
   currentState: 3
   meleeManager: {fileID: 0}
@@ -1978,6 +1981,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ModularEntityEffectManager
   damageFeedback: {fileID: 4039769897120170392}
+  criticalDamageFeedback: {fileID: 0}
   hitFlashFeedback: {fileID: 2175658808418002774}
   attackWarningFeedback: {fileID: 0}
 --- !u!114 &7897646302885439734
@@ -2014,6 +2018,26 @@ MonoBehaviour:
   staggerDamageTakenMultiplier: 1.5
   staggerAnimBool: stagger
   staggerFeedback: {fileID: 0}
+--- !u!114 &1902126331489061861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7283447650030811870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f8ddad5cd0c3cc4aab9ba026f3e0e8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityLootDrop
+  drops:
+  - item: {fileID: 11400000, guid: 83bc55f6729eb1c4eab6b82ce9a1cfd6, type: 2}
+    chance: 1
+    amount: {x: 5, y: 8}
+  maxPickupsPerEntry: 3
+  spawnHeight: 1.5
+  upSpeed: {x: 6, y: 10}
+  sideSpeed: {x: 2, y: 6}
 --- !u!1 &7319143396022305101
 GameObject:
   m_ObjectHideFlags: 0

@@ -56,7 +56,7 @@ public class MissileLauncherController : MonoBehaviour
                 // 這兩行必須在 Spawn 之後 —— Bullet 在被啟用時會把所有欄位還原成 prefab 值，
                 // 先寫會被蓋掉。順序跟原本的 Instantiate 版本一致，不用調整。
                 bullet.attacker = owner;
-                bullet.SetHomingTarget(target);
+                if (bullet is GuidedMissile guided) guided.SetTarget(target);   // non-guided bullets fly straight
             }
             else
             {

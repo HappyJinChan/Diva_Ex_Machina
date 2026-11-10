@@ -9,6 +9,7 @@ TagManager:
   - Mobile Platform
   - Mobile Platform Hitbox
   - Defence Fortifications
+  - Core
   layers:
   - Default
   - TransparentFX

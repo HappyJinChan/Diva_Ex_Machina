@@ -14,6 +14,8 @@ public enum EntitySize
 public class ModularEntityStats : MonoBehaviour, IDamageable, IPooled
 {
     public EntitySize entitySize;
+    [Tooltip("指揮群組名稱（例如 Hound）。Boss 的 EntityCommander 只會招募群組符合的敵人。空白 = 不會被任何 Boss 指揮。")]
+    public string commandGroup = "";
     public float maxHealth;
     public float health;
     // 防禦值（不是百分比）。減傷 = 防禦 ÷ (防禦 + 1000)，詳見 DefenseFormula。

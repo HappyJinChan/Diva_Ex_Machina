@@ -91,7 +91,47 @@ public class ModularEntityMovement : MonoBehaviour, IManagedEntity, IPooled
 
         ApplyHorizontalMovementFixed(dt);
         ApplySteepSlopeLimit(dt);
+        LimitRiseOnPlayer();
         UpdateFacing();
+    }
+
+    // ── 不准踩著玩家飛起來 ───────────────────────────────────────────────
+    //
+    // 近戰衝刺時水平速度每步被直接設成 dashSpeed，垂直速度則保留物理的結果。
+    // 撞到玩家 Capsule 的圓頂時，物理把實體往上推出去，這個往上的速度被一路保留 → 整隻飛起來。
+    // 碰到玩家、而且接觸面朝上（實體在玩家上方）的那一步，把「往上」的速度（相對平台）砍成 0，
+    // 讓它順著圓頂滑下去，不會被彈飛。只看玩家的 Collider，不影響上坡、跳躍、撞飛。
+
+    [Tooltip("接觸面法線的 Y 超過這個值，就算是「壓在玩家上方」。")]
+    [SerializeField, Range(0f, 1f)] private float playerTopContactNormalY = 0.3f;
+
+    private bool _onTopOfPlayer;
+
+    private void LimitRiseOnPlayer()
+    {
+        if (!_onTopOfPlayer) return;
+        _onTopOfPlayer = false;   // 每一步由 OnCollisionStay 重新設定
+
+        Vector3 platformVel = GetMobilePlatformVelocity();
+        Vector3 vRel = entityRigidbody.linearVelocity - platformVel;
+        if (vRel.y <= 0f) return;
+        vRel.y = 0f;
+        entityRigidbody.linearVelocity = vRel + platformVel;
+    }
+
+    private void OnCollisionEnter(Collision c) => CheckPlayerTopContact(c);
+    private void OnCollisionStay(Collision c) => CheckPlayerTopContact(c);
+
+    private void CheckPlayerTopContact(Collision c)
+    {
+        bool isPlayer = c.collider.CompareTag("Player") || (c.rigidbody != null && c.rigidbody.CompareTag("Player"));
+        if (!isPlayer) return;
+
+        for (int i = 0; i < c.contactCount; i++)
+        {
+            // OnCollision 的法線指向這個實體：Y 朝上 = 實體在玩家上方
+            if (c.GetContact(i).normal.y > playerTopContactNormalY) { _onTopOfPlayer = true; return; }
+        }
     }
 
     // ── 陡坡限制 ─────────────────────────────────────────────────────────

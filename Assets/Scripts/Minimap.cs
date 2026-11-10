@@ -56,6 +56,10 @@ public class Minimap : MonoBehaviour
     [SerializeField] private MinimapRing barrageRing;
     [Tooltip("敵人點的 prefab（一個小 Image）。")]
     [SerializeField] private RectTransform enemyDotPrefab;
+    [Tooltip("中型敵人（ModularEntityStats.entitySize = Medium）的專用圖示 prefab。留空 = 用一般的敵人點。")]
+    [SerializeField] private RectTransform mediumEnemyIconPrefab;
+    [Tooltip("大型敵人（Large）的專用圖示 prefab。留空 = 用中型的圖示；中型也沒設就用一般的敵人點。")]
+    [SerializeField] private RectTransform largeEnemyIconPrefab;
 
     [Header("View")]
     [Tooltip("顯示半徑（公尺）：圓的邊緣 = 離 Bradamant 這麼遠。")]
@@ -102,6 +106,13 @@ public class Minimap : MonoBehaviour
     private readonly List<Transform> _enemies = new List<Transform>();
     private readonly HashSet<int> _seen = new HashSet<int>();
     private readonly List<RectTransform> _dots = new List<RectTransform>();
+    private readonly List<EntitySize> _enemySizes = new List<EntitySize>();      // 跟 _enemies 一一對應
+    private readonly List<RectTransform> _mediumIcons = new List<RectTransform>();
+    private readonly List<RectTransform> _largeIcons = new List<RectTransform>();
+    private readonly Dictionary<Transform, ModularEntityStats> _statsCache = new Dictionary<Transform, ModularEntityStats>();
+    // 敵人點與中大型圖示各放一層：中大型永遠畫在一般敵人點上面，不會被一群小兵蓋住
+    private RectTransform _dotLayer;
+    private RectTransform _sizedIconLayer;
     private static readonly Collider[] _scanBuffer = new Collider[512];
 
     private float _barrageRadiusAuto = -1f;
@@ -341,6 +352,7 @@ public class Minimap : MonoBehaviour
         {
             _nextScanTime = Time.time + scanInterval;
             _enemies.Clear();
+            _enemySizes.Clear();
             _seen.Clear();
 
             int count = Physics.OverlapSphereNonAlloc(center, range * 1.1f, _scanBuffer, enemyLayer.value,
@@ -350,11 +362,20 @@ public class Minimap : MonoBehaviour
                 Collider col = _scanBuffer[i];
                 if (col == null) continue;
                 Transform root = col.attachedRigidbody != null ? col.attachedRigidbody.transform : col.transform;
-                if (_seen.Add(root.GetInstanceID())) _enemies.Add(root);
+                if (_seen.Add(root.GetInstanceID()))
+                {
+                    _enemies.Add(root);
+                    _enemySizes.Add(GetEntitySize(root));
+                }
             }
         }
 
-        int shown = 0;
+        if (_dotLayer == null) _dotLayer = CreateIconSubLayer("Enemy Dots");
+        if (_sizedIconLayer == null) _sizedIconLayer = CreateIconSubLayer("Enemy Sized Icons");
+
+        RectTransform largePrefab = largeEnemyIconPrefab != null ? largeEnemyIconPrefab : mediumEnemyIconPrefab;
+
+        int shownDots = 0, shownMedium = 0, shownLarge = 0;
         float max = radiusPx;
         for (int i = 0; i < _enemies.Count; i++)
         {
@@ -364,24 +385,64 @@ public class Minimap : MonoBehaviour
             Vector2 p = ToMap(e.position, center, yaw, pxPerMeter);
             if (p.sqrMagnitude > max * max) continue;
 
-            RectTransform dot = GetDot(shown++);
-            dot.anchoredPosition = p;
+            EntitySize size = _enemySizes[i];
+            RectTransform icon;
+            if (size >= EntitySize.Large && largePrefab != null)
+                icon = GetIcon(_largeIcons, largePrefab, shownLarge++, _sizedIconLayer);
+            else if (size >= EntitySize.Medium && mediumEnemyIconPrefab != null)
+                icon = GetIcon(_mediumIcons, mediumEnemyIconPrefab, shownMedium++, _sizedIconLayer);
+            else
+                icon = GetIcon(_dots, enemyDotPrefab, shownDots++, _dotLayer);
+
+            icon.anchoredPosition = p;
         }
-        for (int i = shown; i < _dots.Count; i++)
-            if (_dots[i].gameObject.activeSelf) _dots[i].gameObject.SetActive(false);
+        HideIconsFrom(_dots, shownDots);
+        HideIconsFrom(_mediumIcons, shownMedium);
+        HideIconsFrom(_largeIcons, shownLarge);
     }
 
-    private RectTransform GetDot(int index)
+    private static RectTransform GetIcon(List<RectTransform> pool, RectTransform prefab, int index, RectTransform parent)
     {
-        while (_dots.Count <= index)
+        while (pool.Count <= index)
         {
-            RectTransform d = Instantiate(enemyDotPrefab, iconLayer);
+            RectTransform d = Instantiate(prefab, parent);
             d.anchorMin = d.anchorMax = new Vector2(0.5f, 0.5f);
-            _dots.Add(d);
+            pool.Add(d);
         }
-        RectTransform dot = _dots[index];
-        if (!dot.gameObject.activeSelf) dot.gameObject.SetActive(true);
-        return dot;
+        RectTransform icon = pool[index];
+        if (!icon.gameObject.activeSelf) icon.gameObject.SetActive(true);
+        return icon;
+    }
+
+    private static void HideIconsFrom(List<RectTransform> pool, int start)
+    {
+        for (int i = start; i < pool.Count; i++)
+            if (pool[i].gameObject.activeSelf) pool[i].gameObject.SetActive(false);
+    }
+
+    /// <summary>敵人的體型（讀 ModularEntityStats，依 root 快取）。沒有 Stats 的當作小型。</summary>
+    private EntitySize GetEntitySize(Transform root)
+    {
+        if (!_statsCache.TryGetValue(root, out ModularEntityStats stats))
+        {
+            stats = root.GetComponentInParent<ModularEntityStats>();
+            _statsCache[root] = stats;
+        }
+        return stats != null ? stats.entitySize : EntitySize.Small;
+    }
+
+    /// <summary>在 Icon Layer 底下建一層填滿的子容器（跟 Icon Layer 同中心，圖示的 anchoredPosition 不變）。</summary>
+    private RectTransform CreateIconSubLayer(string layerName)
+    {
+        var go = new GameObject(layerName, typeof(RectTransform));
+        var rt = (RectTransform)go.transform;
+        rt.SetParent(iconLayer, false);
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        return rt;
     }
 
     private float BarrageRadius

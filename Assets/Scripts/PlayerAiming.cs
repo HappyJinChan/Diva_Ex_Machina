@@ -59,6 +59,14 @@ public class PlayerAiming : MonoBehaviour
     [SerializeField] private float crosshairTiltLerp = 12f;
     [SerializeField] private float resetTiltLerp = 8f;
 
+    [Header("Crosshair Distance Scale")]
+    [Tooltip("鎖定中，準星依目標距離縮小，免得遠處的小敵人被準星蓋住。\n" +
+             "距離（鏡頭到目標瞄準點）≤ Near 時是原本大小，≥ Far 時縮到 Scale At Far，中間線性過渡。沒鎖定時一律原本大小。")]
+    [SerializeField] private float crosshairScaleNearDistance = 30f;
+    [SerializeField] private float crosshairScaleFarDistance = 300f;
+    [SerializeField, Range(0.05f, 1f)] private float crosshairScaleAtFar = 0.4f;
+    [SerializeField] private float crosshairScaleLerp = 12f;
+
     [Header("Aiming Point (Optional)")]
     [SerializeField] public Transform aimingPoint;
 
@@ -318,6 +326,16 @@ public class PlayerAiming : MonoBehaviour
         ClearLock();
     }
 
+    /// <summary>
+    /// 解除玩家的 AutoAim（中鍵鎖定）。進入迫擊砲鎖定模式時呼叫。
+    /// 程式強制的鎖定（ForceAutoAim，WeaponBalanceBot 用）不受影響。
+    /// </summary>
+    public void CancelAutoAim()
+    {
+        if (!_autoAimActive || _forcedAutoAim) return;
+        EndAutoAim();
+    }
+
     private void EndAutoAim()
     {
         _autoAimActive = false;
@@ -450,6 +468,15 @@ public class PlayerAiming : MonoBehaviour
         if (_autoAimActive)
         {
             UpdateAutoAimLock(radius);
+            return;
+        }
+
+        // 迫擊砲鎖定模式：武器的輔助鎖定暫停（不鎖、不顯示鎖定框），準星維持自由瞄準。
+        // 炮擊自己的多目標鎖定走 FindLockCandidate，不受影響。
+        if (SupplyManager.Instance != null && SupplyManager.Instance.IsMortarTargeting)
+        {
+            ClearLock();
+            FreeAim();
             return;
         }
 
@@ -899,6 +926,22 @@ public class PlayerAiming : MonoBehaviour
         t.rotation = Quaternion.Euler(Vector3.Lerp(t.rotation.eulerAngles, targetTilt, Time.deltaTime * crosshairTiltLerp));
 
         crosshairImage.color = tilt ? new Color32(24, 180, 0, 200) : new Color32(53, 53, 53, 152);
+
+        // 鎖定中依目標距離縮放；沒鎖定（含圈外夾邊）回到原本大小
+        float targetScale = 1f;
+        if (tilt && _lockedTarget != null && mainCam != null)
+        {
+            float dist = Vector3.Distance(mainCam.transform.position, GetTargetAimPoint(_lockedTarget));
+            float k = Mathf.InverseLerp(crosshairScaleNearDistance, crosshairScaleFarDistance, dist);
+            targetScale = Mathf.Lerp(1f, crosshairScaleAtFar, k);
+        }
+        LerpCrosshairScale(t, targetScale);
+    }
+
+    private void LerpCrosshairScale(RectTransform t, float targetScale)
+    {
+        float s = Mathf.Lerp(t.localScale.x, targetScale, Time.deltaTime * crosshairScaleLerp);
+        t.localScale = new Vector3(s, s, 1f);
     }
 
     private void SmoothResetCrosshairToCenter()
@@ -909,6 +952,7 @@ public class PlayerAiming : MonoBehaviour
         t.rotation = Quaternion.Euler(Vector3.Lerp(t.rotation.eulerAngles, Vector3.zero, Time.deltaTime * resetTiltLerp));
         t.position = Vector2.Lerp(t.position, screenCenter, Time.deltaTime * centerLerpSpeed);
         crosshairImage.color = new Color32(53, 53, 53, 152);
+        LerpCrosshairScale(t, 1f);
     }
 
     private float GetLockAreaPixelRadius()

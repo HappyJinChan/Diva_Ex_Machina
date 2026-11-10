@@ -29,8 +29,10 @@ public class ModularEntityEffectManager : MonoBehaviour, IPooled
 
     public void PlayDamageFeedback(float damage, bool critical = false)
     {
+        // 傷害數字和閃光各自可以留空（例如砲塔只要閃光、不要數字）
         MMF_Player numbers = (critical && criticalDamageFeedback != null) ? criticalDamageFeedback : damageFeedback;
-        numbers.PlayFeedbacks(this.transform.position, RoundForDisplay(damage));
+        if (numbers != null)
+            numbers.PlayFeedbacks(this.transform.position, RoundForDisplay(damage));
 
         // 閃光固定用強度 1 播（不能傳傷害值）
         if (hitFlashFeedback != null)

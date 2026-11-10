@@ -255,7 +255,7 @@ public class EnemySensor : MonoBehaviour
     /// <summary>跟原本 EnemyDetection.OnTriggerEnter 一樣的處理。</summary>
     private void OnEnter(Collider other)
     {
-        Transform t = other.transform;
+        Transform t = ResolveTarget(other);
 
         List<Target> targets = brain.targets;
         for (int x = targets.Count - 1; x >= 0; x--)
@@ -274,6 +274,21 @@ public class EnemySensor : MonoBehaviour
             brain.AddTarget(t, rule.type, rule.priority, rule.priorityDecreaseMultiplier);
             return;
         }
+    }
+
+    /// <summary>
+    /// 碰撞體 → 要加進清單的目標。
+    ///
+    /// 一個可受傷的物件可能有好幾個碰撞體（例如砲塔的 Base 和 TurretHead），
+    /// 原本以碰撞體為單位加目標，同一座砲塔會變成兩筆。
+    /// 改成記錄 IDamageable 所在的物件（砲塔的 BuildingStats、玩家根物件上的 DamageRelay……），
+    /// 一個物件只會有一筆；瞄準位置由 TurretController.GetAimPoint 找它底下的 AimPoint。
+    /// 沒有 IDamageable 的（例如障礙物）維持原本的碰撞體。
+    /// </summary>
+    private static Transform ResolveTarget(Collider col)
+    {
+        IDamageable damageable = col.GetComponentInParent<IDamageable>();
+        return damageable is Component c ? c.transform : col.transform;
     }
 
     // ═══════════════════════ Gizmo ═══════════════════════

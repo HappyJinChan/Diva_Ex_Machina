@@ -5,6 +5,16 @@ public class TurretController : MonoBehaviour
 {
     public Vector3 PitchPivotPosition => pitchTransform != null ? pitchTransform.position : transform.position;
     public float BulletSpeed => bulletSpeed;
+
+    // 預判用的彈速覆寫。砲塔上另外掛的武器（TurretWeapon，例如蓄力砲）彈速不同時，
+    // 蓄力 / 開火期間由武器設定，結束時清掉 → 改用 bulletSpeed。0 = 沒有覆寫。
+    private float _leadSpeedOverride;
+
+    /// <summary>瞄準預判（攔截點）用的彈速：有覆寫就用覆寫，否則用這座砲塔自己的 bulletSpeed。</summary>
+    public float LeadSpeed => _leadSpeedOverride > 0f ? _leadSpeedOverride : bulletSpeed;
+
+    public void SetLeadSpeedOverride(float speed) => _leadSpeedOverride = Mathf.Max(0f, speed);
+    public void ClearLeadSpeedOverride() => _leadSpeedOverride = 0f;
     public Vector3 MuzzlePosition => muzzle != null ? muzzle.position : transform.position;
 
     /// <summary>
@@ -220,8 +230,9 @@ public class TurretController : MonoBehaviour
         Vector3 aimPoint = GetAimPoint(_trackTarget);
         Vector3 targetVelocity = _trackTargetRb != null ? _trackTargetRb.linearVelocity : Vector3.zero;
 
-        if (bulletSpeed > 0f &&
-            MathToolKit.InterceptionPoint(aimPoint, MuzzlePosition, targetVelocity, bulletSpeed, out Vector3 intercept))
+        float leadSpeed = LeadSpeed;
+        if (leadSpeed > 0f &&
+            MathToolKit.InterceptionPoint(aimPoint, MuzzlePosition, targetVelocity, leadSpeed, out Vector3 intercept))
         {
             targetLocation = intercept;
         }
@@ -400,12 +411,17 @@ public class TurretController : MonoBehaviour
         }
     }
     /// <summary>
-    /// 目標的瞄準點：目標身上有 Collider 就打它的中心，否則退回 pivot。
+    /// 目標的瞄準點，依序：
+    ///   1. 底下有 AimPoint → 它的位置（跟玩家的準星用同一套）
+    ///   2. 目標身上有 Collider → 它的中心
+    ///   3. 都沒有 → pivot
     /// 建築 / 砲塔的 pivot 通常在地面，直接瞄 position 會打到基座。
     /// </summary>
     public static Vector3 GetAimPoint(Transform target)
     {
         if (target == null) return Vector3.zero;
+        // global::：這個類別自己有一個叫 AimPoint 的屬性，不加會解析成那個屬性
+        if (global::AimPoint.TryGetPosition(target, out Vector3 aimPoint)) return aimPoint;
         if (target.TryGetComponent(out Collider col) && col.enabled)
             return col.bounds.center;
         return target.position;

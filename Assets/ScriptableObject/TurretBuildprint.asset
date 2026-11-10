@@ -22,5 +22,6 @@ MonoBehaviour:
   unavailableMaterial: {fileID: 2100000, guid: 1dc657abc81635f49a03e7616d61e1fe, type: 2}
   buildingMaterial: {fileID: 0}
   costs:
-  - item: {fileID: 11400000, guid: 83bc55f6729eb1c4eab6b82ce9a1cfd6, type: 2}
-    amount: 0
+  - uid: 
+    item: {fileID: 11400000, guid: 83bc55f6729eb1c4eab6b82ce9a1cfd6, type: 2}
+    amount: 15

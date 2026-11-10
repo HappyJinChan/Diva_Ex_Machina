@@ -52,6 +52,21 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
     [Header("Turrets")]
     [SerializeField] protected TurretController[] turrets;   // 0..N 座，Inspector 拖或自動抓
 
+    [Header("Abilities")]
+    [Tooltip("特殊攻擊模式（EntityAbility，例如 StationaryChargeAttack）。留空 = 自動抓自己和子物件上的。")]
+    [SerializeField] protected EntityAbility[] abilities;
+
+    [Tooltip("Combat 狀態下多久「想一次」要不要發動能力（秒，隨機範圍）。\n" +
+             "時間到 → 看哪些能力冷卻好了 → 檢查各自的條件 → 條件成立的裡面挑一個發動。")]
+    [SerializeField] protected Vector2 abilityThinkInterval = new Vector2(2f, 3f);
+
+    private EntityAbility _activeAbility;
+    private float _abilityThinkTimer;
+    private readonly List<EntityAbility> _abilityCandidates = new List<EntityAbility>();
+
+    /// <summary>正在發動能力（發動中不移動、不近戰、砲塔只瞄準不開火）。</summary>
+    public bool IsUsingAbility => _activeAbility != null && _activeAbility.IsRunning;
+
     [Header("Sensors")]
     [Tooltip("偵測範圍（取代 EnemyDetectRange 的 trigger）。留空會自動抓子物件上所有 EnemySensor。")]
     [SerializeField] protected EnemySensor[] sensors;
@@ -181,6 +196,10 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         if (meleeManager == null)
             meleeManager = GetComponentInChildren<ModularEntityMeleeManager>();
 
+        if (abilities == null || abilities.Length == 0)
+            abilities = GetComponentsInChildren<EntityAbility>(true);
+        _abilityThinkTimer = RollAbilityInterval();
+
         _started = true;
     }
 
@@ -222,6 +241,77 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         // 死亡 / 回收到物件池：交還攻擊名額。
         // 原本靠 Destroy 之後 GameManager 自己清掉空參照；池化後物件不會被銷毀，不還的話名額會被一直佔著。
         ReleaseAttackSlot();
+        InterruptAbility();
+    }
+
+    // ═══════════════════════ 指揮（EntityCommander） ═══════════════════════
+    //
+    // Boss 身上的 EntityCommander 可以把這隻敵人「納入指揮」。指揮期間：
+    //   · 仇恨鎖定：Boss 的目標以最高優先度加入，之後不衰減、不加新目標、被打也不拉仇恨。
+    //   · 永遠可以攻擊：不跟其他敵人搶攻擊名額（TryAcquireAttackSlot 直接放行）。
+    //   · Combat 狀態的移動目的地改由 Commander 決定（PathUpdate）。
+    // 其他行為（近戰出招、砲塔、失衡）完全照舊。
+
+    /// <summary>指揮期間，鎖定目標使用的優先度（遠高於感測器與仇恨能給的值）。</summary>
+    public const float CommandTargetPriority = 9999f;
+
+    /// <summary>目前指揮這隻敵人的 Commander；null = 沒有被指揮。</summary>
+    public EntityCommander Commander { get; private set; }
+    public bool IsCommanded => Commander != null;
+
+    private Transform _commandTarget;
+
+    /// <summary>由 EntityCommander 呼叫：納入指揮，並鎖定目標。</summary>
+    public void EnterCommand(EntityCommander commander, Transform target)
+    {
+        if (commander == null) return;
+        if (Commander != null && Commander != commander) return;   // 已經被別的 Boss 指揮
+
+        Commander = commander;
+        ReleaseAttackSlot();          // 指揮期間不使用名額，原本持有的先還回去
+        SetCommandTarget(target);
+
+        destinationTimer = 0f;        // 下一次思考就改用 Commander 給的目的地
+        if (currentState != EntityState.Combat) ChangeState(EntityState.Combat);
+    }
+
+    /// <summary>由 EntityCommander 呼叫：Boss 換目標時，跟著換鎖定的目標。</summary>
+    public void SetCommandTarget(Transform target)
+    {
+        if (Commander == null || _commandTarget == target) return;
+
+        if (_commandTarget != null) UnlockCommandTarget(_commandTarget);
+        _commandTarget = target;
+        if (target == null) return;
+
+        TargetType type = target.CompareTag("Player") ? TargetType.Player : TargetType.Building;
+        AddTarget(target, type, CommandTargetPriority, 0f);
+        destinationTimer = 0f;
+    }
+
+    /// <summary>由 EntityCommander 呼叫：解除指揮，恢復一般的仇恨與名額規則。</summary>
+    public void ExitCommand(EntityCommander commander)
+    {
+        if (Commander == null || Commander != commander) return;
+
+        Transform t = _commandTarget;
+        Commander = null;
+        _commandTarget = null;
+        if (t != null) UnlockCommandTarget(t);
+
+        destinationTimer = 0f;
+    }
+
+    /// <summary>鎖定的目標降回一般上限，之後照常衰減（不然解除後會永遠盯著它）。</summary>
+    private void UnlockCommandTarget(Transform t)
+    {
+        for (int i = 0; i < targets.Count; i++)
+        {
+            Target entry = targets[i];
+            if (entry == null || entry.targetTransform != t) continue;
+            entry.targetPriority = Mathf.Min(entry.targetPriority, maxThreatPriority);
+            entry.priorityDecreaseMultiplier = threatPriorityDecreaseMultiplier;
+        }
     }
 
     // ═══════════════════════ 物件池 ═══════════════════════
@@ -244,6 +334,15 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         CombatTarget = null;
         _velocityTarget = null;
         _velocityTargetRb = null;
+
+        Commander = null;          // 上一世的指揮不帶到下一世
+        _commandTarget = null;
+
+        _activeAbility = null;
+        _abilityThinkTimer = RollAbilityInterval();
+        if (abilities != null)
+            for (int i = 0; i < abilities.Length; i++)
+                if (abilities[i] != null) abilities[i].ResetForSpawn();
     }
 
     public virtual void OnDespawned() { }
@@ -274,6 +373,7 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         // 攻擊名額交還，讓其他敵人可以補上。
         if (modularEntityMovement != null && modularEntityMovement.IsStaggered)
         {
+            InterruptAbility();   // 能力只能被失衡打斷
             ReleaseAttackSlot();
             RunSensors();
             PriorityUpdate();
@@ -290,7 +390,7 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         PriorityUpdate();
         PathUpdate();
         StateBehaviour();
-        if (currentState != EntityState.Combat) CombatTarget = null;
+        if (currentState != EntityState.Combat) { CombatTarget = null; InterruptAbility(); }   // 離開戰鬥（目標消失等）
         LookTarget = SelectLookTarget();
     }
 
@@ -333,6 +433,8 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         //   在這裡剔除，就不需要任何跨物件的死亡通知機制 ——
         //   目標死掉後最多一個 physics step 就會被清掉。
         PruneDestroyedTargets();
+
+        if (IsCommanded) return;   // 指揮期間仇恨鎖定：不衰減
 
         if (targets.Count > 1)
         {
@@ -475,8 +577,17 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
                     destinationTimer = RollInterval(combatDestinationUpdateRange);
                     Transform combatTarget = FindTarget();
                     if (combatTarget == null) { ChangeState(EntityState.Patrolling); break; }   // 沒目標 → 回巡邏
-                    // 多點採樣 + 視線檢查，避免目標在崖邊時選到崖底
-                    destination = pathFinder.PickCombatDestination(combatTarget, combatActivityAreaRadius);
+                    if (IsCommanded && Commander.TryGetDestination(this, out Vector3 commandDestination))
+                    {
+                        // 被指揮：目的地由 Commander 決定，重算間隔也縮短（側翼、背後的位置跟著目標一直在變）
+                        destinationTimer = Commander.RepathInterval;
+                        destination = commandDestination;
+                    }
+                    else
+                    {
+                        // 多點採樣 + 視線檢查，避免目標在崖邊時選到崖底
+                        destination = pathFinder.PickCombatDestination(combatTarget, combatActivityAreaRadius);
+                    }
                     SyncShipFlags(combatTarget);
                     SetPath(pathFinder.FindPath(destination));
                     break;
@@ -879,6 +990,10 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         Transform target = FindTarget();
         CombatTarget = target;
 
+        // ── 能力（特殊攻擊模式） ──
+        //   發動中：停下、面向目標、砲塔只瞄不打，其他全部交給能力。
+        if (UpdateAbilities(target)) return;
+
         // ── 近戰 ──
         //   攻擊中：移動、轉向全部交給近戰，這裡只負責砲塔（停不停火由 UpdateTurretAiming 判斷）。
         //   沒在攻擊：讓近戰判斷要不要出招；出招了這次思考就到此為止。
@@ -917,6 +1032,88 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         {
             UpdateTurretAiming(target, GetTargetVelocity(target));
         }
+    }
+
+    // ═══════════════════════ 能力（EntityAbility） ═══════════════════════
+    //
+    // 「停止 > 蓄力 > 攻擊」這類特殊攻擊模式做成獨立元件（EntityAbility），任何敵人掛上就能用。
+    // Brain 只負責：每隔 abilityThinkInterval 想一次要不要發動、發動中暫停一般戰鬥行為、失衡時打斷。
+
+    /// <summary>回傳 true = 這次思考由能力接管（呼叫端不要再做移動、近戰、一般射擊）。</summary>
+    protected bool UpdateAbilities(Transform target)
+    {
+        if (abilities == null || abilities.Length == 0) return false;
+
+        // 發動中
+        if (_activeAbility != null)
+        {
+            if (_activeAbility.IsRunning) _activeAbility.Tick(target);
+            if (_activeAbility.IsRunning)
+            {
+                HoldForAbility(target);
+                return true;
+            }
+            _activeAbility = null;   // 剛結束 → 這次思考就恢復一般行為
+            _abilityThinkTimer = RollAbilityInterval();
+            return false;
+        }
+
+        // 近戰出招中不打斷，也不計時
+        if (IsMeleeAttacking || target == null) return false;
+
+        _abilityThinkTimer -= ThinkDeltaTime;
+        if (_abilityThinkTimer > 0f) return false;
+        _abilityThinkTimer = RollAbilityInterval();
+
+        // 冷卻好了 → 條件成立 → 機率通過的，取優先度最高的（同優先度隨機）
+        _abilityCandidates.Clear();
+        int bestPriority = int.MinValue;
+        for (int i = 0; i < abilities.Length; i++)
+        {
+            EntityAbility a = abilities[i];
+            if (a == null || !a.isActiveAndEnabled || !a.IsReady) continue;
+            if (!a.CanStart(target) || !a.RollChance()) continue;
+
+            if (a.Priority > bestPriority) { bestPriority = a.Priority; _abilityCandidates.Clear(); }
+            if (a.Priority == bestPriority) _abilityCandidates.Add(a);
+        }
+        if (_abilityCandidates.Count == 0) return false;
+
+        _activeAbility = _abilityCandidates[Random.Range(0, _abilityCandidates.Count)];
+        _activeAbility.Begin(target);
+        HoldForAbility(target);
+        return true;
+    }
+
+    /// <summary>能力發動中：停下、面向目標、砲塔持續瞄準（不開火）。</summary>
+    protected virtual void HoldForAbility(Transform target)
+    {
+        modularEntityMovement.HorizontalMovement(0f, 0f);
+        if (target == null) return;
+
+        if (_activeAbility == null || _activeAbility.FaceTarget)
+        {
+            Vector3 toTarget = target.position - transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude > 0.01f) FaceMoveDirection(toTarget);
+        }
+
+        if (turrets == null) return;
+        for (int i = 0; i < turrets.Length; i++)
+            if (turrets[i] != null) turrets[i].TrackTarget(target);
+    }
+
+    // 不用 RollInterval：那個會在靠近登船口時縮短，而且需要 pathFinder（OnSpawned 可能早於 Start）
+    private float RollAbilityInterval() =>
+        Random.Range(Mathf.Min(abilityThinkInterval.x, abilityThinkInterval.y), Mathf.Max(abilityThinkInterval.x, abilityThinkInterval.y));
+
+    /// <summary>打斷正在發動的能力（失衡、離開戰鬥、停用）。</summary>
+    protected void InterruptAbility()
+    {
+        if (_activeAbility == null) return;
+        if (_activeAbility.IsRunning) _activeAbility.Interrupt();
+        _activeAbility = null;
+        _abilityThinkTimer = RollAbilityInterval();
     }
 
     // ═══════════════════════ 給近戰等系統讀取的目標資料 ═══════════════════════
@@ -1022,6 +1219,10 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
     {
         if (target == null) return false;
 
+        // 被指揮：永遠可以攻擊。不登記名額（不佔其他敵人的額度），
+        // 也就不會有「持有逾時 → 對調目標」—— 那會改動被鎖定的仇恨。
+        if (IsCommanded) return true;
+
         GameManager gm = GameManager.Instance;
         if (gm == null) return true;
 
@@ -1095,6 +1296,9 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
         {
             Target t = targets[i];
             if (!IsTargetUsable(t)) continue;
+            // 不衰減的目標（船的 Core）不參與對調：換出去的低數值會永遠停在那裡，
+            // 敵人就再也不會回頭打船。Core 維持自己的優先度。
+            if (t.priorityDecreaseMultiplier <= 0f) continue;
 
             if (first == null || t.targetPriority > first.targetPriority)
             {
@@ -1145,6 +1349,9 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
     {
         if (targetTransform == null) return;
 
+        // 指揮期間仇恨鎖定：只接受 Commander 指定的目標
+        if (IsCommanded && targetTransform != _commandTarget) return;
+
         // 去重移到這裡。EnemyDetection 呼叫前本來就有檢查，但那個檢查在呼叫端 ——
         // 之後把 TakeDamage 的仇恨接上來時（那是每次中彈都會觸發的高頻呼叫），
         // 沒有這道防線就會瞬間產生大量重複項目。
@@ -1179,6 +1386,7 @@ public class ModularEntityBrain : MonoBehaviour, IManagedEntity, IPooled
     public virtual void OnDamaged(float damage, float maxHealth, GameObject attacker)
     {
         if (!damageThreat || attacker == null) return;
+        if (IsCommanded) return;   // 指揮期間仇恨鎖定：被打也不改
         if (damage <= 0f || maxHealth <= 0f) return;
 
         Transform source = attacker.transform;

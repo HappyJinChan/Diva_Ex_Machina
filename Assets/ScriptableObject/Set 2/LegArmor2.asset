@@ -21,6 +21,9 @@ MonoBehaviour:
   skinnedMeshRenderer: {fileID: 6439124259945334815, guid: d76c45fb41593944da45ceeff9efcbef, type: 3}
   uts3MaterialTemplate: {fileID: 2100000, guid: 5d5f84e82f580fd46b070a0e673bf1fd, type: 2}
   buffs:
+  - attribute: 17
+    mode: 0
+    value: 35
   - attribute: 23
     mode: 0
     value: 15
